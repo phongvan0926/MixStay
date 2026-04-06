@@ -110,76 +110,127 @@ async function main() {
 
   console.log('✅ Properties created');
 
-  // Create rooms
-  const roomsData = [
-    // Prop 1 rooms
-    { propertyId: prop1.id, roomNumber: 'P201', floor: 2, areaSqm: 25, priceMonthly: 3500000, deposit: 3500000, amenities: ['Điều hoà', 'Nóng lạnh', 'WC riêng', 'Ban công'], isAvailable: true, isApproved: true },
-    { propertyId: prop1.id, roomNumber: 'P202', floor: 2, areaSqm: 30, priceMonthly: 4200000, deposit: 4200000, amenities: ['Điều hoà', 'Nóng lạnh', 'WC riêng', 'Bếp riêng'], isAvailable: true, isApproved: true },
-    { propertyId: prop1.id, roomNumber: 'P301', floor: 3, areaSqm: 25, priceMonthly: 3500000, deposit: 3500000, amenities: ['Điều hoà', 'Nóng lạnh', 'WC riêng'], isAvailable: false, isApproved: true },
-    { propertyId: prop1.id, roomNumber: 'P401', floor: 4, areaSqm: 35, priceMonthly: 5000000, deposit: 5000000, amenities: ['Điều hoà', 'Nóng lạnh', 'WC riêng', 'Bếp riêng', 'Ban công'], isAvailable: true, isApproved: true },
-    { propertyId: prop1.id, roomNumber: 'P501', floor: 5, areaSqm: 20, priceMonthly: 2800000, deposit: 2800000, amenities: ['Điều hoà', 'Nóng lạnh', 'WC chung'], isAvailable: true, isApproved: true },
-    // Prop 2 rooms
-    { propertyId: prop2.id, roomNumber: 'P101', floor: 1, areaSqm: 22, priceMonthly: 2500000, deposit: 2500000, amenities: ['Nóng lạnh', 'WC riêng'], isAvailable: true, isApproved: true },
-    { propertyId: prop2.id, roomNumber: 'P201', floor: 2, areaSqm: 28, priceMonthly: 3200000, deposit: 3200000, amenities: ['Điều hoà', 'Nóng lạnh', 'WC riêng', 'Giường tủ'], isAvailable: true, isApproved: true },
-    { propertyId: prop2.id, roomNumber: 'P301', floor: 3, areaSqm: 28, priceMonthly: 3200000, deposit: 3200000, amenities: ['Điều hoà', 'Nóng lạnh', 'WC riêng'], isAvailable: false, isApproved: true },
-    // Prop 3 rooms
-    { propertyId: prop3.id, roomNumber: 'S301', floor: 3, areaSqm: 32, priceMonthly: 4500000, deposit: 4500000, amenities: ['Full nội thất', 'Điều hoà', 'Máy giặt riêng', 'Bếp riêng'], isAvailable: true, isApproved: true },
-    { propertyId: prop3.id, roomNumber: 'S401', floor: 4, areaSqm: 28, priceMonthly: 3800000, deposit: 3800000, amenities: ['Full nội thất', 'Điều hoà', 'WC riêng'], isAvailable: true, isApproved: true },
-    { propertyId: prop3.id, roomNumber: 'S501', floor: 5, areaSqm: 40, priceMonthly: 6000000, deposit: 6000000, amenities: ['Studio', 'Full nội thất', 'Điều hoà', 'Bếp riêng', 'Ban công'], isAvailable: true, isApproved: true },
-    { propertyId: prop3.id, roomNumber: 'S601', floor: 6, areaSqm: 22, priceMonthly: 2800000, deposit: 2800000, amenities: ['Điều hoà', 'WC riêng'], isAvailable: false, isApproved: true },
+  // Create room types
+  const roomTypesData = [
+    // Prop 1 - Cầu Giấy Premium
+    {
+      propertyId: prop1.id, name: 'Phòng đơn 25m²', typeName: 'don',
+      areaSqm: 25, priceMonthly: 3500000, deposit: 3500000,
+      amenities: ['Điều hoà', 'Nóng lạnh', 'WC riêng', 'Ban công'],
+      totalUnits: 3, availableUnits: 2, availableRoomNames: '201, 301',
+      isAvailable: true, isApproved: true,
+    },
+    {
+      propertyId: prop1.id, name: 'Phòng có bếp 30m²', typeName: 'gac_xep',
+      areaSqm: 30, priceMonthly: 4200000, deposit: 4200000,
+      amenities: ['Điều hoà', 'Nóng lạnh', 'WC riêng', 'Bếp riêng'],
+      totalUnits: 2, availableUnits: 1, availableRoomNames: '202',
+      isAvailable: true, isApproved: true,
+    },
+    {
+      propertyId: prop1.id, name: 'Studio 35m² cao cấp', typeName: 'studio',
+      areaSqm: 35, priceMonthly: 5000000, deposit: 5000000,
+      amenities: ['Điều hoà', 'Nóng lạnh', 'WC riêng', 'Bếp riêng', 'Ban công'],
+      totalUnits: 2, availableUnits: 1, availableRoomNames: '401',
+      isAvailable: true, isApproved: true,
+    },
+    {
+      propertyId: prop1.id, name: 'Phòng nhỏ 20m²', typeName: 'don',
+      areaSqm: 20, priceMonthly: 2800000, deposit: 2800000,
+      amenities: ['Điều hoà', 'Nóng lạnh', 'WC chung'],
+      totalUnits: 2, availableUnits: 2, availableRoomNames: '501, 502',
+      isAvailable: true, isApproved: true,
+    },
+    // Prop 2 - Đống Đa Green
+    {
+      propertyId: prop2.id, name: 'Phòng tầng 1 - 22m²', typeName: 'don',
+      areaSqm: 22, priceMonthly: 2500000, deposit: 2500000,
+      amenities: ['Nóng lạnh', 'WC riêng'],
+      totalUnits: 2, availableUnits: 1, availableRoomNames: '101',
+      isAvailable: true, isApproved: true,
+    },
+    {
+      propertyId: prop2.id, name: 'Phòng nội thất 28m²', typeName: 'don',
+      areaSqm: 28, priceMonthly: 3200000, deposit: 3200000,
+      amenities: ['Điều hoà', 'Nóng lạnh', 'WC riêng', 'Giường tủ'],
+      totalUnits: 3, availableUnits: 1, availableRoomNames: '201',
+      isAvailable: true, isApproved: true,
+    },
+    // Prop 3 - Thanh Xuân
+    {
+      propertyId: prop3.id, name: 'Căn hộ full nội thất 32m²', typeName: '1k1n',
+      areaSqm: 32, priceMonthly: 4500000, deposit: 4500000,
+      amenities: ['Full nội thất', 'Điều hoà', 'Máy giặt riêng', 'Bếp riêng'],
+      totalUnits: 2, availableUnits: 2, availableRoomNames: '301, 302',
+      isAvailable: true, isApproved: true,
+      shortTermAllowed: true, shortTermMonths: '1,3', shortTermPrice: 5500000,
+    },
+    {
+      propertyId: prop3.id, name: 'Studio 40m² duplex', typeName: 'studio',
+      areaSqm: 40, priceMonthly: 6000000, deposit: 6000000,
+      amenities: ['Studio', 'Full nội thất', 'Điều hoà', 'Bếp riêng', 'Ban công'],
+      totalUnits: 2, availableUnits: 1, availableRoomNames: '501',
+      isAvailable: true, isApproved: true,
+    },
+    {
+      propertyId: prop3.id, name: 'Phòng đơn 22m²', typeName: 'don',
+      areaSqm: 22, priceMonthly: 2800000, deposit: 2800000,
+      amenities: ['Điều hoà', 'WC riêng'],
+      totalUnits: 3, availableUnits: 0,
+      isAvailable: false, isApproved: true,
+    },
   ];
 
-  for (const room of roomsData) {
-    await prisma.room.create({ data: room });
+  const createdRoomTypes = [];
+  for (const rt of roomTypesData) {
+    const created = await prisma.roomType.create({ data: rt });
+    createdRoomTypes.push(created);
   }
 
-  console.log('✅ Rooms created');
+  console.log('✅ Room types created');
 
   // Create some deals
-  const room1 = await prisma.room.findFirst({ where: { roomNumber: 'P301', propertyId: prop1.id } });
-  const room2 = await prisma.room.findFirst({ where: { roomNumber: 'P301', propertyId: prop2.id } });
-  const room3 = await prisma.room.findFirst({ where: { roomNumber: 'S601', propertyId: prop3.id } });
+  // Phòng đơn 25m² Cầu Giấy - 1 phòng đã cho thuê
+  const rt1 = createdRoomTypes[0]; // Phòng đơn 25m²
+  // Phòng nội thất 28m² Đống Đa - 2 phòng đã cho thuê
+  const rt2 = createdRoomTypes[5]; // Phòng nội thất 28m²
+  // Phòng đơn 22m² Thanh Xuân - hết phòng
+  const rt3 = createdRoomTypes[8]; // Phòng đơn 22m²
 
-  if (room1) {
-    await prisma.deal.create({
-      data: {
-        roomId: room1.id, brokerId: broker1.id, customerName: 'Nguyễn Minh Tuấn', customerPhone: '0987654321',
-        dealPrice: 3500000, commissionTotal: 1750000, commissionBroker: 1050000, commissionCompany: 700000,
-        commissionRate: 60, status: 'CONFIRMED', confirmedAt: new Date(),
-      },
-    });
-  }
+  await prisma.deal.create({
+    data: {
+      roomTypeId: rt1.id, brokerId: broker1.id, customerName: 'Nguyễn Minh Tuấn', customerPhone: '0987654321',
+      dealPrice: 3500000, commissionTotal: 1750000, commissionBroker: 1050000, commissionCompany: 700000,
+      commissionRate: 60, status: 'CONFIRMED', confirmedAt: new Date(),
+    },
+  });
 
-  if (room2) {
-    await prisma.deal.create({
-      data: {
-        roomId: room2.id, brokerId: broker1.id, customerName: 'Lê Thị Hoa', customerPhone: '0912333444',
-        dealPrice: 3200000, commissionTotal: 1600000, commissionBroker: 960000, commissionCompany: 640000,
-        commissionRate: 60, status: 'PAID', confirmedAt: new Date(),
-      },
-    });
-  }
+  await prisma.deal.create({
+    data: {
+      roomTypeId: rt2.id, brokerId: broker1.id, customerName: 'Lê Thị Hoa', customerPhone: '0912333444',
+      dealPrice: 3200000, commissionTotal: 1600000, commissionBroker: 960000, commissionCompany: 640000,
+      commissionRate: 60, status: 'PAID', confirmedAt: new Date(),
+    },
+  });
 
-  if (room3) {
-    await prisma.deal.create({
-      data: {
-        roomId: room3.id, brokerId: broker2.id, customerName: 'Trần Văn Đức', customerPhone: '0977888999',
-        dealPrice: 2800000, commissionTotal: 1400000, commissionBroker: 840000, commissionCompany: 560000,
-        commissionRate: 60, status: 'PENDING',
-      },
-    });
-  }
+  await prisma.deal.create({
+    data: {
+      roomTypeId: rt3.id, brokerId: broker2.id, customerName: 'Trần Văn Đức', customerPhone: '0977888999',
+      dealPrice: 2800000, commissionTotal: 1400000, commissionBroker: 840000, commissionCompany: 560000,
+      commissionRate: 60, status: 'PENDING',
+    },
+  });
 
   console.log('✅ Deals created');
 
   // Create share links
-  const availableRooms = await prisma.room.findMany({ where: { isAvailable: true }, take: 3 });
-  for (const room of availableRooms) {
+  const availableRoomTypes = await prisma.roomType.findMany({ where: { isAvailable: true }, take: 3 });
+  for (const rt of availableRoomTypes) {
     await prisma.shareLink.create({
       data: {
-        roomId: room.id,
+        roomTypeId: rt.id,
         brokerId: broker1.id,
-        token: `demo${room.roomNumber.toLowerCase().replace(/[^a-z0-9]/g, '')}${Math.random().toString(36).slice(2, 6)}`,
+        token: `demo${rt.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8)}${Math.random().toString(36).slice(2, 6)}`,
         viewCount: Math.floor(Math.random() * 50),
       },
     });

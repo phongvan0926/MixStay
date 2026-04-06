@@ -22,7 +22,8 @@ const menuItems: Record<string, { label: string; href: string; icon: string }[]>
   ],
   LANDLORD: [
     { label: 'Tòa nhà', href: '/landlord/properties', icon: '🏠' },
-    { label: 'Phòng', href: '/landlord/rooms', icon: '🚪' },
+    { label: 'Loại phòng', href: '/landlord/rooms', icon: '🚪' },
+    { label: 'Link chia sẻ', href: '/landlord/share-links', icon: '🔗' },
   ],
 };
 

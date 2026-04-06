@@ -24,59 +24,49 @@ function ImageGallery({ images }: { images: string[] }) {
     );
   }
 
+  // Show up to 3 main images in grid, click to open lightbox
+  const mainImages = images.slice(0, 3);
+
   return (
     <>
-      {/* Main image */}
-      <div className="relative rounded-2xl overflow-hidden group cursor-pointer" onClick={() => setLightbox(true)}>
-        <img
-          src={images[activeIdx]}
-          alt={`Ảnh phòng ${activeIdx + 1}`}
-          className="w-full h-64 md:h-80 object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-
-        {/* Image counter */}
-        <span className="absolute bottom-3 right-3 bg-black/50 text-white text-xs font-medium px-3 py-1 rounded-full backdrop-blur-sm">
-          {activeIdx + 1} / {images.length}
-        </span>
-
-        {/* Prev/Next on main image */}
-        {images.length > 1 && (
-          <>
-            <button
-              onClick={(e) => { e.stopPropagation(); setActiveIdx(i => (i - 1 + images.length) % images.length); }}
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 text-stone-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white shadow-lg text-lg"
-            >
-              ‹
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); setActiveIdx(i => (i + 1) % images.length); }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 text-stone-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white shadow-lg text-lg"
-            >
-              ›
-            </button>
-          </>
+      {/* Main images grid */}
+      <div className="relative cursor-pointer" onClick={() => setLightbox(true)}>
+        {mainImages.length === 1 && (
+          <div className="rounded-2xl overflow-hidden">
+            <img src={mainImages[0]} alt="Ảnh phòng" className="w-full h-64 md:h-80 object-cover hover:scale-[1.02] transition-transform duration-300" />
+          </div>
         )}
-      </div>
+        {mainImages.length === 2 && (
+          <div className="grid grid-cols-2 gap-2 rounded-2xl overflow-hidden">
+            {mainImages.map((img, i) => (
+              <img key={i} src={img} alt={`Ảnh ${i + 1}`} className="w-full h-64 md:h-80 object-cover hover:scale-[1.02] transition-transform duration-300" />
+            ))}
+          </div>
+        )}
+        {mainImages.length >= 3 && (
+          <div className="grid grid-cols-3 gap-2 rounded-2xl overflow-hidden">
+            <div className="col-span-2 row-span-2">
+              <img src={mainImages[0]} alt="Ảnh 1" className="w-full h-64 md:h-80 object-cover hover:scale-[1.02] transition-transform duration-300" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <img src={mainImages[1]} alt="Ảnh 2" className="w-full h-[calc(50%-4px)] md:h-[calc(160px-4px)] object-cover hover:scale-[1.02] transition-transform duration-300" />
+              <div className="relative">
+                <img src={mainImages[2]} alt="Ảnh 3" className="w-full h-[calc(50%-4px)] md:h-[calc(160px-4px)] object-cover hover:scale-[1.02] transition-transform duration-300" />
+                {images.length > 3 && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <span className="text-white font-semibold text-lg">+{images.length - 3} ảnh</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
-      {/* Thumbnails */}
-      {images.length > 1 && (
-        <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-thin">
-          {images.map((img, idx) => (
-            <button
-              key={idx}
-              onClick={() => setActiveIdx(idx)}
-              className={`flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden border-2 transition-all ${
-                idx === activeIdx
-                  ? 'border-brand-500 shadow-md ring-2 ring-brand-200'
-                  : 'border-transparent opacity-60 hover:opacity-100'
-              }`}
-            >
-              <img src={img} alt="" className="w-full h-full object-cover" />
-            </button>
-          ))}
-        </div>
-      )}
+        {/* Image counter badge */}
+        <span className="absolute bottom-3 right-3 bg-black/50 text-white text-xs font-medium px-3 py-1 rounded-full backdrop-blur-sm">
+          📷 {images.length} ảnh
+        </span>
+      </div>
 
       {/* Lightbox */}
       {lightbox && (
@@ -86,16 +76,18 @@ function ImageGallery({ images }: { images: string[] }) {
         >
           <button
             onClick={() => setLightbox(false)}
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/30 text-xl"
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/30 text-xl z-10"
           >
             ✕
           </button>
+
           <img
             src={images[activeIdx]}
             alt=""
             className="max-w-full max-h-[85vh] object-contain rounded-lg"
             onClick={(e) => e.stopPropagation()}
           />
+
           {images.length > 1 && (
             <>
               <button
@@ -112,6 +104,12 @@ function ImageGallery({ images }: { images: string[] }) {
               </button>
             </>
           )}
+
+          {/* Counter */}
+          <span className="absolute top-4 left-1/2 -translate-x-1/2 text-white/80 text-sm">
+            {activeIdx + 1} / {images.length}
+          </span>
+
           {/* Lightbox thumbnails */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 max-w-[90vw] overflow-x-auto pb-1">
             {images.map((img, idx) => (
@@ -167,10 +165,10 @@ export default function ShareViewPage() {
     </div>
   );
 
-  const room = data.room;
-  const property = room?.property;
+  const roomType = data.roomType;
+  const property = roomType?.property;
 
-  const roomImages: string[] = room?.images || [];
+  const roomImages: string[] = roomType?.images || [];
   const propImages: string[] = property?.images || [];
   const allImages = [...roomImages, ...propImages];
 
@@ -196,66 +194,86 @@ export default function ShareViewPage() {
       </nav>
 
       <div className="max-w-3xl mx-auto px-4 py-8">
-        {/* Image Gallery */}
+        {/* Image Gallery — 3 ảnh chính, click mở lightbox */}
         <div className="mb-6">
           <ImageGallery images={allImages} />
         </div>
 
-        {/* Room info */}
+        {/* Room type info */}
         <div className="card mb-4">
           <div className="flex items-start justify-between mb-3">
             <div>
               <h1 className="font-display text-2xl font-bold">{property?.name}</h1>
-              <p className="text-stone-500 mt-1">Phòng {room.roomNumber} • Tầng {room.floor}</p>
+              <p className="text-stone-500 mt-1">{roomType.name}</p>
             </div>
-            <span className="badge bg-emerald-100 text-emerald-700 text-sm py-1 flex-shrink-0">Còn trống</span>
+            {roomType.availableUnits > 0 && (
+              <span className="badge bg-emerald-100 text-emerald-700 text-sm py-1 flex-shrink-0">
+                Còn {roomType.availableUnits} phòng trống
+              </span>
+            )}
           </div>
 
-          {room.roomType && (
+          {roomType.typeName && (
             <span className="badge bg-brand-100 text-brand-700 mb-3">
-              {roomTypeLabels[room.roomType] || room.roomType}
+              {roomTypeLabels[roomType.typeName] || roomType.typeName}
             </span>
           )}
 
           <div className="text-3xl font-bold text-brand-600 mb-1">
-            {formatCurrency(room.priceMonthly)}
+            {formatCurrency(roomType.priceMonthly)}
             <span className="text-base font-normal text-stone-400">/tháng</span>
           </div>
 
-          {room.deposit > 0 && (
-            <p className="text-sm text-stone-500 mb-4">Đặt cọc: <span className="font-semibold text-stone-700">{formatCurrency(room.deposit)}</span></p>
+          {roomType.deposit > 0 && (
+            <p className="text-sm text-stone-500 mb-2">Đặt cọc: <span className="font-semibold text-stone-700">{formatCurrency(roomType.deposit)}</span></p>
+          )}
+
+          {/* Short term rental */}
+          {roomType.shortTermAllowed && (
+            <div className="p-3 bg-violet-50 rounded-xl border border-violet-100 mb-4">
+              <p className="text-sm text-violet-700 font-medium">📅 Cho thuê ngắn hạn</p>
+              <p className="text-xs text-violet-600 mt-0.5">
+                {roomType.shortTermMonths && <>Từ {roomType.shortTermMonths} tháng</>}
+                {roomType.shortTermPrice && <> — Giá {formatCurrency(roomType.shortTermPrice)}/tháng</>}
+              </p>
+            </div>
           )}
 
           {/* Key specs grid */}
           <div className="grid grid-cols-3 gap-3 mb-4 mt-4">
             <div className="p-3 bg-stone-50 rounded-xl text-center">
-              <p className="text-lg font-bold text-stone-800">{room.areaSqm} m²</p>
+              <p className="text-lg font-bold text-stone-800">{roomType.areaSqm} m²</p>
               <p className="text-[11px] text-stone-500 mt-0.5">Diện tích</p>
             </div>
             <div className="p-3 bg-stone-50 rounded-xl text-center">
-              <p className="text-lg font-bold text-stone-800">Tầng {room.floor}</p>
-              <p className="text-[11px] text-stone-500 mt-0.5">Vị trí</p>
+              <p className="text-lg font-bold text-stone-800">{roomType.totalUnits}</p>
+              <p className="text-[11px] text-stone-500 mt-0.5">Tổng phòng</p>
             </div>
             <div className="p-3 bg-stone-50 rounded-xl text-center">
-              <p className="text-lg font-bold text-stone-800">
-                {property?.totalFloors || '—'}
-              </p>
-              <p className="text-[11px] text-stone-500 mt-0.5">Tổng tầng</p>
+              <p className="text-lg font-bold text-emerald-600">{roomType.availableUnits}</p>
+              <p className="text-[11px] text-stone-500 mt-0.5">Còn trống</p>
             </div>
           </div>
 
-          {room.description && (
+          {/* Available room names */}
+          {roomType.availableRoomNames && (
+            <p className="text-sm text-stone-500 mb-4">
+              Phòng trống: <span className="font-medium text-stone-700">{roomType.availableRoomNames}</span>
+            </p>
+          )}
+
+          {roomType.description && (
             <div className="p-3 bg-stone-50 rounded-xl mb-4">
-              <p className="text-sm text-stone-600 leading-relaxed">{room.description}</p>
+              <p className="text-sm text-stone-600 leading-relaxed">{roomType.description}</p>
             </div>
           )}
 
           {/* Room amenities */}
-          {room.amenities?.length > 0 && (
+          {roomType.amenities?.length > 0 && (
             <div>
               <p className="text-sm font-semibold text-stone-700 mb-2">Tiện ích phòng</p>
               <div className="flex flex-wrap gap-2">
-                {room.amenities.map((a: string) => (
+                {roomType.amenities.map((a: string) => (
                   <span key={a} className="px-3 py-1.5 bg-brand-50 text-brand-700 text-sm rounded-lg border border-brand-100 font-medium">{a}</span>
                 ))}
               </div>
@@ -331,12 +349,20 @@ export default function ShareViewPage() {
           <h2 className="font-display font-semibold text-lg mb-2">Quan tâm phòng này?</h2>
           <p className="text-brand-100 text-sm mb-4">Liên hệ môi giới để được tư vấn và hẹn xem phòng miễn phí.</p>
           <div className="flex gap-3">
-            <a href={`tel:+84`} className="flex-1 bg-white text-brand-700 font-medium py-3 rounded-xl text-center text-sm hover:bg-brand-50 transition-all">
-              📞 Gọi môi giới
-            </a>
-            <a href={`sms:+84`} className="flex-1 bg-white/20 text-white font-medium py-3 rounded-xl text-center text-sm hover:bg-white/30 transition-all border border-white/20">
-              💬 Nhắn tin
-            </a>
+            {data.broker?.phone ? (
+              <>
+                <a href={`tel:${data.broker.phone}`} className="flex-1 bg-white text-brand-700 font-medium py-3 rounded-xl text-center text-sm hover:bg-brand-50 transition-all">
+                  📞 Gọi môi giới
+                </a>
+                <a href={`sms:${data.broker.phone}`} className="flex-1 bg-white/20 text-white font-medium py-3 rounded-xl text-center text-sm hover:bg-white/30 transition-all border border-white/20">
+                  💬 Nhắn tin
+                </a>
+              </>
+            ) : (
+              <div className="flex-1 bg-white/20 text-white font-medium py-3 rounded-xl text-center text-sm border border-white/20">
+                Liên hệ môi giới: {data.broker?.name}
+              </div>
+            )}
           </div>
         </div>
 

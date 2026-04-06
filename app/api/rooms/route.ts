@@ -14,20 +14,33 @@ export async function GET(req: NextRequest) {
     const maxPrice = url.searchParams.get('maxPrice');
     const search = url.searchParams.get('search');
 
-    const roomType = url.searchParams.get('roomType');
+    const typeName = url.searchParams.get('typeName') || url.searchParams.get('roomType');
     const parkingCar = url.searchParams.get('parkingCar');
     const foreignerOk = url.searchParams.get('foreignerOk');
     const evCharging = url.searchParams.get('evCharging');
     const petAllowed = url.searchParams.get('petAllowed');
+    const shortTerm = url.searchParams.get('shortTerm');
+    const companyId = url.searchParams.get('companyId');
+    const landlordId = url.searchParams.get('landlordId');
+    const status = url.searchParams.get('status'); // available/unavailable/all
 
-    const where: any = { isApproved: true };
+    const where: any = {};
+
+    // Admin sees all rooms; others only see approved
+    if (session?.user?.role !== 'ADMIN') {
+      where.isApproved = true;
+    }
 
     if (propertyId) where.propertyId = propertyId;
-    if (available === 'true') where.isAvailable = true;
-    if (available === 'false') where.isAvailable = false;
-    if (roomType) where.roomType = roomType;
+    if (typeName) where.typeName = typeName;
     if (minPrice) where.priceMonthly = { ...where.priceMonthly, gte: parseFloat(minPrice) };
     if (maxPrice) where.priceMonthly = { ...where.priceMonthly, lte: parseFloat(maxPrice) };
+    if (shortTerm === 'true') where.shortTermAllowed = true;
+
+    // Status filter
+    if (status === 'available' || available === 'true') where.isAvailable = true;
+    else if (status === 'unavailable' || available === 'false') where.isAvailable = false;
+    // status === 'all' → no filter
 
     // Property-level filters
     const propertyWhere: any = {};
@@ -36,29 +49,39 @@ export async function GET(req: NextRequest) {
     if (foreignerOk === 'true') propertyWhere.foreignerOk = true;
     if (evCharging === 'true') propertyWhere.evCharging = true;
     if (petAllowed === 'true') propertyWhere.petAllowed = true;
+    if (companyId) propertyWhere.companyId = companyId;
+    if (landlordId) propertyWhere.landlordId = landlordId;
 
     if (Object.keys(propertyWhere).length > 0) {
       where.property = { ...where.property, ...propertyWhere };
     }
     if (search) {
       where.OR = [
-        { roomNumber: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
         { property: { name: { contains: search, mode: 'insensitive' } } },
         { property: { district: { contains: search, mode: 'insensitive' } } },
+        { property: { streetName: { contains: search, mode: 'insensitive' } } },
+        { property: { fullAddress: { contains: search, mode: 'insensitive' } } },
+        { property: { zaloPhone: { contains: search, mode: 'insensitive' } } },
+        { property: { landlord: { phone: { contains: search, mode: 'insensitive' } } } },
       ];
     }
 
-    // For landlord, show their own rooms regardless of approval
+    // For landlord, show their own room types regardless of approval
     if (session?.user?.role === 'LANDLORD') {
       delete where.isApproved;
       where.property = { ...where.property, landlordId: session.user.id };
     }
 
-    const rooms = await prisma.room.findMany({
+    const roomTypes = await prisma.roomType.findMany({
       where,
       include: {
         property: {
           include: {
+            company: {
+              select: { id: true, name: true, zaloGroupLink: true },
+            },
             landlord: {
               select: {
                 id: true, name: true,
@@ -72,15 +95,15 @@ export async function GET(req: NextRequest) {
     });
 
     // Strip sensitive data for non-broker/admin users
-    const sanitized = rooms.map(room => {
+    const sanitized = roomTypes.map(rt => {
       const isBrokerOrAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'BROKER';
       return {
-        ...room,
+        ...rt,
         property: {
-          ...room.property,
-          fullAddress: isBrokerOrAdmin ? room.property.fullAddress : undefined,
-          latitude: isBrokerOrAdmin ? room.property.latitude : undefined,
-          longitude: isBrokerOrAdmin ? room.property.longitude : undefined,
+          ...rt.property,
+          fullAddress: isBrokerOrAdmin ? rt.property.fullAddress : undefined,
+          latitude: isBrokerOrAdmin ? rt.property.latitude : undefined,
+          longitude: isBrokerOrAdmin ? rt.property.longitude : undefined,
         },
       };
     });
@@ -98,26 +121,31 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
 
-    const room = await prisma.room.create({
+    const roomType = await prisma.roomType.create({
       data: {
         propertyId: body.propertyId,
-        roomNumber: body.roomNumber,
-        floor: parseInt(body.floor) || 1,
-        roomType: body.roomType || 'don',
+        name: body.name,
+        typeName: body.typeName || 'don',
         areaSqm: parseFloat(body.areaSqm),
         priceMonthly: parseFloat(body.priceMonthly),
-        deposit: parseFloat(body.deposit) || 0,
+        deposit: body.deposit ? parseFloat(body.deposit) : null,
         description: body.description,
         amenities: body.amenities || [],
         images: body.images || [],
+        totalUnits: parseInt(body.totalUnits) || 1,
+        availableUnits: parseInt(body.availableUnits) ?? parseInt(body.totalUnits) ?? 1,
+        availableRoomNames: body.availableRoomNames || null,
         commissionJson: body.commissionJson || null,
+        shortTermAllowed: body.shortTermAllowed ?? false,
+        shortTermMonths: body.shortTermMonths || null,
+        shortTermPrice: body.shortTermPrice ? parseFloat(body.shortTermPrice) : null,
         landlordNotes: body.landlordNotes || null,
         isAvailable: body.isAvailable ?? true,
         isApproved: session.user.role === 'ADMIN' ? (body.isApproved ?? true) : false,
       },
     });
 
-    return NextResponse.json(room, { status: 201 });
+    return NextResponse.json(roomType, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
   }
@@ -131,27 +159,32 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const { id, ...data } = body;
 
-    const room = await prisma.room.update({
+    const roomType = await prisma.roomType.update({
       where: { id },
       data: {
         ...(data.propertyId && { propertyId: data.propertyId }),
-        ...(data.roomNumber && { roomNumber: data.roomNumber }),
-        ...(data.floor && { floor: parseInt(data.floor) }),
-        ...(data.roomType && { roomType: data.roomType }),
+        ...(data.name && { name: data.name }),
+        ...(data.typeName && { typeName: data.typeName }),
         ...(data.areaSqm && { areaSqm: parseFloat(data.areaSqm) }),
         ...(data.priceMonthly && { priceMonthly: parseFloat(data.priceMonthly) }),
-        ...(data.deposit !== undefined && { deposit: parseFloat(data.deposit) }),
+        ...(data.deposit !== undefined && { deposit: data.deposit ? parseFloat(data.deposit) : null }),
         ...(data.description !== undefined && { description: data.description }),
         ...(data.amenities && { amenities: data.amenities }),
         ...(data.images !== undefined && { images: data.images }),
+        ...(data.totalUnits !== undefined && { totalUnits: parseInt(data.totalUnits) }),
+        ...(data.availableUnits !== undefined && { availableUnits: parseInt(data.availableUnits) }),
+        ...(data.availableRoomNames !== undefined && { availableRoomNames: data.availableRoomNames }),
         ...(data.commissionJson !== undefined && { commissionJson: data.commissionJson }),
+        ...(data.shortTermAllowed !== undefined && { shortTermAllowed: data.shortTermAllowed }),
+        ...(data.shortTermMonths !== undefined && { shortTermMonths: data.shortTermMonths }),
+        ...(data.shortTermPrice !== undefined && { shortTermPrice: data.shortTermPrice ? parseFloat(data.shortTermPrice) : null }),
         ...(data.landlordNotes !== undefined && { landlordNotes: data.landlordNotes }),
         ...(data.isAvailable !== undefined && { isAvailable: data.isAvailable }),
         ...(data.isApproved !== undefined && { isApproved: data.isApproved }),
       },
     });
 
-    return NextResponse.json(room);
+    return NextResponse.json(roomType);
   } catch (error) {
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
   }
@@ -166,7 +199,7 @@ export async function DELETE(req: NextRequest) {
     const id = url.searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
-    await prisma.room.delete({ where: { id } });
+    await prisma.roomType.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });

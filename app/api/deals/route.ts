@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     const deals = await prisma.deal.findMany({
       where,
       include: {
-        room: { include: { property: { select: { name: true, district: true, images: true, companyId: true } } } },
+        roomType: { include: { property: { select: { name: true, district: true, images: true, companyId: true } } } },
         broker: { select: { id: true, name: true, phone: true, email: true } },
         customer: { select: { id: true, name: true, phone: true } },
       },
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
     const deal = await prisma.deal.create({
       data: {
-        roomId: body.roomId,
+        roomTypeId: body.roomTypeId,
         brokerId: session.user.role === 'BROKER' ? session.user.id : body.brokerId,
         customerId: body.customerId || null,
         customerName: body.customerName,
@@ -96,9 +96,19 @@ export async function PUT(req: NextRequest) {
 
     const deal = await prisma.deal.update({ where: { id }, data: updateData });
 
-    // If confirmed, mark room as unavailable
+    // If confirmed, decrement availableUnits
     if (newStatus === 'CONFIRMED') {
-      await prisma.room.update({ where: { id: deal.roomId }, data: { isAvailable: false } });
+      const roomType = await prisma.roomType.findUnique({ where: { id: deal.roomTypeId } });
+      if (roomType) {
+        const newAvailable = Math.max(0, roomType.availableUnits - 1);
+        await prisma.roomType.update({
+          where: { id: deal.roomTypeId },
+          data: {
+            availableUnits: newAvailable,
+            isAvailable: newAvailable > 0,
+          },
+        });
+      }
     }
 
     return NextResponse.json(deal);

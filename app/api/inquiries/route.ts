@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const url = new URL(req.url);
-    const roomId = url.searchParams.get('roomId');
+    const roomTypeId = url.searchParams.get('roomTypeId') || url.searchParams.get('roomId');
     const where: any = {};
 
     // Broker sees their own inquiries
@@ -17,17 +17,17 @@ export async function GET(req: NextRequest) {
       where.brokerId = session.user.id;
     }
 
-    // Landlord sees inquiries for their rooms
+    // Landlord sees inquiries for their room types
     if (session.user.role === 'LANDLORD') {
-      where.room = { property: { landlordId: session.user.id } };
+      where.roomType = { property: { landlordId: session.user.id } };
     }
 
-    if (roomId) where.roomId = roomId;
+    if (roomTypeId) where.roomTypeId = roomTypeId;
 
     const inquiries = await prisma.roomInquiry.findMany({
       where,
       include: {
-        room: { include: { property: { select: { name: true, landlordId: true } } } },
+        roomType: { include: { property: { select: { name: true, landlordId: true } } } },
         broker: { select: { name: true, phone: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -47,24 +47,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Chỉ Môi giới mới gửi được' }, { status: 403 });
     }
 
-    const { roomId, message } = await req.json();
+    const { roomTypeId, message } = await req.json();
 
     // Create inquiry
     const inquiry = await prisma.roomInquiry.create({
       data: {
-        roomId,
+        roomTypeId,
         brokerId: session.user.id,
         message: message || 'Còn phòng không?',
       },
-      include: { room: { include: { property: true } } },
+      include: { roomType: { include: { property: true } } },
     });
 
     // Create notification for landlord
     await prisma.notification.create({
       data: {
-        userId: inquiry.room.property.landlordId,
+        userId: inquiry.roomType.property.landlordId,
         type: 'inquiry',
-        title: `MG hỏi phòng ${inquiry.room.roomNumber}`,
+        title: `MG hỏi về ${inquiry.roomType.name}`,
         message: `${session.user.name} hỏi: "${inquiry.message}"`,
         link: `/landlord/rooms`,
       },
@@ -89,7 +89,7 @@ export async function PUT(req: NextRequest) {
     const inquiry = await prisma.roomInquiry.update({
       where: { id },
       data: { reply, repliedAt: new Date() },
-      include: { room: true, broker: true },
+      include: { roomType: true, broker: true },
     });
 
     // Notify broker of reply
@@ -98,16 +98,16 @@ export async function PUT(req: NextRequest) {
         userId: inquiry.brokerId,
         type: 'reply',
         title: `Chủ nhà trả lời: ${reply}`,
-        message: `Phòng ${inquiry.room.roomNumber}: "${reply}"`,
+        message: `${inquiry.roomType.name}: "${reply}"`,
         link: `/broker/inventory`,
       },
     });
 
-    // If reply is "HẾT", auto-update room availability
+    // If reply is "HẾT", auto-update room type availability
     if (reply === 'HẾT') {
-      await prisma.room.update({
-        where: { id: inquiry.roomId },
-        data: { isAvailable: false },
+      await prisma.roomType.update({
+        where: { id: inquiry.roomTypeId },
+        data: { availableUnits: 0, isAvailable: false },
       });
     }
 

@@ -94,18 +94,19 @@ model VerificationToken {
 }
 
 model Company {
-  id          String     @id @default(cuid())
-  name        String
-  description String?
-  phone       String?
-  email       String?
-  address     String?
-  logo        String?
-  isActive    Boolean    @default(true)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id            String     @id @default(cuid())
+  name          String
+  description   String?
+  phone         String?
+  email         String?
+  address       String?
+  logo          String?
+  zaloGroupLink String?    // link nhóm Zalo của hệ thống
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
-  properties  Property[]
+  properties    Property[]
 
   @@map("companies")
 }
@@ -142,44 +143,53 @@ model Property {
   // Relations
   company       Company?       @relation(fields: [companyId], references: [id])
   landlord      User           @relation("LandlordProperties", fields: [landlordId], references: [id])
-  rooms         Room[]
+  roomTypes     RoomType[]
 
   @@map("properties")
 }
 
-model Room {
-  id              String    @id @default(cuid())
-  propertyId      String
-  roomNumber      String
-  floor           Int       @default(1)
-  areaSqm         Float
-  priceMonthly    Float
-  deposit         Float     @default(0)
-  description     String?
-  amenities       String[]  @default([])
-  images          String[]  @default([])
-  isAvailable     Boolean   @default(true)
-  isApproved      Boolean   @default(false)
-  viewCount       Int       @default(0)
-  // NEW fields
-  roomType        String    @default("don")  // don, gac_xep, 1k1n, 2k1n, studio, duplex
-  landlordNotes   String?   // Lưu ý riêng cho MG (VD: khách phải đặt cọc 2 tháng)
-  commissionJson  String?   // JSON: {"6":40,"12":50} = 6 tháng 40%, 12 tháng 50%
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+model RoomType {
+  id                  String    @id @default(cuid())
+  propertyId          String
+  name                String    // "Loại 1 - Phòng đơn", "Loại 2 - Studio"...
+  typeName            String    @default("don") // don, gac_xep, 1k1n, 2k1n, studio, duplex
+  areaSqm             Float
+  priceMonthly        Float
+  deposit             Float?    // mặc định = priceMonthly (1 tháng tiền thuê)
+  description         String?
+  amenities           String[]  @default([])
+  images              String[]  @default([])
+
+  // Quản lý số lượng theo loại
+  totalUnits          Int       @default(1)    // tổng số phòng loại này
+  availableUnits      Int       @default(1)    // số phòng đang trống
+  availableRoomNames  String?                  // "101, 201, 301" — tên cụ thể phòng trống
+  isAvailable         Boolean   @default(true) // bật/tắt nhanh toàn bộ loại này
+  isApproved          Boolean   @default(false)
+
+  // Chính sách hoa hồng & cho thuê
+  commissionJson      String?   // {"6":40, "12":50} = 6 tháng 40%, 12 tháng 50%
+  shortTermAllowed    Boolean   @default(false) // cho thuê ngắn hạn?
+  shortTermMonths     String?   // "1,2,3" — số tháng ngắn hạn cho phép
+  shortTermPrice      Float?    // giá thuê ngắn hạn/tháng
+
+  landlordNotes       String?   // lưu ý cho MG
+  viewCount           Int       @default(0)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   // Relations
-  property        Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  deals           Deal[]
-  shareLinks      ShareLink[]
-  inquiries       RoomInquiry[]
+  property            Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  deals               Deal[]
+  shareLinks          ShareLink[]
+  inquiries           RoomInquiry[]
 
-  @@map("rooms")
+  @@map("room_types")
 }
 
 model Deal {
   id                String     @id @default(cuid())
-  roomId            String
+  roomTypeId        String
   brokerId          String
   customerId        String?
   customerName      String?
@@ -197,7 +207,7 @@ model Deal {
   updatedAt         DateTime   @updatedAt
 
   // Relations
-  room              Room       @relation(fields: [roomId], references: [id])
+  roomType          RoomType   @relation(fields: [roomTypeId], references: [id])
   broker            User       @relation("BrokerDeals", fields: [brokerId], references: [id])
   customer          User?      @relation("CustomerDeals", fields: [customerId], references: [id])
 
@@ -206,17 +216,18 @@ model Deal {
 
 model ShareLink {
   id          String    @id @default(cuid())
-  roomId      String
+  roomTypeId  String?   // null khi isSystem = true
   brokerId    String
   token       String    @unique
   viewCount   Int       @default(0)
   isActive    Boolean   @default(true)
+  isSystem    Boolean   @default(false) // true = link tổng chủ nhà (tất cả phòng trống)
   expiresAt   DateTime?
   createdAt   DateTime  @default(now())
 
   // Relations
-  room        Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  broker      User      @relation(fields: [brokerId], references: [id])
+  roomType    RoomType?  @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  broker      User       @relation(fields: [brokerId], references: [id])
 
   @@map("share_links")
 }
@@ -231,14 +242,14 @@ model Setting {
 
 model RoomInquiry {
   id          String    @id @default(cuid())
-  roomId      String
+  roomTypeId  String
   brokerId    String
   message     String    @default("Còn phòng không?")
   reply       String?   // "CÒN" / "HẾT" / custom message
   repliedAt   DateTime?
   createdAt   DateTime  @default(now())
 
-  room        Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomType    RoomType  @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
   broker      User      @relation("BrokerInquiries", fields: [brokerId], references: [id])
 
   @@map("room_inquiries")

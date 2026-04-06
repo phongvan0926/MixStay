@@ -26,11 +26,23 @@ export async function GET(req: NextRequest) {
       where,
       include: {
         _count: { select: { properties: true } },
+        properties: {
+          select: {
+            _count: { select: { roomTypes: true } },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json(companies);
+    // Add roomTypes count to _count
+    const companiesWithRoomCount = companies.map(c => {
+      const roomTypeCount = c.properties.reduce((sum, p) => sum + p._count.roomTypes, 0);
+      const { properties: _props, ...rest } = c;
+      return { ...rest, _count: { ...rest._count, roomTypes: roomTypeCount } };
+    });
+
+    return NextResponse.json(companiesWithRoomCount);
   } catch {
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
   }
@@ -54,6 +66,7 @@ export async function POST(req: NextRequest) {
         email: body.email || null,
         address: body.address || null,
         logo: body.logo || null,
+        zaloGroupLink: body.zaloGroupLink || null,
         isActive: body.isActive ?? true,
       },
     });
@@ -84,6 +97,7 @@ export async function PUT(req: NextRequest) {
         ...(data.email !== undefined && { email: data.email || null }),
         ...(data.address !== undefined && { address: data.address || null }),
         ...(data.logo !== undefined && { logo: data.logo || null }),
+        ...(data.zaloGroupLink !== undefined && { zaloGroupLink: data.zaloGroupLink || null }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
       },
     });

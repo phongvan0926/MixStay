@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
       where,
       include: {
         landlord: { select: { id: true, name: true, phone: true, email: true } },
-        rooms: { select: { id: true, isAvailable: true, priceMonthly: true } },
+        roomTypes: { select: { id: true, isAvailable: true, priceMonthly: true, availableUnits: true, totalUnits: true } },
       },
       orderBy: { createdAt: 'desc' },
     });

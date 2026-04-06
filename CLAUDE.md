@@ -15,35 +15,42 @@ Kết nối 4 vai trò: Admin (Công ty), Môi giới, Chủ nhà, Khách thuê.
 app/admin/          → Trang quản trị (companies, properties, rooms, deals, users, settings)
 app/broker/         → Trang môi giới (inventory, deals, share-links)
 app/landlord/       → Trang chủ nhà (properties, rooms)
-app/share/[token]/  → Trang khách xem phòng (public, ẩn địa chỉ + SĐT)
+app/share/[token]/  → Trang tin đăng loại phòng (public, ẩn địa chỉ + SĐT)
+app/share/system/[token]/ → Trang kho phòng hệ thống (public, tất cả phòng trống của landlord)
 app/auth/callback/  → Trang chọn vai trò sau OAuth login lần đầu
-app/api/            → API routes (companies, properties, rooms, deals, share-links, inquiries, notifications, users, settings)
+app/api/            → API routes (companies, properties, rooms, rooms/import, deals, share-links, share-links/system, inquiries, notifications, users, settings)
 components/layout/  → DashboardLayout.tsx (sidebar + topbar), AuthProvider.tsx
 lib/auth.ts         → NextAuth config
 lib/prisma.ts       → Prisma client singleton
 lib/utils.ts        → Helpers: formatCurrency, formatDate, getStatusColor...
-prisma/schema.prisma → 12 bảng: users, accounts, sessions, companies, properties, rooms, deals, share_links, room_inquiries, notifications, settings, verification_tokens
+prisma/schema.prisma → 12 bảng: users, accounts, sessions, companies, properties, room_types, deals, share_links, room_inquiries, notifications, settings, verification_tokens
 prisma/seed.ts      → Demo data (password: 123456)
 middleware.ts       → Route protection theo role
 ```
 
 ## Database schema tóm tắt
-- companies: id, name, description, phone, email, address, logo, isActive
+- companies: id, name, description, phone, email, address, logo, zaloGroupLink, isActive
 - users: id, name, email, phone, password, role (ADMIN/BROKER/LANDLORD/CUSTOMER), isActive, setupComplete
 - accounts: id, userId, type, provider, providerAccountId (OAuth accounts)
 - properties: id, companyId?, landlordId, name, fullAddress, district, streetName, zaloPhone, landlordNotes, parkingCar, evCharging, petAllowed, foreignerOk, status (PENDING/APPROVED/REJECTED)
-- rooms: id, propertyId, roomNumber, floor, areaSqm, priceMonthly, deposit, roomType (don/gac_xep/1k1n/2k1n/studio/duplex), commissionJson, landlordNotes, isAvailable, isApproved, amenities[]
-- deals: id, roomId, brokerId, dealPrice, commissionTotal, commissionBroker, commissionCompany, status (PENDING/CONFIRMED/PAID/CANCELLED)
-- share_links: id, roomId, brokerId, token (unique), viewCount
-- room_inquiries: id, roomId, brokerId, message, reply (CÒN/HẾT), repliedAt
+- room_types: id, propertyId, name, typeName (don/gac_xep/1k1n/2k1n/studio/duplex), areaSqm, priceMonthly, deposit, description, amenities[], images[], totalUnits, availableUnits, availableRoomNames, isAvailable, isApproved, commissionJson, shortTermAllowed, shortTermMonths, shortTermPrice, landlordNotes, viewCount
+- deals: id, roomTypeId, brokerId, dealPrice, commissionTotal, commissionBroker, commissionCompany, status (PENDING/CONFIRMED/PAID/CANCELLED)
+- share_links: id, roomTypeId?, brokerId, token (unique), viewCount, isSystem, isActive, expiresAt
+- room_inquiries: id, roomTypeId, brokerId, message, reply (CÒN/HẾT), repliedAt
 - notifications: id, userId, type, title, message, isRead
 - settings: key-value (commission_broker_percent)
+
+## Logic nghiệp vụ RoomType
+- RoomType = 1 loại phòng (VD: "Phòng đơn 25m²"), KHÔNG phải 1 phòng cụ thể
+- Mỗi RoomType có totalUnits (tổng) và availableUnits (trống), availableRoomNames (tên phòng trống cụ thể)
+- Khi deal CONFIRMED → availableUnits giảm 1, nếu =0 thì isAvailable=false
+- shortTermAllowed: cho phép thuê ngắn hạn với giá shortTermPrice
 
 ## Phân quyền dữ liệu
 - Môi giới: thấy fullAddress + SĐT/Zalo chủ nhà + hoa hồng + lưu ý
 - Khách (qua share link): chỉ thấy district, streetName, amenities — KHÔNG thấy fullAddress, SĐT
 - Chủ nhà: tự set commissionJson, zaloPhone, landlordNotes, bật/tắt isAvailable
-- Admin: thấy tất cả, duyệt property/room, xác nhận deal
+- Admin: thấy tất cả, duyệt property/roomType, xác nhận deal
 
 ## Quy tắc khi sửa code
 - CSS: dùng Tailwind classes, custom classes trong app/globals.css (btn-primary, input-field, card, badge, stat-card, sidebar-link...)
@@ -53,6 +60,13 @@ middleware.ts       → Route protection theo role
 - Format tiền: dùng formatCurrency() từ lib/utils.ts
 - Toast: dùng react-hot-toast (toast.success, toast.error)
 - Mỗi lần thay đổi tính năng → cập nhật file README.md cho đồng bộ
+
+## Excel Import/Export (Admin > Quản lý phòng)
+- Thư viện: xlsx (SheetJS)
+- Tải form mẫu: client-side, tạo file .xlsx 2 sheet (dữ liệu mẫu + hướng dẫn)
+- Import: upload .xlsx → parse client-side → preview bảng + validate → POST /api/rooms/import (bulk create)
+- Export: client-side, xuất filteredRooms ra .xlsx (có thể filter trước rồi export)
+- Import tự match tòa nhà theo tên + quận, nếu chưa có → tạo mới (PENDING)
 
 ## Lệnh thường dùng
 - `npm run dev` → chạy dev server (localhost:3000)

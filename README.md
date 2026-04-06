@@ -19,21 +19,34 @@ Nền tảng quản lý chung cư mini — kết nối Chủ nhà, Môi giới, 
 - Quản lý giao dịch & tính hoa hồng tự động
 - Cấu hình tỷ lệ chia hoa hồng
 - Quản lý tài khoản người dùng
+- **Excel Import/Export:**
+  - Tải form mẫu Excel (2 sheet: dữ liệu mẫu + hướng dẫn tiếng Việt)
+  - Import từ Excel: upload → preview bảng → validate từng dòng → import hàng loạt
+  - Xuất Excel: export toàn bộ hoặc chỉ kết quả đang filter
 
 ### 🤝 Môi giới
-- Xem kho phòng trống (lọc theo khu vực, giá)
-- Xem SĐT chủ nhà & địa chỉ chi tiết
+- Kho hàng với card phong phú: ảnh carousel (3 ảnh), badge loại phòng, giá nổi bật
+- Hoa hồng hiển thị ngay ngoài card: "HH: 6th=40% (1.4tr) | 12th=50% (1.75tr)"
+- Hiện số phòng trống: "Còn 3/5 phòng" + tên phòng cụ thể
+- Badge ngắn hạn + giá ngắn hạn nếu có
+- Link Zalo nhóm hệ thống (từ Company.zaloGroupLink)
+- Icon tiện ích đặc biệt: 🚗 🌍 ⚡ 🐾
+- Bộ lọc nâng cao: tìm kiếm thông minh (tên, địa chỉ, SĐT, mô tả), công ty, loại phòng, khoảng giá, toggle tags (ô tô, foreigner, sạc xe, pet, ngắn hạn), trạng thái (còn phòng/tất cả)
+- Xem SĐT chủ nhà & địa chỉ chi tiết + liên hệ Zalo
 - Tạo link chia sẻ cho khách (ẩn thông tin nhạy cảm)
 - Báo deal & theo dõi hoa hồng
 - Quản lý link đã chia sẻ
 
 ### 🏠 Chủ nhà
-- Tự đăng tòa nhà & phòng
-- Bật/tắt trạng thái phòng (còn/hết)
-- Theo dõi lượt xem
+- Wizard tạo tòa nhà 2 bước: bước 1 thông tin tòa nhà → bước 2 thêm loại phòng ngay
+- Quản lý phòng theo loại (RoomType card): inline edit số phòng trống, tên phòng trống
+- Bật/tắt nhanh toàn bộ loại phòng
+- Tạo link tổng hệ thống: 1 link chứa tất cả phòng trống của tất cả tòa nhà
+- Theo dõi lượt xem link chia sẻ
 
 ### 👤 Khách thuê
-- Xem chi tiết phòng qua link chia sẻ
+- **Trang tin đăng loại phòng:** gallery 3 ảnh grid + lightbox, thông tin đầy đủ (giá, diện tích, tiện ích, ngắn hạn, số phòng trống), nút Google Maps, nút liên hệ MG
+- **Trang kho phòng hệ thống:** xem tất cả phòng trống của 1 hệ thống, card carousel 3 ảnh, bộ lọc (khu vực, giá, kiểu phòng), nút "Xem chi tiết"
 - Thấy khu vực & tuyến phố (KHÔNG thấy địa chỉ cụ thể & SĐT chủ nhà)
 - Liên hệ qua môi giới
 
@@ -155,7 +168,8 @@ minizen/
 │   ├── admin/           # Admin dashboard pages
 │   ├── broker/          # Broker pages
 │   ├── landlord/        # Landlord pages
-│   ├── share/[token]/   # Public share page (khách xem)
+│   ├── share/[token]/   # Public share page (1 loại phòng)
+│   ├── share/system/[token]/ # Public share page (kho phòng chủ nhà)
 │   ├── api/             # API routes
 │   ├── login/           # Login page
 │   ├── register/        # Register page
@@ -186,6 +200,22 @@ minizen/
 | Hoa hồng | ✅ | Của mình | ❌ | ❌ |
 
 ## Changelog
+
+### v6 — RoomType, system links, trang tin đăng, Excel import/export
+- **Chuyển Room → RoomType:** Toàn bộ hệ thống quản lý theo loại phòng (RoomType) thay vì từng phòng riêng lẻ. Mỗi loại: totalUnits, availableUnits, availableRoomNames
+- **Wizard tạo tòa nhà 2 bước:** Bước 1 thông tin tòa nhà → Bước 2 thêm loại phòng ngay (form inline nhanh)
+- **Quản lý phòng theo loại:** Card RoomType với inline edit số phòng trống, bật/tắt nhanh, sửa chi tiết
+- **Share link hệ thống:** 1 link chứa tất cả phòng trống của landlord. Trang public `/share/system/{token}` có grid cards (carousel 3 ảnh), bộ lọc (khu vực, giá, kiểu phòng), modal chi tiết + Google Maps
+- **Trang tin đăng loại phòng:** Gallery 3 ảnh grid + lightbox, info đầy đủ (giá, ngắn hạn, số trống, tiện ích), Google Maps, liên hệ MG
+- **API share-links/system:** POST tạo link hệ thống, GET lấy kho phòng theo token
+- **Company.zaloGroupLink:** Link Zalo nhóm hiển thị trong kho hàng MG
+- **Bộ lọc cascade:** Admin filter Công ty → Tòa nhà → Loại phòng → Trạng thái
+- **Excel Import/Export (Admin > Quản lý phòng):**
+  - Tải form mẫu: file .xlsx 2 sheet (dữ liệu mẫu 3 dòng + hướng dẫn tiếng Việt)
+  - Import: upload .xlsx → preview bảng + validate từng dòng → match tòa nhà theo tên+quận (nếu chưa có → tạo mới PENDING) → bulk create
+  - Xuất Excel: export toàn bộ hoặc chỉ kết quả filter hiện tại
+- **Package mới:** xlsx (SheetJS)
+- **Sau khi pull code v6:** chạy `npm install && npx prisma db push`
 
 ### v5 — Hệ thống Công ty quản lý đa cấp + Bộ lọc nâng cao
 - **Model Company:** Thêm entity Công ty — mỗi công ty quản lý nhiều tòa nhà, mỗi tòa nhà có nhiều căn hộ

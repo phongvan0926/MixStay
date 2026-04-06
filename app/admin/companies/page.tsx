@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { formatDate } from '@/lib/utils';
 
-const EMPTY_FORM = { name: '', description: '', phone: '', email: '', address: '', isActive: true };
+const EMPTY_FORM = { name: '', description: '', phone: '', email: '', address: '', zaloGroupLink: '', isActive: true };
 
 export default function AdminCompaniesPage() {
   const [companies, setCompanies] = useState<any[]>([]);
@@ -32,7 +32,7 @@ export default function AdminCompaniesPage() {
   const openAdd = () => { setEditItem(null); setForm({ ...EMPTY_FORM }); setShowModal(true); };
   const openEdit = (c: any) => {
     setEditItem(c);
-    setForm({ name: c.name, description: c.description || '', phone: c.phone || '', email: c.email || '', address: c.address || '', isActive: c.isActive });
+    setForm({ name: c.name, description: c.description || '', phone: c.phone || '', email: c.email || '', address: c.address || '', zaloGroupLink: c.zaloGroupLink || '', isActive: c.isActive });
     setShowModal(true);
   };
 
@@ -63,6 +63,10 @@ export default function AdminCompaniesPage() {
     if (!res.ok) { toast.error(data.error); return; }
     toast.success('Đã xoá công ty');
     fetchData();
+  };
+
+  const getRoomTypeCount = (c: any) => {
+    return c._count?.roomTypes ?? 0;
   };
 
   return (
@@ -111,14 +115,32 @@ export default function AdminCompaniesPage() {
                     {c.description && <p className="text-xs text-stone-500 truncate">{c.description}</p>}
                     {c.phone && <p className="text-xs text-stone-400 mt-1">{c.phone}</p>}
                     {c.email && <p className="text-xs text-stone-400">{c.email}</p>}
+                    {c.address && <p className="text-xs text-stone-400 truncate">{c.address}</p>}
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between mt-4 pt-3 border-t border-stone-100">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-stone-400">{formatDate(c.createdAt)}</span>
-                    <span className="badge bg-brand-50 text-brand-700 text-[10px]">{c._count?.properties || 0} tòa nhà</span>
+                {/* Stats row */}
+                <div className="flex items-center gap-3 mt-4 pt-3 border-t border-stone-100">
+                  <span className="badge bg-brand-50 text-brand-700 text-[10px]">{c._count?.properties || 0} tòa nhà</span>
+                  <span className="badge bg-purple-50 text-purple-700 text-[10px]">{getRoomTypeCount(c)} loại phòng</span>
+                  <span className="text-xs text-stone-400 ml-auto">{formatDate(c.createdAt)}</span>
+                </div>
+
+                {/* Zalo link */}
+                {c.zaloGroupLink && (
+                  <div className="mt-3 pt-3 border-t border-stone-100">
+                    <a href={c.zaloGroupLink} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12.49 10.272v-.45h1.347v6.322h-.77l-.3-.549a2.809 2.809 0 01-1.81.684c-1.617 0-2.865-1.347-2.865-3.013s1.248-3.013 2.864-3.013c.72 0 1.347.27 1.82.684zm-1.533 4.767c1.04 0 1.82-.855 1.82-1.91s-.78-1.91-1.82-1.91-1.82.855-1.82 1.91.78 1.91 1.82 1.91z" />
+                      </svg>
+                      Nhóm Zalo hệ thống
+                    </a>
                   </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex items-center justify-end mt-3 pt-3 border-t border-stone-100">
                   <div className="flex items-center gap-1">
                     <button onClick={() => openEdit(c)} className="p-1.5 rounded-lg text-stone-400 hover:text-brand-600 hover:bg-brand-50 transition-colors" title="Sửa">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -146,7 +168,7 @@ export default function AdminCompaniesPage() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-stone-100">
               <h2 className="font-display text-lg font-bold text-stone-900">
                 {editItem ? 'Sửa công ty' : 'Thêm công ty mới'}
@@ -159,18 +181,13 @@ export default function AdminCompaniesPage() {
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">Tên công ty <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Tên công ty / hệ thống <span className="text-red-500">*</span></label>
                 <input type="text" required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   className="input-field w-full" placeholder="VD: Công ty ABC" />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">Mô tả</label>
-                <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  className="input-field w-full" rows={2} placeholder="Mô tả ngắn về công ty" />
-              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Điện thoại</label>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">SĐT liên hệ</label>
                   <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                     className="input-field w-full" placeholder="09xxxxxxxx" />
                 </div>
@@ -184,6 +201,19 @@ export default function AdminCompaniesPage() {
                 <label className="block text-sm font-medium text-stone-700 mb-1">Địa chỉ</label>
                 <input type="text" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
                   className="input-field w-full" placeholder="Địa chỉ văn phòng" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">
+                  Link nhóm Zalo <span className="text-red-500">*</span>
+                </label>
+                <input type="url" value={form.zaloGroupLink} onChange={e => setForm(f => ({ ...f, zaloGroupLink: e.target.value }))}
+                  className="input-field w-full" placeholder="https://zalo.me/g/..." />
+                <p className="text-[11px] text-stone-400 mt-1">Link nhóm Zalo dùng chung cho TẤT CẢ tòa nhà trong hệ thống này</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Mô tả</label>
+                <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                  className="input-field w-full" rows={2} placeholder="Mô tả ngắn về công ty" />
               </div>
               <div className="flex items-center justify-between py-2">
                 <span className="text-sm font-medium text-stone-700">Trạng thái hoạt động</span>

@@ -34,16 +34,19 @@ export default function AdminPropertiesPage() {
 
   useEffect(() => { fetchData(); }, []);
 
-  // Unique landlords from properties
+  // Landlords filtered by selected company (cascade)
   const landlords = useMemo(() => {
+    const source = filterCompany
+      ? properties.filter(p => filterCompany === '__none__' ? !p.companyId : p.companyId === filterCompany)
+      : properties;
     const map = new Map<string, { id: string; name: string }>();
-    properties.forEach(p => {
+    source.forEach(p => {
       if (p.landlord && !map.has(p.landlord.id)) {
         map.set(p.landlord.id, { id: p.landlord.id, name: p.landlord.name });
       }
     });
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [properties]);
+  }, [properties, filterCompany]);
 
   const filtered = useMemo(() => {
     return properties.filter(p => {
@@ -135,7 +138,7 @@ export default function AdminPropertiesPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-5">
-        <select value={filterCompany} onChange={e => setFilterCompany(e.target.value)} className="input-field !w-auto min-w-[160px]">
+        <select value={filterCompany} onChange={e => { setFilterCompany(e.target.value); setFilterLandlord(''); }} className="input-field !w-auto min-w-[160px]">
           <option value="">Tất cả công ty</option>
           <option value="__none__">Chưa gán công ty</option>
           {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -177,7 +180,6 @@ export default function AdminPropertiesPage() {
             </thead>
             <tbody className="divide-y divide-stone-100">
               {filtered.map((p: any) => {
-                const companyName = companies.find((c: any) => c.id === p.companyId)?.name;
                 return (
                   <tr key={p.id} className="hover:bg-stone-50/50 transition-colors">
                     <td className="table-cell">
@@ -192,11 +194,22 @@ export default function AdminPropertiesPage() {
                       <p className="text-xs text-stone-500 mt-0.5 max-w-[200px] truncate">{p.fullAddress}</p>
                     </td>
                     <td className="table-cell">
-                      {companyName ? (
-                        <span className="badge bg-brand-50 text-brand-700 text-xs">{companyName}</span>
-                      ) : (
-                        <span className="text-xs text-stone-400">—</span>
-                      )}
+                      {(() => {
+                        const company = companies.find((c: any) => c.id === p.companyId);
+                        return company ? (
+                          <div>
+                            <span className="badge bg-brand-50 text-brand-700 text-xs">{company.name}</span>
+                            {company.zaloGroupLink && (
+                              <a href={company.zaloGroupLink} target="_blank" rel="noopener noreferrer"
+                                className="block mt-1 text-[10px] text-blue-600 hover:text-blue-800 truncate max-w-[120px]">
+                                Zalo nhóm
+                              </a>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-stone-400">—</span>
+                        );
+                      })()}
                     </td>
                     <td className="table-cell"><span className="text-stone-700">{p.district}</span></td>
                     <td className="table-cell">
@@ -204,8 +217,8 @@ export default function AdminPropertiesPage() {
                       <p className="text-xs text-stone-500">{p.landlord.phone}</p>
                     </td>
                     <td className="table-cell">
-                      <span className="text-emerald-600 font-bold">{p.rooms.filter((r: any) => r.isAvailable).length}</span>
-                      <span className="text-stone-400 font-medium">/{p.rooms.length}</span>
+                      <span className="text-emerald-600 font-bold">{p.roomTypes.filter((r: any) => r.isAvailable).length}</span>
+                      <span className="text-stone-400 font-medium">/{p.roomTypes.length}</span>
                     </td>
                     <td className="table-cell">
                       <span className={`badge ${getStatusColor(p.status)}`}>{getStatusLabel(p.status)}</span>
