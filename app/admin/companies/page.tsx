@@ -16,7 +16,8 @@ export default function AdminCompaniesPage() {
 
   const fetchData = async () => {
     const res = await fetch('/api/companies');
-    setCompanies(await res.json());
+    const data = await res.json();
+    setCompanies(Array.isArray(data) ? data : []);
     setLoading(false);
   };
 

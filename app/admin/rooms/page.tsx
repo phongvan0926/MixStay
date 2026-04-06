@@ -27,7 +27,8 @@ export default function AdminRoomsPage() {
     const [roomsRes, propsRes, companiesRes] = await Promise.all([
       fetch('/api/rooms'), fetch('/api/properties?status=APPROVED'), fetch('/api/companies'),
     ]);
-    setRooms(await roomsRes.json());
+    const roomsData = await roomsRes.json();
+    setRooms(Array.isArray(roomsData) ? roomsData : []);
     const propsData = await propsRes.json();
     setProperties(Array.isArray(propsData) ? propsData : []);
     const compData = await companiesRes.json();

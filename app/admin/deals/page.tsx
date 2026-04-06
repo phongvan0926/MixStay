@@ -14,7 +14,8 @@ export default function AdminDealsPage() {
     const [dealsRes, companiesRes] = await Promise.all([
       fetch('/api/deals'), fetch('/api/companies'),
     ]);
-    setDeals(await dealsRes.json());
+    const dealsData = await dealsRes.json();
+    setDeals(Array.isArray(dealsData) ? dealsData : []);
     const compData = await companiesRes.json();
     setCompanies(Array.isArray(compData) ? compData : []);
     setLoading(false);
