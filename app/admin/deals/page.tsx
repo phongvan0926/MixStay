@@ -1,27 +1,21 @@
 'use client';
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '@/lib/utils';
+import Pagination from '@/components/ui/Pagination';
+import OptimizedImage from '@/components/ui/OptimizedImage';
+import { useDeals, useCompanies } from '@/hooks/useData';
+import { SkeletonStats, SkeletonTable } from '@/components/ui/Skeleton';
 
 export default function AdminDealsPage() {
-  const [deals, setDeals] = useState<any[]>([]);
-  const [companies, setCompanies] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filterCompany, setFilterCompany] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [page, setPage] = useState(1);
 
-  const fetchData = async () => {
-    const [dealsRes, companiesRes] = await Promise.all([
-      fetch('/api/deals'), fetch('/api/companies'),
-    ]);
-    const dealsData = await dealsRes.json();
-    setDeals(Array.isArray(dealsData) ? dealsData : []);
-    const compData = await companiesRes.json();
-    setCompanies(Array.isArray(compData) ? compData : []);
-    setLoading(false);
-  };
+  const { deals, pagination, isLoading: loading, mutate } = useDeals({ page: String(page), limit: '20' });
+  const { companies } = useCompanies();
 
-  useEffect(() => { fetchData(); }, []);
+  const handlePageChange = (newPage: number) => { setPage(newPage); };
 
   const filtered = useMemo(() => {
     return deals.filter(d => {
@@ -41,10 +35,10 @@ export default function AdminDealsPage() {
       body: JSON.stringify({ id, status }),
     });
     toast.success(`Đã ${status === 'CONFIRMED' ? 'xác nhận' : status === 'PAID' ? 'thanh toán' : 'huỷ'} giao dịch`);
-    fetchData();
+    mutate();
   };
 
-  if (loading) return <div className="animate-pulse text-stone-400 p-8">Đang tải...</div>;
+  if (loading) return <div className="p-8"><SkeletonStats count={4} /><div className="mt-6"><SkeletonTable rows={5} cols={6} /></div></div>;
 
   const activeDeals = filtered.filter(d => d.status === 'CONFIRMED' || d.status === 'PAID');
   const totalCommission = activeDeals.reduce((s, d) => s + d.commissionTotal, 0);
@@ -71,12 +65,12 @@ export default function AdminDealsPage() {
         {statCards.map(s => (
           <div key={s.label} className="card relative overflow-hidden">
             <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${s.gradient}`} />
-            <div className="pt-4 pb-3 px-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className={`w-10 h-10 rounded-xl ${s.bgLight} ${s.textColor} flex items-center justify-center`}>{s.icon}</div>
-                <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">{s.label}</p>
+            <div className="pt-4 pb-3 px-3 sm:px-4">
+              <div className="flex items-center gap-2 sm:gap-3 mb-3">
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl ${s.bgLight} ${s.textColor} flex items-center justify-center`}>{s.icon}</div>
+                <p className="text-[10px] sm:text-xs font-medium text-stone-500 uppercase tracking-wide">{s.label}</p>
               </div>
-              <p className={`text-xl font-bold ${s.textColor}`}>{s.value}</p>
+              <p className={`text-lg sm:text-xl font-bold ${s.textColor} truncate`}>{s.value}</p>
               {s.sub && <p className="text-xs text-amber-600 mt-1">{s.sub}</p>}
             </div>
           </div>
@@ -85,12 +79,12 @@ export default function AdminDealsPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-5">
-        <select value={filterCompany} onChange={e => setFilterCompany(e.target.value)} className="input-field !w-auto min-w-[160px]">
+        <select value={filterCompany} onChange={e => setFilterCompany(e.target.value)} className="input-field w-full sm:!w-auto sm:min-w-[160px]">
           <option value="">Tất cả công ty</option>
           <option value="__none__">Chưa gán công ty</option>
           {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="input-field !w-auto min-w-[140px]">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="input-field w-full sm:!w-auto sm:min-w-[140px]">
           <option value="">Tất cả trạng thái</option>
           <option value="PENDING">Chờ duyệt</option>
           <option value="CONFIRMED">Đã xác nhận</option>
@@ -106,7 +100,7 @@ export default function AdminDealsPage() {
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[1100px]">
             <thead className="bg-stone-50/80">
               <tr>
                 <th className="table-header">Phòng</th>
@@ -129,7 +123,7 @@ export default function AdminDealsPage() {
                     <td className="table-cell">
                       <div className="flex items-center gap-3">
                         {d.room?.images && d.room.images.length > 0 ? (
-                          <img src={d.room.images[0]} alt={d.room.roomNumber} className="w-10 h-10 rounded-lg object-cover border border-stone-200 flex-shrink-0" />
+                          <OptimizedImage src={d.room.images[0]} alt={d.room.roomNumber} width={40} height={40} className="w-10 h-10 rounded-lg object-cover border border-stone-200 flex-shrink-0" />
                         ) : (
                           <div className="w-10 h-10 rounded-lg bg-stone-100 flex items-center justify-center text-stone-400 text-sm flex-shrink-0">🚪</div>
                         )}
@@ -192,6 +186,10 @@ export default function AdminDealsPage() {
           </table>
         </div>
       </div>
+
+      {pagination && (
+        <Pagination page={page} totalPages={pagination.totalPages} total={pagination.total} onPageChange={handlePageChange} />
+      )}
     </div>
   );
 }

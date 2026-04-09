@@ -19,10 +19,16 @@ app/share/[token]/  → Trang tin đăng loại phòng (public, ẩn địa ch�
 app/share/system/[token]/ → Trang kho phòng hệ thống (public, tất cả phòng trống của landlord)
 app/auth/callback/  → Trang chọn vai trò sau OAuth login lần đầu
 app/api/            → API routes (companies, properties, rooms, rooms/import, deals, share-links, share-links/system, inquiries, notifications, users, settings)
-components/layout/  → DashboardLayout.tsx (sidebar + topbar), AuthProvider.tsx
+components/layout/  → DashboardLayout.tsx (sidebar + topbar + notification badge), AuthProvider.tsx
+components/ui/      → Skeleton.tsx, ImageUpload.tsx, OptimizedImage.tsx, Pagination.tsx
+hooks/useData.ts    → SWR hooks: useProperties, useRoomTypes, useDeals, useUsers, useShareLinks, useCompanies, useDashboardStats, useInquiries
 lib/auth.ts         → NextAuth config
 lib/prisma.ts       → Prisma client singleton
 lib/utils.ts        → Helpers: formatCurrency, formatDate, getStatusColor...
+lib/fetcher.ts      → SWR fetcher function
+lib/pagination.ts   → getPaginationParams(), paginatedResponse()
+lib/rate-limit.ts   → applyRateLimit() — in-memory rate limiter
+lib/validations.ts  → Zod schemas + validateBody()
 prisma/schema.prisma → 12 bảng: users, accounts, sessions, companies, properties, room_types, deals, share_links, room_inquiries, notifications, settings, verification_tokens
 prisma/seed.ts      → Demo data (password: 123456)
 middleware.ts       → Route protection theo role
@@ -67,6 +73,38 @@ middleware.ts       → Route protection theo role
 - Import: upload .xlsx → parse client-side → preview bảng + validate → POST /api/rooms/import (bulk create)
 - Export: client-side, xuất filteredRooms ra .xlsx (có thể filter trước rồi export)
 - Import tự match tòa nhà theo tên + quận, nếu chưa có → tạo mới (PENDING)
+
+## SWR Hooks (hooks/useData.ts)
+- useProperties(), useRoomTypes(), useDeals(), useUsers(), useShareLinks(), useCompanies(), useDashboardStats(), useInquiries()
+- Tất cả return: { data, error, isLoading, mutate, pagination? }
+- Options: revalidateOnFocus=false, dedupingInterval=10s, keepPreviousData=true
+- Dùng fetcher từ lib/fetcher.ts
+
+## Pagination (lib/pagination.ts)
+- getPaginationParams(url): lấy page, limit, skip từ URL searchParams
+- paginatedResponse(data, total, page, limit): trả về { data, pagination: { page, limit, total, totalPages } }
+- Component Pagination ở components/ui/Pagination.tsx
+
+## Validation (lib/validations.ts)
+- Zod schemas: registerSchema, propertyCreateSchema, roomTypeCreateSchema, dealCreateSchema, shareLinkCreateSchema, settingsSchema
+- validateBody(schema, body): return { success, data?, error? }
+- Dùng trong API routes trước khi xử lý
+
+## Rate Limiting (lib/rate-limit.ts)
+- applyRateLimit(req, type): type = 'api' (60 req/min) hoặc 'auth' (10 req/min)
+- Return NextResponse 429 nếu vượt limit, undefined nếu OK
+- Dùng ở đầu mỗi API route handler
+
+## SEO & PWA
+- app/layout.tsx: metadata mặc định với title template '%s | MiniZen'
+- app/share/[token]/page.tsx: generateMetadata() dynamic OG tags (ảnh, giá, khu vực)
+- app/share/system/[token]/page.tsx: generateMetadata() cho kho phòng
+- app/sitemap.ts, app/robots.ts
+- public/manifest.json, public/icon-*.svg
+
+## Skeleton Loading (components/ui/Skeleton.tsx)
+- SkeletonCard, SkeletonTable, SkeletonStats, SkeletonText, SkeletonCardGrid, SkeletonList
+- Dùng thay thế text "Đang tải..." trong tất cả dashboard pages
 
 ## Lệnh thường dùng
 - `npm run dev` → chạy dev server (localhost:3000)

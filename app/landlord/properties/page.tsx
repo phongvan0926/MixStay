@@ -1,9 +1,13 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { formatDate, formatCurrency, getStatusColor, getStatusLabel } from '@/lib/utils';
 import PropertyForm from '@/components/forms/PropertyForm';
 import QuickRoomTypeForm, { QuickRoomTypeData } from '@/components/forms/QuickRoomTypeForm';
+import Pagination from '@/components/ui/Pagination';
+import OptimizedImage from '@/components/ui/OptimizedImage';
+import { useProperties, useDashboardStats } from '@/hooks/useData';
+import { SkeletonStats, SkeletonCardGrid } from '@/components/ui/Skeleton';
 
 const ROOM_TYPE_LABELS: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1K1N',
@@ -11,9 +15,10 @@ const ROOM_TYPE_LABELS: Record<string, string> = {
 };
 
 export default function LandlordPropertiesPage() {
-  const [properties, setProperties] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+
+  const { properties, pagination, isLoading: loading, mutate } = useProperties({ page: String(page), limit: '20' });
+  const { stats } = useDashboardStats();
 
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -21,22 +26,13 @@ export default function LandlordPropertiesPage() {
   const [submitting, setSubmitting] = useState(false);
 
   // Wizard states
-  const [wizardStep, setWizardStep] = useState(1); // 1 = property form, 2 = room types
+  const [wizardStep, setWizardStep] = useState(1);
   const [wizardPropertyData, setWizardPropertyData] = useState<any>(null);
   const [createdPropertyId, setCreatedPropertyId] = useState<string | null>(null);
   const [wizardRoomTypes, setWizardRoomTypes] = useState<QuickRoomTypeData[]>([]);
   const [showRoomForm, setShowRoomForm] = useState(false);
 
-  const fetchData = async () => {
-    const [propsRes, statsRes] = await Promise.all([
-      fetch('/api/properties'), fetch('/api/dashboard-stats'),
-    ]);
-    setProperties(await propsRes.json());
-    setStats(await statsRes.json());
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchData(); }, []);
+  const handlePageChange = (newPage: number) => { setPage(newPage); };
 
   const openCreate = () => {
     setEditingProperty(null);
@@ -78,7 +74,7 @@ export default function LandlordPropertiesPage() {
         if (res.ok) {
           toast.success('Đã cập nhật tòa nhà!');
           closeModal();
-          fetchData();
+          mutate();
         } else {
           toast.error('Lỗi cập nhật');
         }
@@ -122,7 +118,7 @@ export default function LandlordPropertiesPage() {
       // Allow finishing without room types
       toast.success('Đã gửi tòa nhà! Chờ Admin duyệt.');
       closeModal();
-      fetchData();
+      mutate();
       return;
     }
 
@@ -151,22 +147,22 @@ export default function LandlordPropertiesPage() {
       }
       toast.success(`Hoàn tất! Đã tạo ${success} loại phòng. Chờ Admin duyệt.`);
       closeModal();
-      fetchData();
+      mutate();
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <div className="animate-pulse text-stone-400 p-8">Đang tải...</div>;
+  if (loading) return <div className="p-8"><SkeletonStats count={4} /><div className="mt-6"><SkeletonCardGrid count={6} /></div></div>;
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="font-display text-2xl font-bold">Tòa nhà của tôi</h1>
           <p className="text-sm text-stone-500 mt-1">{properties.length} tòa nhà</p>
         </div>
-        <button onClick={openCreate} className="btn-primary">
+        <button onClick={openCreate} className="btn-primary w-full sm:w-auto">
           + Thêm tòa nhà
         </button>
       </div>
@@ -187,10 +183,13 @@ export default function LandlordPropertiesPage() {
             {/* Cover image */}
             <div className="relative -mx-5 -mt-5 mb-4 h-44 overflow-hidden">
               {p.images && p.images.length > 0 ? (
-                <img
+                <OptimizedImage
                   src={p.images[0]}
                   alt={p.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                  fallback="property"
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-brand-100 to-brand-50 flex items-center justify-center">
@@ -256,6 +255,10 @@ export default function LandlordPropertiesPage() {
           </div>
         )}
       </div>
+
+      {pagination && (
+        <Pagination page={page} totalPages={pagination.totalPages} total={pagination.total} onPageChange={handlePageChange} />
+      )}
 
       {/* Modal — Wizard */}
       {showModal && (

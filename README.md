@@ -175,11 +175,18 @@ minizen/
 │   ├── register/        # Register page
 │   └── page.tsx         # Landing page
 ├── components/
-│   └── layout/          # Dashboard layout, AuthProvider
+│   ├── layout/          # Dashboard layout, AuthProvider
+│   └── ui/              # Skeleton, ImageUpload, OptimizedImage, Pagination
+├── hooks/
+│   └── useData.ts       # SWR hooks (useProperties, useRoomTypes, useDeals, etc.)
 ├── lib/
 │   ├── auth.ts          # NextAuth config
 │   ├── prisma.ts        # Prisma client
-│   └── utils.ts         # Helper functions
+│   ├── utils.ts         # Helper functions
+│   ├── fetcher.ts       # SWR fetcher
+│   ├── pagination.ts    # Server-side pagination helper
+│   ├── rate-limit.ts    # API rate limiter
+│   └── validations.ts   # Zod validation schemas
 ├── prisma/
 │   ├── schema.prisma    # Database schema
 │   └── seed.ts          # Demo data
@@ -199,7 +206,35 @@ minizen/
 | SĐT Chủ nhà | ✅ | ✅ | — | ❌ |
 | Hoa hồng | ✅ | Của mình | ❌ | ❌ |
 
+## Performance & Optimization
+
+- **SWR Caching:** Tất cả dashboard pages dùng SWR hooks (`hooks/useData.ts`) với deduping 10s, keepPreviousData
+- **Pagination:** Server-side pagination cho tất cả API list endpoints (`lib/pagination.ts`)
+- **Image Optimization:** Next.js Image component wrapper (`OptimizedImage`) với lazy loading, AVIF/WebP, responsive sizes
+- **Database Indexes:** Composite indexes trên Prisma schema cho các query phổ biến
+- **Rate Limiting:** In-memory rate limiter (`lib/rate-limit.ts`) cho tất cả API routes
+- **Input Validation:** Zod schemas (`lib/validations.ts`) validate request body trước khi xử lý
+- **Error Boundaries:** `app/error.tsx`, `app/loading.tsx`, `app/not-found.tsx` cho UX mượt
+- **Skeleton Loading:** Pulse animation skeletons thay thế text "Đang tải..." trên tất cả trang dashboard
+- **SEO:** Dynamic OG tags cho share pages (`generateMetadata`), sitemap.xml, robots.txt
+- **PWA:** Web app manifest, SVG icons, standalone display mode
+
 ## Changelog
+
+### v7 — Performance, Security, SEO, PWA, Pre-launch Polish
+- **Database Indexes:** Thêm composite indexes cho các query phổ biến (properties by landlord/company, rooms by property, deals by broker/status, etc.)
+- **Pagination:** Server-side pagination helper (`lib/pagination.ts`) cho tất cả API list endpoints, component `Pagination` cho client
+- **Image Optimization:** `OptimizedImage` component wrapper Next.js Image, AVIF/WebP format, responsive device sizes
+- **SWR Caching:** Custom hooks (`hooks/useData.ts`) cho tất cả data fetching, deduping 10s, `keepPreviousData`
+- **Rate Limiting:** In-memory rate limiter (`lib/rate-limit.ts`) bảo vệ tất cả API routes
+- **Input Validation:** Zod schemas (`lib/validations.ts`) validate đầu vào cho register, property, room, deal, share-link, settings
+- **Error Boundaries:** `app/error.tsx` (runtime error), `app/loading.tsx` (root loading), `app/not-found.tsx` (404)
+- **SEO + OG Tags:** Rich metadata trong `layout.tsx`, `generateMetadata()` cho share pages (dynamic title, description, OG image), `sitemap.ts`, `robots.ts`
+- **PWA:** `manifest.json`, SVG icons (192/512), theme-color, apple-touch-icon — có thể "Add to Home Screen" trên mobile
+- **Skeleton Loading:** 6 skeleton components (`SkeletonCard`, `SkeletonTable`, `SkeletonStats`, `SkeletonText`, `SkeletonCardGrid`, `SkeletonList`) thay thế text loading trên tất cả 11 trang dashboard
+- **Notification Badge:** Badge đỏ số thông báo chưa đọc trên sidebar + mobile nav, poll mỗi 30s
+- **Responsive Polish:** Sửa toàn bộ trang cho viewport 375px — table overflow-x-auto, filter wrap, header stack, stats grid-cols-2, modal responsive, image gallery adapt
+- **Sau khi pull code v7:** chạy `npm install && npx prisma db push`
 
 ### v6 — RoomType, system links, trang tin đăng, Excel import/export
 - **Chuyển Room → RoomType:** Toàn bộ hệ thống quản lý theo loại phòng (RoomType) thay vì từng phòng riêng lẻ. Mỗi loại: totalUnits, availableUnits, availableRoomNames

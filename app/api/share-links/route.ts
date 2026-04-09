@@ -3,8 +3,14 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { nanoid } from 'nanoid';
+import { getPaginationParams, paginatedResponse } from '@/lib/pagination';
+import { applyRateLimit } from '@/lib/rate-limit';
+import { shareLinkCreateSchema, validateBody } from '@/lib/validations';
 
 export async function GET(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   try {
     const url = new URL(req.url);
     const token = url.searchParams.get('token');
@@ -107,27 +113,42 @@ export async function GET(req: NextRequest) {
       where.brokerId = session.user.id;
     }
 
-    const links = await prisma.shareLink.findMany({
-      where,
-      include: {
-        roomType: { include: { property: { select: { name: true, district: true, images: true } } } },
-        broker: { select: { name: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { page, limit, skip } = getPaginationParams(url);
 
-    return NextResponse.json(links);
+    const [links, total] = await Promise.all([
+      prisma.shareLink.findMany({
+        where,
+        include: {
+          roomType: { include: { property: { select: { name: true, district: true, images: true } } } },
+          broker: { select: { name: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.shareLink.count({ where }),
+    ]);
+
+    return NextResponse.json(paginatedResponse(links, total, page, limit));
   } catch (error) {
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   try {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
+    const validated = validateBody(shareLinkCreateSchema, body);
+    if (!validated.success) {
+      return NextResponse.json({ error: validated.error }, { status: 400 });
+    }
+
     const token = nanoid(12);
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
@@ -176,6 +197,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   try {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

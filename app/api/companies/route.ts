@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { applyRateLimit } from '@/lib/rate-limit';
 
 export async function GET(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   try {
     const session = await getServerSession(authOptions);
     if (!session || (session.user as any).role !== 'ADMIN') {
@@ -49,6 +53,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   try {
     const session = await getServerSession(authOptions);
     if (!session || (session.user as any).role !== 'ADMIN') {
@@ -78,6 +85,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   try {
     const session = await getServerSession(authOptions);
     if (!session || (session.user as any).role !== 'ADMIN') {
@@ -109,6 +119,9 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   try {
     const session = await getServerSession(authOptions);
     if (!session || (session.user as any).role !== 'ADMIN') {

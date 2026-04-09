@@ -1,7 +1,11 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/lib/utils';
+import Pagination from '@/components/ui/Pagination';
+import OptimizedImage from '@/components/ui/OptimizedImage';
+import { useRoomTypes, useCompanies, useDashboardStats } from '@/hooks/useData';
+import { SkeletonStats, SkeletonCardGrid } from '@/components/ui/Skeleton';
 
 const roomTypeLabels: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1K1N',
@@ -42,10 +46,12 @@ function RoomImageCarousel({ room }: { room: any }) {
 
   return (
     <div className="h-48 rounded-xl overflow-hidden relative group">
-      <img
+      <OptimizedImage
         src={show[imgIdx]}
         alt="Ảnh phòng"
-        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+        fill
+        className="object-cover transition-transform duration-300 group-hover:scale-105"
+        sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
       />
       <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/50 to-transparent" />
       {/* Image count badge */}
@@ -79,10 +85,7 @@ function RoomImageCarousel({ room }: { room: any }) {
 }
 
 export default function BrokerInventoryPage() {
-  const [rooms, setRooms] = useState<any[]>([]);
-  const [companies, setCompanies] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
   const [copiedLink, setCopiedLink] = useState('');
   const [inquirySent, setInquirySent] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState({
@@ -91,45 +94,32 @@ export default function BrokerInventoryPage() {
     shortTerm: false, status: 'available' as 'available' | 'all',
   });
 
-  const fetchData = async () => {
-    const params = new URLSearchParams();
-    if (filter.status === 'available') params.set('available', 'true');
-    if (filter.companyId) params.set('companyId', filter.companyId);
-    if (filter.minPrice) params.set('minPrice', filter.minPrice);
-    if (filter.maxPrice) params.set('maxPrice', filter.maxPrice);
-    if (filter.search) params.set('search', filter.search);
-    if (filter.roomType) params.set('roomType', filter.roomType);
-    if (filter.parkingCar) params.set('parkingCar', 'true');
-    if (filter.foreignerOk) params.set('foreignerOk', 'true');
-    if (filter.evCharging) params.set('evCharging', 'true');
-    if (filter.petAllowed) params.set('petAllowed', 'true');
-    if (filter.shortTerm) params.set('shortTerm', 'true');
+  // Build SWR params from filter
+  const swrParams: Record<string, string> = { page: String(page), limit: '20' };
+  if (filter.status === 'available') swrParams.available = 'true';
+  if (filter.companyId) swrParams.companyId = filter.companyId;
+  if (filter.minPrice) swrParams.minPrice = filter.minPrice;
+  if (filter.maxPrice) swrParams.maxPrice = filter.maxPrice;
+  if (filter.search) swrParams.search = filter.search;
+  if (filter.roomType) swrParams.roomType = filter.roomType;
+  if (filter.parkingCar) swrParams.parkingCar = 'true';
+  if (filter.foreignerOk) swrParams.foreignerOk = 'true';
+  if (filter.evCharging) swrParams.evCharging = 'true';
+  if (filter.petAllowed) swrParams.petAllowed = 'true';
+  if (filter.shortTerm) swrParams.shortTerm = 'true';
 
-    const [roomsRes, statsRes, companiesRes] = await Promise.all([
-      fetch('/api/rooms?' + params),
-      fetch('/api/dashboard-stats'),
-      fetch('/api/companies'),
-    ]);
-    const roomsData = await roomsRes.json();
-    const companiesData = await companiesRes.json();
-    setRooms(Array.isArray(roomsData) ? roomsData : []);
-    setCompanies(Array.isArray(companiesData) ? companiesData : []);
-    setStats(await statsRes.json());
-    setLoading(false);
-  };
+  const { roomTypes: rooms, pagination, isLoading: loading, mutate } = useRoomTypes(swrParams);
+  const { stats } = useDashboardStats();
+  const { companies } = useCompanies();
 
-  const [filterTrigger, setFilterTrigger] = useState(0);
-  useEffect(() => { fetchData(); }, [filterTrigger]);
-  const handleFilter = () => { setLoading(true); setFilterTrigger(t => t + 1); };
+  const handleFilter = () => { setPage(1); };
 
   const toggleFilter = (key: string, value: any) => {
-    setFilter(prev => {
-      const next = { ...prev, [key]: value };
-      // Use setTimeout to trigger fetch after state update
-      setTimeout(() => { setLoading(true); setFilterTrigger(t => t + 1); }, 0);
-      return next;
-    });
+    setFilter(prev => ({ ...prev, [key]: value }));
+    setPage(1);
   };
+
+  const handlePageChange = (newPage: number) => { setPage(newPage); };
 
   const createShareLink = async (roomTypeId: string) => {
     const res = await fetch('/api/share-links', {
@@ -156,11 +146,7 @@ export default function BrokerInventoryPage() {
     }
   };
 
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-[50vh]">
-      <div className="animate-spin rounded-full h-8 w-8 border-2 border-brand-600 border-t-transparent" />
-    </div>
-  );
+  if (loading) return <div className="p-8"><SkeletonStats count={4} /><div className="mt-6"><SkeletonCardGrid count={6} /></div></div>;
 
   return (
     <div>
@@ -180,7 +166,7 @@ export default function BrokerInventoryPage() {
                 <span className="text-lg">{s.icon}</span>
                 <p className="text-xs font-medium text-stone-500 uppercase">{s.label}</p>
               </div>
-              <p className={'text-xl font-bold mt-1 ' + s.color}>{s.value}</p>
+              <p className={'text-lg sm:text-xl font-bold mt-1 truncate ' + s.color}>{s.value}</p>
             </div>
           ))}
         </div>
@@ -196,7 +182,7 @@ export default function BrokerInventoryPage() {
               onChange={e => setFilter({ ...filter, search: e.target.value })}
               onKeyDown={e => e.key === 'Enter' && handleFilter()} />
           </div>
-          <div className="w-40">
+          <div className="w-full sm:w-40">
             <label className="block text-xs font-medium text-stone-500 mb-1">Hệ thống/Công ty</label>
             <select className="input-field" value={filter.companyId}
               onChange={e => { setFilter({ ...filter, companyId: e.target.value }); }}>
@@ -206,19 +192,19 @@ export default function BrokerInventoryPage() {
               ))}
             </select>
           </div>
-          <div className="w-32">
+          <div className="w-full sm:w-32">
             <label className="block text-xs font-medium text-stone-500 mb-1">Loại phòng</label>
             <select className="input-field" value={filter.roomType}
               onChange={e => setFilter({ ...filter, roomType: e.target.value })}>
               {roomTypeOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
-          <div className="w-28">
+          <div className="flex-1 min-w-[100px] sm:w-28 sm:flex-none">
             <label className="block text-xs font-medium text-stone-500 mb-1">Giá từ</label>
             <input type="number" className="input-field" placeholder="2000000" value={filter.minPrice}
               onChange={e => setFilter({ ...filter, minPrice: e.target.value })} />
           </div>
-          <div className="w-28">
+          <div className="flex-1 min-w-[100px] sm:w-28 sm:flex-none">
             <label className="block text-xs font-medium text-stone-500 mb-1">Giá đến</label>
             <input type="number" className="input-field" placeholder="5000000" value={filter.maxPrice}
               onChange={e => setFilter({ ...filter, maxPrice: e.target.value })} />
@@ -407,6 +393,10 @@ export default function BrokerInventoryPage() {
           </div>
         )}
       </div>
+
+      {pagination && (
+        <Pagination page={page} totalPages={pagination.totalPages} total={pagination.total} onPageChange={handlePageChange} />
+      )}
     </div>
   );
 }

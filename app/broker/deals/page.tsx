@@ -1,27 +1,24 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '@/lib/utils';
+import Pagination from '@/components/ui/Pagination';
+import OptimizedImage from '@/components/ui/OptimizedImage';
+import { useDeals, useRoomTypes } from '@/hooks/useData';
+import { SkeletonStats, SkeletonList } from '@/components/ui/Skeleton';
 
 export default function BrokerDealsPage() {
-  const [deals, setDeals] = useState<any[]>([]);
-  const [rooms, setRooms] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+
+  const { deals, pagination, isLoading: loading, mutate } = useDeals({ page: String(page), limit: '20' });
+  const { roomTypes: rooms } = useRoomTypes({ available: 'true', limit: '200' });
+
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     roomTypeId: '', dealPrice: '', commissionTotal: '', customerName: '', customerPhone: '', notes: '',
   });
 
-  const fetchData = async () => {
-    const [dealsRes, roomsRes] = await Promise.all([
-      fetch('/api/deals'), fetch('/api/rooms?available=true'),
-    ]);
-    setDeals(await dealsRes.json());
-    setRooms(await roomsRes.json());
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchData(); }, []);
+  const handlePageChange = (newPage: number) => { setPage(newPage); };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,15 +31,11 @@ export default function BrokerDealsPage() {
       toast.success('Đã gửi deal! Chờ Admin xác nhận.');
       setShowForm(false);
       setForm({ roomTypeId: '', dealPrice: '', commissionTotal: '', customerName: '', customerPhone: '', notes: '' });
-      fetchData();
+      mutate();
     }
   };
 
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-[50vh]">
-      <div className="animate-spin rounded-full h-8 w-8 border-2 border-brand-600 border-t-transparent" />
-    </div>
-  );
+  if (loading) return <div className="p-8"><SkeletonStats count={3} /><div className="mt-6"><SkeletonList count={4} /></div></div>;
 
   const myCommission = deals
     .filter(d => d.status === 'CONFIRMED' || d.status === 'PAID')
@@ -53,20 +46,20 @@ export default function BrokerDealsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="font-display text-2xl font-bold">Giao dịch của tôi</h1>
           <p className="text-sm text-stone-500 mt-1">
             {deals.length} deal • Hoa hồng: <span className="font-bold text-brand-600">{formatCurrency(myCommission)}</span>
           </p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="btn-primary">
+        <button onClick={() => setShowForm(!showForm)} className="btn-primary w-full sm:w-auto">
           {showForm ? 'Đóng' : '+ Báo deal mới'}
         </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
         <div className="stat-card">
           <div className="flex items-center gap-2">
             <span className="text-lg">📊</span>
@@ -149,7 +142,7 @@ export default function BrokerDealsPage() {
                 {/* Room image thumbnail */}
                 <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-gradient-to-br from-brand-100 to-brand-50">
                   {coverImage ? (
-                    <img src={coverImage} alt="" className="w-full h-full object-cover" />
+                    <OptimizedImage src={coverImage} alt="" fill className="object-cover" sizes="80px" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-2xl">🏢</div>
                   )}
@@ -204,6 +197,10 @@ export default function BrokerDealsPage() {
           </div>
         )}
       </div>
+
+      {pagination && (
+        <Pagination page={page} totalPages={pagination.totalPages} total={pagination.total} onPageChange={handlePageChange} />
+      )}
     </div>
   );
 }

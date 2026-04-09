@@ -96,17 +96,17 @@ export default function HomePage() {
           </div>
 
           {/* Social proof */}
-          <div className="inline-flex items-center gap-6 sm:gap-10 text-sm text-stone-400 animate-fade-in bg-white/60 backdrop-blur rounded-2xl px-6 py-3 border border-stone-200/50 shadow-sm">
-            <div className="flex items-center gap-1.5">
-              <span className="font-display font-bold text-stone-700 text-base">5000+</span> phòng
+          <div className="inline-flex items-center gap-4 sm:gap-10 text-xs sm:text-sm text-stone-400 animate-fade-in bg-white/60 backdrop-blur rounded-2xl px-4 sm:px-6 py-3 border border-stone-200/50 shadow-sm">
+            <div className="flex items-center gap-1">
+              <span className="font-display font-bold text-stone-700 text-sm sm:text-base">5000+</span> phòng
             </div>
             <div className="w-1 h-1 rounded-full bg-stone-300" />
-            <div className="flex items-center gap-1.5">
-              <span className="font-display font-bold text-stone-700 text-base">200+</span> môi giới
+            <div className="flex items-center gap-1">
+              <span className="font-display font-bold text-stone-700 text-sm sm:text-base">200+</span> môi giới
             </div>
             <div className="w-1 h-1 rounded-full bg-stone-300" />
-            <div className="flex items-center gap-1.5">
-              <span className="font-display font-bold text-stone-700 text-base">200+</span> tòa nhà
+            <div className="flex items-center gap-1">
+              <span className="font-display font-bold text-stone-700 text-sm sm:text-base">200+</span> tòa nhà
             </div>
           </div>
         </div>

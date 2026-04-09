@@ -4,6 +4,8 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import useSWR from 'swr';
+import { fetcher } from '@/lib/fetcher';
 
 const menuItems: Record<string, { label: string; href: string; icon: string }[]> = {
   ADMIN: [
@@ -49,6 +51,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const role = (session.user as any).role as string;
   const items = menuItems[role] || [];
 
+  // Notification badge - poll every 30s
+  const { data: notifData } = useSWR(
+    session ? '/api/notifications?limit=1' : null,
+    fetcher,
+    { refreshInterval: 30000, revalidateOnFocus: false }
+  );
+  const unreadCount = notifData?.unreadCount || 0;
+
+  // Which menu item gets the badge
+  const badgeHref: Record<string, string> = {
+    LANDLORD: '/landlord/rooms',
+    ADMIN: '/admin/properties',
+  };
+
   return (
     <div className="min-h-screen bg-stone-50">
       {/* Top bar */}
@@ -87,32 +103,50 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Sidebar */}
         <aside className="fixed left-0 top-16 bottom-0 w-60 bg-white border-r border-stone-200/60 p-4 overflow-y-auto hidden lg:block">
           <nav className="space-y-1">
-            {items.map((item) => (
-              <Link key={item.href + item.label} href={item.href}
-                className={pathname === item.href ? 'sidebar-link-active' : 'sidebar-link'}>
-                <span className="text-base">{item.icon}</span>
-                <span>{item.label}</span>
-              </Link>
-            ))}
+            {items.map((item) => {
+              const showBadge = unreadCount > 0 && item.href === badgeHref[role];
+              return (
+                <Link key={item.href + item.label} href={item.href}
+                  className={`${pathname === item.href ? 'sidebar-link-active' : 'sidebar-link'} relative`}>
+                  <span className="text-base">{item.icon}</span>
+                  <span>{item.label}</span>
+                  {showBadge && (
+                    <span className="ml-auto bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
           </nav>
         </aside>
 
         {/* Mobile bottom nav */}
         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-stone-200/60 flex lg:hidden">
-          {items.slice(0, 4).map((item) => (
-            <Link key={item.href + item.label} href={item.href}
-              className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-xs ${
-                pathname === item.href ? 'text-brand-600 font-medium' : 'text-stone-500'
-              }`}>
-              <span className="text-lg">{item.icon}</span>
-              <span>{item.label}</span>
-            </Link>
-          ))}
+          {items.slice(0, 4).map((item) => {
+            const showBadge = unreadCount > 0 && item.href === badgeHref[role];
+            return (
+              <Link key={item.href + item.label} href={item.href}
+                className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-xs relative ${
+                  pathname === item.href ? 'text-brand-600 font-medium' : 'text-stone-500'
+                }`}>
+                <span className="text-lg relative">
+                  {item.icon}
+                  {showBadge && (
+                    <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[8px] font-bold min-w-[14px] h-[14px] rounded-full flex items-center justify-center px-0.5">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </span>
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Main content */}
         <main className="flex-1 lg:ml-60 min-h-[calc(100vh-4rem)] pb-20 lg:pb-8">
-          <div className="p-6 max-w-7xl mx-auto page-enter">
+          <div className="p-4 sm:p-6 max-w-7xl mx-auto page-enter">
             {children}
           </div>
         </main>

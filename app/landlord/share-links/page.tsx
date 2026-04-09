@@ -1,21 +1,13 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { formatDateTime } from '@/lib/utils';
+import { useShareLinks } from '@/hooks/useData';
+import { SkeletonList } from '@/components/ui/Skeleton';
 
 export default function LandlordShareLinksPage() {
-  const [links, setLinks] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { links, isLoading: loading, mutate } = useShareLinks();
   const [creating, setCreating] = useState(false);
-
-  const fetchData = async () => {
-    const res = await fetch('/api/share-links');
-    const data = await res.json();
-    setLinks(Array.isArray(data) ? data : []);
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchData(); }, []);
 
   const createSystemLink = async () => {
     setCreating(true);
@@ -33,7 +25,7 @@ export default function LandlordShareLinksPage() {
           await navigator.clipboard.writeText(data.url);
           toast.success('Đã copy link vào clipboard!');
         } catch {}
-        fetchData();
+        mutate();
       } else {
         toast.error('Lỗi tạo link');
       }
@@ -45,7 +37,7 @@ export default function LandlordShareLinksPage() {
   const deleteLink = async (id: string) => {
     await fetch(`/api/share-links?id=${id}`, { method: 'DELETE' });
     toast.success('Đã xoá link!');
-    fetchData();
+    mutate();
   };
 
   const copyLink = async (token: string, isSystem: boolean) => {
@@ -59,19 +51,19 @@ export default function LandlordShareLinksPage() {
     }
   };
 
-  if (loading) return <div className="animate-pulse text-stone-400 p-8">Đang tải...</div>;
+  if (loading) return <div className="p-8"><SkeletonList count={4} /></div>;
 
   const systemLinks = links.filter(l => l.isSystem);
   const otherLinks = links.filter(l => !l.isSystem);
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="font-display text-2xl font-bold">Link chia sẻ</h1>
           <p className="text-sm text-stone-500 mt-1">Quản lý link chia sẻ kho phòng</p>
         </div>
-        <button onClick={createSystemLink} disabled={creating} className="btn-primary">
+        <button onClick={createSystemLink} disabled={creating} className="btn-primary w-full sm:w-auto">
           {creating ? (
             <span className="flex items-center gap-2">
               <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -103,9 +95,9 @@ export default function LandlordShareLinksPage() {
           <h2 className="font-display font-semibold text-lg mb-3">Link tổng</h2>
           <div className="space-y-3">
             {systemLinks.map((link: any) => (
-              <div key={link.id} className="card flex items-center justify-between gap-4">
+              <div key={link.id} className="card flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="text-lg">🌐</span>
                     <p className="font-medium text-stone-800 truncate">Link tổng kho phòng</p>
                     {link.isActive ? (
@@ -123,11 +115,11 @@ export default function LandlordShareLinksPage() {
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <button onClick={() => copyLink(link.token, true)}
-                    className="px-3 py-2 bg-brand-50 text-brand-700 rounded-xl text-sm font-medium hover:bg-brand-100 transition-all border border-brand-200">
+                    className="flex-1 sm:flex-none px-3 py-2 bg-brand-50 text-brand-700 rounded-xl text-sm font-medium hover:bg-brand-100 transition-all border border-brand-200">
                     Copy
                   </button>
                   <button onClick={() => deleteLink(link.id)}
-                    className="px-3 py-2 bg-red-50 text-red-600 rounded-xl text-sm font-medium hover:bg-red-100 transition-all border border-red-200">
+                    className="flex-1 sm:flex-none px-3 py-2 bg-red-50 text-red-600 rounded-xl text-sm font-medium hover:bg-red-100 transition-all border border-red-200">
                     Xoá
                   </button>
                 </div>
@@ -143,7 +135,7 @@ export default function LandlordShareLinksPage() {
           <h2 className="font-display font-semibold text-lg mb-3">Link riêng lẻ</h2>
           <div className="space-y-3">
             {otherLinks.map((link: any) => (
-              <div key={link.id} className="card flex items-center justify-between gap-4">
+              <div key={link.id} className="card flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-lg">🚪</span>
@@ -157,11 +149,11 @@ export default function LandlordShareLinksPage() {
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <button onClick={() => copyLink(link.token, false)}
-                    className="px-3 py-2 bg-brand-50 text-brand-700 rounded-xl text-sm font-medium hover:bg-brand-100 transition-all border border-brand-200">
+                    className="flex-1 sm:flex-none px-3 py-2 bg-brand-50 text-brand-700 rounded-xl text-sm font-medium hover:bg-brand-100 transition-all border border-brand-200">
                     Copy
                   </button>
                   <button onClick={() => deleteLink(link.id)}
-                    className="px-3 py-2 bg-red-50 text-red-600 rounded-xl text-sm font-medium hover:bg-red-100 transition-all border border-red-200">
+                    className="flex-1 sm:flex-none px-3 py-2 bg-red-50 text-red-600 rounded-xl text-sm font-medium hover:bg-red-100 transition-all border border-red-200">
                     Xoá
                   </button>
                 </div>

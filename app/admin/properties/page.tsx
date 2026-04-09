@@ -1,14 +1,20 @@
 'use client';
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { formatCurrency, getStatusColor, getStatusLabel } from '@/lib/utils';
 import PropertyForm from '@/components/forms/PropertyForm';
+import Pagination from '@/components/ui/Pagination';
+import OptimizedImage from '@/components/ui/OptimizedImage';
+import { useProperties, useCompanies, useDashboardStats } from '@/hooks/useData';
+import { SkeletonStats, SkeletonTable } from '@/components/ui/Skeleton';
 
 export default function AdminPropertiesPage() {
-  const [stats, setStats] = useState<any>(null);
-  const [properties, setProperties] = useState<any[]>([]);
-  const [companies, setCompanies] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+
+  const { stats } = useDashboardStats();
+  const { properties, pagination, isLoading: loading, mutate } = useProperties({ page: String(page), limit: '20' });
+  const { companies } = useCompanies();
+
   const [showModal, setShowModal] = useState(false);
   const [editingProperty, setEditingProperty] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -18,21 +24,9 @@ export default function AdminPropertiesPage() {
   const [filterLandlord, setFilterLandlord] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
 
-  const fetchData = async () => {
-    const [statsRes, propsRes, companiesRes] = await Promise.all([
-      fetch('/api/dashboard-stats'),
-      fetch('/api/properties'),
-      fetch('/api/companies'),
-    ]);
-    setStats(await statsRes.json());
-    const propsData = await propsRes.json();
-    setProperties(Array.isArray(propsData) ? propsData : []);
-    const compData = await companiesRes.json();
-    setCompanies(Array.isArray(compData) ? compData : []);
-    setLoading(false);
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
   };
-
-  useEffect(() => { fetchData(); }, []);
 
   // Landlords filtered by selected company (cascade)
   const landlords = useMemo(() => {
@@ -58,6 +52,11 @@ export default function AdminPropertiesPage() {
     });
   }, [properties, filterCompany, filterLandlord, filterStatus]);
 
+  const resetFilters = () => {
+    setFilterCompany(''); setFilterLandlord(''); setFilterStatus('');
+    setPage(1);
+  };
+
   const handleApprove = async (id: string, status: string) => {
     await fetch('/api/properties', {
       method: 'PUT',
@@ -65,7 +64,7 @@ export default function AdminPropertiesPage() {
       body: JSON.stringify({ id, status }),
     });
     toast.success(status === 'APPROVED' ? 'Đã duyệt!' : 'Đã từ chối');
-    fetchData();
+    mutate();
   };
 
   const openCreate = () => { setEditingProperty(null); setShowModal(true); };
@@ -80,7 +79,7 @@ export default function AdminPropertiesPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: editingProperty.id, ...data }),
         });
-        if (res.ok) { toast.success('Đã cập nhật tòa nhà!'); setShowModal(false); fetchData(); }
+        if (res.ok) { toast.success('Đã cập nhật tòa nhà!'); setShowModal(false); mutate(); }
         else toast.error('Lỗi cập nhật');
       } else {
         const res = await fetch('/api/properties', {
@@ -88,7 +87,7 @@ export default function AdminPropertiesPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         });
-        if (res.ok) { toast.success('Đã thêm tòa nhà!'); setShowModal(false); fetchData(); }
+        if (res.ok) { toast.success('Đã thêm tòa nhà!'); setShowModal(false); mutate(); }
         else toast.error('Lỗi thêm tòa nhà');
       }
     } finally { setSubmitting(false); }
@@ -98,21 +97,21 @@ export default function AdminPropertiesPage() {
     if (!confirm('Xác nhận xoá tòa nhà này?')) return;
     await fetch(`/api/properties?id=${id}`, { method: 'DELETE' });
     toast.success('Đã xoá!');
-    fetchData();
+    mutate();
   };
 
-  if (loading) return <div className="animate-pulse text-stone-400 p-8">Đang tải...</div>;
+  if (loading) return <div className="p-8"><SkeletonStats count={4} /><div className="mt-6"><SkeletonTable rows={5} cols={6} /></div></div>;
 
   const hasFilters = filterCompany || filterLandlord || filterStatus;
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="font-display text-2xl font-bold">Tổng quan</h1>
           <p className="text-sm text-stone-500 mt-1">Quản lý toàn bộ hệ thống</p>
         </div>
-        <button onClick={openCreate} className="btn-primary">+ Thêm tòa nhà</button>
+        <button onClick={openCreate} className="btn-primary w-full sm:w-auto">+ Thêm tòa nhà</button>
       </div>
 
       {/* Stats */}
@@ -130,7 +129,7 @@ export default function AdminPropertiesPage() {
           ].map(s => (
             <div key={s.label} className="stat-card">
               <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">{s.label}</p>
-              <p className={`text-xl font-bold mt-1 ${s.color}`}>{s.value}</p>
+              <p className={`text-lg sm:text-xl font-bold mt-1 ${s.color} truncate`}>{s.value}</p>
             </div>
           ))}
         </div>
@@ -138,23 +137,23 @@ export default function AdminPropertiesPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-5">
-        <select value={filterCompany} onChange={e => { setFilterCompany(e.target.value); setFilterLandlord(''); }} className="input-field !w-auto min-w-[160px]">
+        <select value={filterCompany} onChange={e => { setFilterCompany(e.target.value); setFilterLandlord(''); }} className="input-field w-full sm:!w-auto sm:min-w-[160px]">
           <option value="">Tất cả công ty</option>
           <option value="__none__">Chưa gán công ty</option>
           {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <select value={filterLandlord} onChange={e => setFilterLandlord(e.target.value)} className="input-field !w-auto min-w-[160px]">
+        <select value={filterLandlord} onChange={e => setFilterLandlord(e.target.value)} className="input-field w-full sm:!w-auto sm:min-w-[160px]">
           <option value="">Tất cả chủ nhà</option>
           {landlords.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
         </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="input-field !w-auto min-w-[140px]">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="input-field w-full sm:!w-auto sm:min-w-[140px]">
           <option value="">Tất cả trạng thái</option>
           <option value="PENDING">Chờ duyệt</option>
           <option value="APPROVED">Đã duyệt</option>
           <option value="REJECTED">Từ chối</option>
         </select>
         {hasFilters && (
-          <button onClick={() => { setFilterCompany(''); setFilterLandlord(''); setFilterStatus(''); }}
+          <button onClick={resetFilters}
             className="px-3 py-2 text-sm text-stone-500 hover:text-stone-700">Xoá bộ lọc</button>
         )}
         <span className="self-center text-sm text-stone-400 ml-auto">
@@ -165,7 +164,7 @@ export default function AdminPropertiesPage() {
       {/* Table */}
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[900px]">
             <thead className="bg-stone-50/80">
               <tr>
                 <th className="table-header">Ảnh</th>
@@ -184,7 +183,7 @@ export default function AdminPropertiesPage() {
                   <tr key={p.id} className="hover:bg-stone-50/50 transition-colors">
                     <td className="table-cell">
                       {p.images && p.images.length > 0 ? (
-                        <img src={p.images[0]} alt={p.name} className="w-14 h-14 rounded-xl object-cover border border-stone-200" />
+                        <OptimizedImage src={p.images[0]} alt={p.name} width={56} height={56} className="w-14 h-14 rounded-xl object-cover border border-stone-200" fallback="property" />
                       ) : (
                         <div className="w-14 h-14 rounded-xl bg-stone-100 flex items-center justify-center text-stone-400 text-xl">🏢</div>
                       )}
@@ -253,6 +252,10 @@ export default function AdminPropertiesPage() {
           </table>
         </div>
       </div>
+
+      {pagination && (
+        <Pagination page={page} totalPages={pagination.totalPages} total={pagination.total} onPageChange={handlePageChange} />
+      )}
 
       {/* Modal */}
       {showModal && (

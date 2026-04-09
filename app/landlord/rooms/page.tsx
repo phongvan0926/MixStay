@@ -1,8 +1,12 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import RoomTypeForm from '@/components/forms/RoomTypeForm';
+import Pagination from '@/components/ui/Pagination';
+import OptimizedImage from '@/components/ui/OptimizedImage';
+import { useRoomTypes, useProperties, useInquiries } from '@/hooks/useData';
+import { SkeletonCardGrid } from '@/components/ui/Skeleton';
 
 const ROOM_TYPE_LABELS: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1K1N',
@@ -10,10 +14,13 @@ const ROOM_TYPE_LABELS: Record<string, string> = {
 };
 
 export default function LandlordRoomsPage() {
-  const [roomTypes, setRoomTypes] = useState<any[]>([]);
-  const [properties, setProperties] = useState<any[]>([]);
-  const [inquiries, setInquiries] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+
+  const { roomTypes, pagination, isLoading: loading, mutate } = useRoomTypes({ page: String(page), limit: '20' });
+  const { properties } = useProperties({ limit: '200' });
+  const { inquiries, mutate: mutateInquiries } = useInquiries();
+
+  // Modal states
   const [showModal, setShowModal] = useState(false);
   const [editingRoomType, setEditingRoomType] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -25,20 +32,7 @@ export default function LandlordRoomsPage() {
   const [editAvailableUnits, setEditAvailableUnits] = useState(0);
   const [editAvailableNames, setEditAvailableNames] = useState('');
 
-  const fetchData = async () => {
-    const [roomsRes, propsRes, inqRes] = await Promise.all([
-      fetch('/api/rooms'), fetch('/api/properties'),
-      fetch('/api/inquiries').catch(() => ({ json: () => [] })),
-    ]);
-    const roomsData = await roomsRes.json();
-    setRoomTypes(Array.isArray(roomsData) ? roomsData : []);
-    const propsData = await propsRes.json();
-    setProperties(Array.isArray(propsData) ? propsData : []);
-    try { const inqData = await inqRes.json(); setInquiries(Array.isArray(inqData) ? inqData : []); } catch { setInquiries([]); }
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchData(); }, []);
+  const handlePageChange = (newPage: number) => { setPage(newPage); };
 
   const openCreate = () => {
     setEditingRoomType(null);
@@ -62,7 +56,7 @@ export default function LandlordRoomsPage() {
         if (res.ok) {
           toast.success('Đã cập nhật loại phòng!');
           setShowModal(false);
-          fetchData();
+          mutate();
         } else {
           toast.error('Lỗi cập nhật');
         }
@@ -75,7 +69,7 @@ export default function LandlordRoomsPage() {
         if (res.ok) {
           toast.success('Đã thêm loại phòng! Chờ Admin duyệt.');
           setShowModal(false);
-          fetchData();
+          mutate();
         } else {
           toast.error('Lỗi thêm loại phòng');
         }
@@ -92,7 +86,7 @@ export default function LandlordRoomsPage() {
       body: JSON.stringify({ id, isAvailable: !current }),
     });
     toast.success(!current ? 'Đã mở loại phòng' : 'Đã tắt loại phòng');
-    fetchData();
+    mutate();
   };
 
   // Inline edit: save available units + names
@@ -109,7 +103,7 @@ export default function LandlordRoomsPage() {
     });
     toast.success('Đã cập nhật phòng trống!');
     setEditingAvailable(null);
-    fetchData();
+    mutate();
   };
 
   // Reply inquiry
@@ -119,10 +113,10 @@ export default function LandlordRoomsPage() {
       body: JSON.stringify({ id: inqId, reply }),
     });
     toast.success('Đã phản hồi!');
-    fetchData();
+    mutate(); mutateInquiries();
   };
 
-  if (loading) return <div className="animate-pulse text-stone-400 p-8">Đang tải...</div>;
+  if (loading) return <div className="p-8"><SkeletonCardGrid count={6} /></div>;
 
   const pendingInquiries = inquiries.filter((i: any) => !i.reply);
   const totalAvailable = roomTypes.reduce((sum, rt) => sum + (rt.isAvailable ? (rt.availableUnits || 0) : 0), 0);
@@ -134,7 +128,7 @@ export default function LandlordRoomsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="font-display text-2xl font-bold">Loại phòng</h1>
           <p className="text-sm text-stone-500 mt-1">
@@ -151,7 +145,7 @@ export default function LandlordRoomsPage() {
               </span>
             </button>
           )}
-          <button onClick={openCreate} className="btn-primary">
+          <button onClick={openCreate} className="btn-primary flex-1 sm:flex-none">
             + Thêm loại phòng
           </button>
         </div>
@@ -217,8 +211,9 @@ export default function LandlordRoomsPage() {
               {/* Cover image */}
               <div className="relative -mx-5 -mt-5 mb-4 h-40 overflow-hidden">
                 {coverImage ? (
-                  <img src={coverImage} alt={rt.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <OptimizedImage src={coverImage} alt={rt.name} fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw" />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-violet-100 to-violet-50 flex items-center justify-center">
                     <span className="text-4xl opacity-50">🏠</span>
@@ -357,6 +352,10 @@ export default function LandlordRoomsPage() {
           </div>
         )}
       </div>
+
+      {pagination && (
+        <Pagination page={page} totalPages={pagination.totalPages} total={pagination.total} onPageChange={handlePageChange} />
+      )}
 
       {/* Modal — RoomTypeForm */}
       {showModal && (

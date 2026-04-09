@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { applyRateLimit } from '@/lib/rate-limit';
 
 // POST /api/rooms/import — bulk import room types from parsed Excel data
 export async function POST(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   try {
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== 'ADMIN') {

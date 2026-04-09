@@ -1,23 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hash } from 'bcryptjs';
 import prisma from '@/lib/prisma';
+import { applyRateLimit } from '@/lib/rate-limit';
+import { registerSchema, validateBody } from '@/lib/validations';
 
 export async function POST(req: NextRequest) {
-  try {
-    const { name, email, phone, password, role } = await req.json();
+  const rateLimited = applyRateLimit(req, 'auth');
+  if (rateLimited) return rateLimited;
 
-    if (!name || !email || !password) {
-      return NextResponse.json({ error: 'Thiếu thông tin bắt buộc' }, { status: 400 });
+  try {
+    const body = await req.json();
+    const validated = validateBody(registerSchema, body);
+    if (!validated.success) {
+      return NextResponse.json({ error: validated.error }, { status: 400 });
     }
+
+    const { name, email, phone, password, role } = validated.data;
 
     const exists = await prisma.user.findUnique({ where: { email } });
     if (exists) {
       return NextResponse.json({ error: 'Email đã được sử dụng' }, { status: 400 });
-    }
-
-    const validRoles = ['BROKER', 'LANDLORD', 'CUSTOMER'];
-    if (!validRoles.includes(role)) {
-      return NextResponse.json({ error: 'Vai trò không hợp lệ' }, { status: 400 });
     }
 
     const hashedPassword = await hash(password, 12);

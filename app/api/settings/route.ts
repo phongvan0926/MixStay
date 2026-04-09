@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { applyRateLimit } from '@/lib/rate-limit';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   try {
     const settings = await prisma.setting.findMany();
     const map: Record<string, string> = {};
@@ -13,6 +17,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   try {
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== 'ADMIN') {

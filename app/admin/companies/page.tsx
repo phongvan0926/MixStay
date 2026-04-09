@@ -1,27 +1,19 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { formatDate } from '@/lib/utils';
+import { useCompanies } from '@/hooks/useData';
+import { SkeletonCardGrid } from '@/components/ui/Skeleton';
 
 const EMPTY_FORM = { name: '', description: '', phone: '', email: '', address: '', zaloGroupLink: '', isActive: true };
 
 export default function AdminCompaniesPage() {
-  const [companies, setCompanies] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { companies, isLoading: loading, mutate } = useCompanies();
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [submitting, setSubmitting] = useState(false);
-
-  const fetchData = async () => {
-    const res = await fetch('/api/companies');
-    const data = await res.json();
-    setCompanies(Array.isArray(data) ? data : []);
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchData(); }, []);
 
   const filtered = companies.filter(c => {
     if (!search.trim()) return true;
@@ -52,7 +44,7 @@ export default function AdminCompaniesPage() {
       if (!res.ok) { toast.error(data.error); return; }
       toast.success(editItem ? 'Đã cập nhật công ty' : 'Đã thêm công ty mới');
       setShowModal(false);
-      fetchData();
+      mutate();
     } finally { setSubmitting(false); }
   };
 
@@ -62,7 +54,7 @@ export default function AdminCompaniesPage() {
     const data = await res.json();
     if (!res.ok) { toast.error(data.error); return; }
     toast.success('Đã xoá công ty');
-    fetchData();
+    mutate();
   };
 
   const getRoomTypeCount = (c: any) => {
@@ -71,12 +63,12 @@ export default function AdminCompaniesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="font-display text-2xl font-bold text-stone-900">Hệ thống công ty</h1>
           <p className="text-sm text-stone-500 mt-0.5">{companies.length} công ty</p>
         </div>
-        <button onClick={openAdd} className="btn-primary flex items-center gap-2">
+        <button onClick={openAdd} className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
@@ -94,7 +86,7 @@ export default function AdminCompaniesPage() {
       </div>
 
       {loading ? (
-        <div className="animate-pulse text-stone-400 p-8 text-center">Đang tải...</div>
+        <SkeletonCardGrid count={6} />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map(c => (
@@ -185,7 +177,7 @@ export default function AdminCompaniesPage() {
                 <input type="text" required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   className="input-field w-full" placeholder="VD: Công ty ABC" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-stone-700 mb-1">SĐT liên hệ</label>
                   <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}

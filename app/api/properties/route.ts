@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { getPaginationParams, paginatedResponse } from '@/lib/pagination';
+import { applyRateLimit } from '@/lib/rate-limit';
+import { propertyCreateSchema, propertyUpdateSchema, validateBody } from '@/lib/validations';
 
 export async function GET(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   try {
     const session = await getServerSession(authOptions);
     const url = new URL(req.url);
@@ -31,27 +37,58 @@ export async function GET(req: NextRequest) {
     const companyId = url.searchParams.get('companyId');
     if (companyId) where.companyId = companyId;
 
-    const properties = await prisma.property.findMany({
-      where,
-      include: {
-        landlord: { select: { id: true, name: true, phone: true, email: true } },
-        roomTypes: { select: { id: true, isAvailable: true, priceMonthly: true, availableUnits: true, totalUnits: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { page, limit, skip } = getPaginationParams(url);
 
-    return NextResponse.json(properties);
+    const [properties, total] = await Promise.all([
+      prisma.property.findMany({
+        where,
+        include: {
+          landlord: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+              email: true,
+              // password is NOT selected
+            },
+          },
+          roomTypes: {
+            select: {
+              id: true,
+              isAvailable: true,
+              priceMonthly: true,
+              availableUnits: true,
+              totalUnits: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.property.count({ where }),
+    ]);
+
+    return NextResponse.json(paginatedResponse(properties, total, page, limit));
   } catch (error) {
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   try {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
+    const validated = validateBody(propertyCreateSchema, body);
+    if (!validated.success) {
+      return NextResponse.json({ error: validated.error }, { status: 400 });
+    }
+
     const landlordId = session.user.role === 'LANDLORD' ? session.user.id : body.landlordId;
 
     const property = await prisma.property.create({
@@ -87,11 +124,19 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   try {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
+    const validated = validateBody(propertyUpdateSchema, body);
+    if (!validated.success) {
+      return NextResponse.json({ error: validated.error }, { status: 400 });
+    }
+
     const { id, ...data } = body;
 
     // Verify ownership
@@ -132,6 +177,9 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   try {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

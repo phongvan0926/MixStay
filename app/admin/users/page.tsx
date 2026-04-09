@@ -1,8 +1,11 @@
 'use client';
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
 import { formatDate, getRoleLabel, getRoleColor } from '@/lib/utils';
+import Pagination from '@/components/ui/Pagination';
+import { useUsers } from '@/hooks/useData';
+import { SkeletonStats, SkeletonCardGrid } from '@/components/ui/Skeleton';
 
 const ROLE_AVATAR_COLORS: Record<string, string> = {
   ADMIN: 'bg-purple-500',
@@ -26,8 +29,10 @@ export default function AdminUsersPage() {
   const { data: session } = useSession();
   const currentUserId = (session?.user as any)?.id;
 
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+
+  const { users: rawUsers, pagination, isLoading: loading, mutate } = useUsers({ page: String(page), limit: '20' });
+  const users: User[] = rawUsers;
 
   // Filters & sort
   const [search, setSearch] = useState('');
@@ -46,15 +51,7 @@ export default function AdminUsersPage() {
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const fetchData = async () => {
-    setLoading(true);
-    const res = await fetch('/api/users');
-    const data = await res.json();
-    setUsers(Array.isArray(data) ? data : []);
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchData(); }, []);
+  const handlePageChange = (newPage: number) => { setPage(newPage); };
 
   // Client-side filter + sort
   const filtered = useMemo(() => {
@@ -130,7 +127,7 @@ export default function AdminUsersPage() {
 
       toast.success(editUser ? 'Đã cập nhật người dùng' : 'Đã thêm người dùng mới');
       closeModal();
-      fetchData();
+      mutate();
     } finally {
       setSubmitting(false);
     }
@@ -146,7 +143,7 @@ export default function AdminUsersPage() {
       if (!res.ok) { toast.error(data.error || 'Lỗi'); return; }
       toast.success(data.message);
       setDeleteTarget(null);
-      fetchData();
+      mutate();
     } finally {
       setDeleting(false);
     }
@@ -155,12 +152,12 @@ export default function AdminUsersPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="font-display text-2xl font-bold text-stone-900">Quản lý người dùng</h1>
           <p className="text-sm text-stone-500 mt-0.5">{stats.total} người dùng · {stats.active} đang hoạt động</p>
         </div>
-        <button onClick={openAdd} className="btn-primary flex items-center gap-2">
+        <button onClick={openAdd} className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
@@ -216,7 +213,7 @@ export default function AdminUsersPage() {
 
       {/* Users grid */}
       {loading ? (
-        <div className="animate-pulse text-stone-400 p-8 text-center">Đang tải...</div>
+        <div><SkeletonStats count={4} /><div className="mt-6"><SkeletonCardGrid count={6} /></div></div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map(u => (
@@ -282,6 +279,10 @@ export default function AdminUsersPage() {
             </div>
           )}
         </div>
+      )}
+
+      {pagination && (
+        <Pagination page={page} totalPages={pagination.totalPages} total={pagination.total} onPageChange={handlePageChange} />
       )}
 
       {/* ===== ADD/EDIT MODAL ===== */}

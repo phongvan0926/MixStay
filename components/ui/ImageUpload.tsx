@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef, useCallback } from 'react';
 import toast from 'react-hot-toast';
+import OptimizedImage from '@/components/ui/OptimizedImage';
 
 interface ImageUploadProps {
   images: string[];
@@ -106,7 +107,7 @@ export default function ImageUpload({ images, onChange, maxImages = 10, folder }
               onDrop={() => handleReorderDrop(i)}
               onDragEnd={() => { setDragIdx(null); setDragOverIdx(null); }}
             >
-              <img src={url} alt={`Ảnh ${i + 1}`} className="w-full h-full object-cover" />
+              <OptimizedImage src={url} alt={`Ảnh ${i + 1}`} fill className="object-cover" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" />
               {/* Overlay on hover */}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all" />
               {/* Badge for first image */}

@@ -52,6 +52,8 @@ model User {
   sentInquiries   RoomInquiry[] @relation("BrokerInquiries")
   notifications   Notification[]
 
+  @@index([role])
+  @@index([isActive])
   @@map("users")
 }
 
@@ -145,6 +147,11 @@ model Property {
   landlord      User           @relation("LandlordProperties", fields: [landlordId], references: [id])
   roomTypes     RoomType[]
 
+  @@index([landlordId])
+  @@index([companyId])
+  @@index([district])
+  @@index([status])
+  @@index([status, district])
   @@map("properties")
 }
 
@@ -184,6 +191,12 @@ model RoomType {
   shareLinks          ShareLink[]
   inquiries           RoomInquiry[]
 
+  @@index([propertyId])
+  @@index([isAvailable])
+  @@index([isApproved])
+  @@index([priceMonthly])
+  @@index([typeName])
+  @@index([isAvailable, isApproved, priceMonthly])
   @@map("room_types")
 }
 
@@ -211,6 +224,10 @@ model Deal {
   broker            User       @relation("BrokerDeals", fields: [brokerId], references: [id])
   customer          User?      @relation("CustomerDeals", fields: [customerId], references: [id])
 
+  @@index([brokerId])
+  @@index([roomTypeId])
+  @@index([status])
+  @@index([createdAt])
   @@map("deals")
 }
 
@@ -229,6 +246,9 @@ model ShareLink {
   roomType    RoomType?  @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
   broker      User       @relation(fields: [brokerId], references: [id])
 
+  @@index([token])
+  @@index([brokerId])
+  @@index([roomTypeId])
   @@map("share_links")
 }
 
@@ -252,6 +272,8 @@ model RoomInquiry {
   roomType    RoomType  @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
   broker      User      @relation("BrokerInquiries", fields: [brokerId], references: [id])
 
+  @@index([roomTypeId])
+  @@index([brokerId])
   @@map("room_inquiries")
 }
 
@@ -267,5 +289,7 @@ model Notification {
 
   user      User     @relation(fields: [userId], references: [id])
 
+  @@index([userId, isRead])
+  @@index([createdAt])
   @@map("notifications")
 }

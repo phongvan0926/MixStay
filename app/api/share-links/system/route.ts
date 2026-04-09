@@ -3,9 +3,13 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { nanoid } from 'nanoid';
+import { applyRateLimit } from '@/lib/rate-limit';
 
 // GET /api/share-links/system?token=xxx — public: lấy tất cả RoomType trống của landlord
 export async function GET(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   try {
     const url = new URL(req.url);
     const token = url.searchParams.get('token');
@@ -66,6 +70,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/share-links/system — tạo system share link (landlord/admin only)
 export async function POST(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   try {
     const session = await getServerSession(authOptions);
     if (!session) {

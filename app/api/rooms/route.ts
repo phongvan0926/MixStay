@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { getPaginationParams, paginatedResponse } from '@/lib/pagination';
+import { applyRateLimit } from '@/lib/rate-limit';
+import { roomTypeCreateSchema, roomTypeUpdateSchema, validateBody } from '@/lib/validations';
 
 export async function GET(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   try {
     const session = await getServerSession(authOptions);
     const url = new URL(req.url);
@@ -74,52 +80,103 @@ export async function GET(req: NextRequest) {
       where.property = { ...where.property, landlordId: session.user.id };
     }
 
-    const roomTypes = await prisma.roomType.findMany({
-      where,
-      include: {
-        property: {
-          include: {
-            company: {
-              select: { id: true, name: true, zaloGroupLink: true },
-            },
-            landlord: {
-              select: {
-                id: true, name: true,
-                phone: session?.user?.role === 'ADMIN' || session?.user?.role === 'BROKER',
+    const isBrokerOrAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'BROKER';
+    const isCustomerOrPublic = !session || session?.user?.role === 'CUSTOMER';
+
+    const { page, limit, skip } = getPaginationParams(url);
+
+    const [roomTypes, total] = await Promise.all([
+      prisma.roomType.findMany({
+        where,
+        select: {
+          id: true,
+          propertyId: true,
+          name: true,
+          typeName: true,
+          areaSqm: true,
+          priceMonthly: true,
+          deposit: true,
+          description: true,
+          amenities: true,
+          images: true,
+          totalUnits: true,
+          availableUnits: true,
+          availableRoomNames: true,
+          isAvailable: true,
+          isApproved: true,
+          commissionJson: isBrokerOrAdmin ? true : false,
+          shortTermAllowed: true,
+          shortTermMonths: true,
+          shortTermPrice: true,
+          landlordNotes: isCustomerOrPublic ? false : true,
+          viewCount: isBrokerOrAdmin ? true : false,
+          createdAt: true,
+          updatedAt: true,
+          property: {
+            select: {
+              id: true,
+              name: true,
+              district: true,
+              streetName: true,
+              city: true,
+              amenities: true,
+              images: true,
+              totalFloors: true,
+              parkingCar: true,
+              parkingBike: true,
+              evCharging: true,
+              petAllowed: true,
+              foreignerOk: true,
+              status: true,
+              // Only broker/admin see fullAddress, coords, zaloPhone
+              ...(isBrokerOrAdmin ? {
+                fullAddress: true,
+                latitude: true,
+                longitude: true,
+                zaloPhone: true,
+                landlordNotes: true,
+                companyId: true,
+              } : {}),
+              company: {
+                select: { id: true, name: true, zaloGroupLink: true },
+              },
+              landlord: {
+                select: {
+                  id: true,
+                  name: true,
+                  // Only broker/admin see landlord phone/email
+                  ...(isBrokerOrAdmin ? { phone: true, email: true } : {}),
+                },
               },
             },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.roomType.count({ where }),
+    ]);
 
-    // Strip sensitive data for non-broker/admin users
-    const sanitized = roomTypes.map(rt => {
-      const isBrokerOrAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'BROKER';
-      return {
-        ...rt,
-        property: {
-          ...rt.property,
-          fullAddress: isBrokerOrAdmin ? rt.property.fullAddress : undefined,
-          latitude: isBrokerOrAdmin ? rt.property.latitude : undefined,
-          longitude: isBrokerOrAdmin ? rt.property.longitude : undefined,
-        },
-      };
-    });
-
-    return NextResponse.json(sanitized);
+    return NextResponse.json(paginatedResponse(roomTypes, total, page, limit));
   } catch (error) {
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   try {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
+    const validated = validateBody(roomTypeCreateSchema, body);
+    if (!validated.success) {
+      return NextResponse.json({ error: validated.error }, { status: 400 });
+    }
 
     const roomType = await prisma.roomType.create({
       data: {
@@ -152,11 +209,19 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   try {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
+    const validated = validateBody(roomTypeUpdateSchema, body);
+    if (!validated.success) {
+      return NextResponse.json({ error: validated.error }, { status: 400 });
+    }
+
     const { id, ...data } = body;
 
     const roomType = await prisma.roomType.update({
@@ -191,6 +256,9 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   try {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

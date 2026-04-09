@@ -1,8 +1,12 @@
 'use client';
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/lib/utils';
 import RoomTypeForm from '@/components/forms/RoomTypeForm';
+import Pagination from '@/components/ui/Pagination';
+import OptimizedImage from '@/components/ui/OptimizedImage';
+import { useRoomTypes, useProperties, useCompanies } from '@/hooks/useData';
+import { SkeletonTable } from '@/components/ui/Skeleton';
 import * as XLSX from 'xlsx';
 
 const ROOM_TYPE_LABELS: Record<string, string> = {
@@ -127,10 +131,13 @@ function validateRow(row: Record<string, any>, idx: number): string[] {
 }
 
 export default function AdminRoomsPage() {
-  const [rooms, setRooms] = useState<any[]>([]);
-  const [properties, setProperties] = useState<any[]>([]);
-  const [companies, setCompanies] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Pagination
+  const [page, setPage] = useState(1);
+
+  const { roomTypes: rooms, pagination, isLoading: loading, mutate } = useRoomTypes({ page: String(page), limit: '20' });
+  const { properties } = useProperties({ status: 'APPROVED', limit: '200' });
+  const { companies } = useCompanies();
+
   const [showModal, setShowModal] = useState(false);
   const [editingRoom, setEditingRoom] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -149,20 +156,7 @@ export default function AdminRoomsPage() {
   const [filterRoomType, setFilterRoomType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
 
-  const fetchData = async () => {
-    const [roomsRes, propsRes, companiesRes] = await Promise.all([
-      fetch('/api/rooms'), fetch('/api/properties?status=APPROVED'), fetch('/api/companies'),
-    ]);
-    const roomsData = await roomsRes.json();
-    setRooms(Array.isArray(roomsData) ? roomsData : []);
-    const propsData = await propsRes.json();
-    setProperties(Array.isArray(propsData) ? propsData : []);
-    const compData = await companiesRes.json();
-    setCompanies(Array.isArray(compData) ? compData : []);
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchData(); }, []);
+  const handlePageChange = (newPage: number) => { setPage(newPage); };
 
   // Properties filtered by selected company (cascade)
   const filteredProperties = useMemo(() => {
@@ -197,22 +191,22 @@ export default function AdminRoomsPage() {
     try {
       if (editingRoom) {
         const res = await fetch('/api/rooms', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editingRoom.id, ...data }) });
-        if (res.ok) { toast.success('Đã cập nhật phòng!'); setShowModal(false); fetchData(); } else toast.error('Lỗi cập nhật');
+        if (res.ok) { toast.success('Đã cập nhật phòng!'); setShowModal(false); mutate(); } else toast.error('Lỗi cập nhật');
       } else {
         const res = await fetch('/api/rooms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-        if (res.ok) { toast.success('Đã thêm phòng!'); setShowModal(false); fetchData(); } else toast.error('Lỗi thêm phòng');
+        if (res.ok) { toast.success('Đã thêm phòng!'); setShowModal(false); mutate(); } else toast.error('Lỗi thêm phòng');
       }
     } finally { setSubmitting(false); }
   };
 
   const toggleAvailability = async (id: string, current: boolean) => {
     await fetch('/api/rooms', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, isAvailable: !current }) });
-    toast.success(!current ? 'Đã bật phòng' : 'Đã tắt phòng'); fetchData();
+    toast.success(!current ? 'Đã bật phòng' : 'Đã tắt phòng'); mutate();
   };
 
   const toggleApproval = async (id: string, current: boolean) => {
     await fetch('/api/rooms', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, isApproved: !current }) });
-    toast.success(!current ? 'Đã duyệt phòng' : 'Đã huỷ duyệt'); fetchData();
+    toast.success(!current ? 'Đã duyệt phòng' : 'Đã huỷ duyệt'); mutate();
   };
 
   const getCommissionText = (r: any) => {
@@ -285,7 +279,7 @@ export default function AdminRoomsPage() {
       if (res.ok) {
         setImportResult(result.message);
         toast.success(result.message);
-        fetchData();
+        mutate();
       } else {
         toast.error(result.error || 'Lỗi import');
       }
@@ -352,18 +346,18 @@ export default function AdminRoomsPage() {
     toast.success(`Đã xuất ${dataToExport.length} loại phòng ra Excel`);
   };
 
-  if (loading) return <div className="animate-pulse text-stone-400 p-8">Đang tải...</div>;
+  if (loading) return <div className="p-8"><SkeletonTable rows={6} cols={8} /></div>;
 
   const hasFilters = filterCompany || filterProperty || filterRoomType || filterStatus;
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="font-display text-2xl font-bold">Quản lý phòng</h1>
           <p className="text-sm text-stone-500 mt-1">{rooms.length} loại phòng</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Excel buttons */}
           <button onClick={downloadTemplate}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors border border-emerald-200">
@@ -383,21 +377,21 @@ export default function AdminRoomsPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-6">
-        <select className="input-field !w-auto min-w-[160px]" value={filterCompany}
+        <select className="input-field w-full sm:!w-auto sm:min-w-[160px]" value={filterCompany}
           onChange={e => { setFilterCompany(e.target.value); setFilterProperty(''); }}>
           <option value="">Tất cả công ty</option>
           <option value="__none__">Chưa gán công ty</option>
           {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <select className="input-field !w-auto min-w-[180px]" value={filterProperty} onChange={e => setFilterProperty(e.target.value)}>
+        <select className="input-field w-full sm:!w-auto sm:min-w-[180px]" value={filterProperty} onChange={e => setFilterProperty(e.target.value)}>
           <option value="">Tất cả tòa nhà</option>
           {filteredProperties.map((p: any) => <option key={p.id} value={p.id}>{p.name} — {p.district}</option>)}
         </select>
-        <select className="input-field !w-auto min-w-[150px]" value={filterRoomType} onChange={e => setFilterRoomType(e.target.value)}>
+        <select className="input-field w-full sm:!w-auto sm:min-w-[150px]" value={filterRoomType} onChange={e => setFilterRoomType(e.target.value)}>
           <option value="">Tất cả loại phòng</option>
           {Object.entries(ROOM_TYPE_LABELS).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
         </select>
-        <select className="input-field !w-auto min-w-[140px]" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+        <select className="input-field w-full sm:!w-auto sm:min-w-[140px]" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="">Tất cả trạng thái</option>
           <option value="available">Còn trống</option>
           <option value="partial">Sắp trống</option>
@@ -412,7 +406,7 @@ export default function AdminRoomsPage() {
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[1200px]">
             <thead className="bg-stone-50/80">
               <tr>
                 <th className="table-header">Ảnh</th>
@@ -439,7 +433,7 @@ export default function AdminRoomsPage() {
                   <tr key={r.id} className="hover:bg-stone-50/50 transition-colors">
                     <td className="table-cell">
                       {r.images && r.images.length > 0 ? (
-                        <img src={r.images[0]} alt={r.name} className="w-12 h-12 rounded-lg object-cover border border-stone-200" />
+                        <OptimizedImage src={r.images[0]} alt={r.name} width={48} height={48} className="w-12 h-12 rounded-lg object-cover border border-stone-200" />
                       ) : (
                         <div className="w-12 h-12 rounded-lg bg-stone-100 flex items-center justify-center text-stone-400 text-lg">🚪</div>
                       )}
@@ -505,7 +499,7 @@ export default function AdminRoomsPage() {
                         <button onClick={async () => {
                           if (confirm('Xoá phòng này?')) {
                             await fetch(`/api/rooms?id=${r.id}`, { method: 'DELETE' });
-                            toast.success('Đã xoá'); fetchData();
+                            toast.success('Đã xoá'); mutate();
                           }
                         }} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors">Xoá</button>
                       </div>
@@ -522,6 +516,10 @@ export default function AdminRoomsPage() {
           </table>
         </div>
       </div>
+
+      {pagination && (
+        <Pagination page={page} totalPages={pagination.totalPages} total={pagination.total} onPageChange={handlePageChange} />
+      )}
 
       {/* Create/Edit Modal */}
       {showModal && (
@@ -589,7 +587,7 @@ export default function AdminRoomsPage() {
 
               {/* Preview table */}
               <div className="overflow-x-auto border border-stone-200 rounded-xl">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm min-w-[800px]">
                   <thead className="bg-stone-50">
                     <tr>
                       <th className="px-3 py-2 text-left text-xs font-semibold text-stone-600">#</th>
