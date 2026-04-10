@@ -11,9 +11,9 @@ const featuredRooms = [
 ];
 
 const testimonials = [
-  { name: 'Nguyễn Minh Tuấn', role: 'Môi giới', initial: 'T', color: 'bg-brand-100 text-brand-700', content: 'Từ khi dùng MiniZen, mình tiết kiệm cả tiếng mỗi ngày. Kho phòng cập nhật real-time, tạo link gửi khách chỉ 1 click. Thu nhập tăng gấp đôi!' },
-  { name: 'Lê Thị Hoa', role: 'Chủ nhà', initial: 'H', color: 'bg-emerald-100 text-emerald-700', content: 'Đăng phòng lên MiniZen, 3 ngày sau đã có người thuê. Không phải chạy quảng cáo, không mất phí đăng tin. Quản lý phòng rất tiện!' },
-  { name: 'Phạm Văn Đức', role: 'Khách thuê', initial: 'Đ', color: 'bg-amber-100 text-amber-700', content: 'Tìm phòng trên MiniZen nhanh hơn nhiều so với đi hỏi từng nơi. Thông tin rõ ràng, giá minh bạch, không bị hét giá.' },
+  { name: 'Nguyễn Minh Tuấn', role: 'Môi giới', initial: 'T', color: 'bg-brand-100 text-brand-700', content: 'Từ khi dùng MixStay, mình tiết kiệm cả tiếng mỗi ngày. Kho phòng cập nhật real-time, tạo link gửi khách chỉ 1 click. Thu nhập tăng gấp đôi!' },
+  { name: 'Lê Thị Hoa', role: 'Chủ nhà', initial: 'H', color: 'bg-emerald-100 text-emerald-700', content: 'Đăng phòng lên MixStay, 3 ngày sau đã có người thuê. Không phải chạy quảng cáo, không mất phí đăng tin. Quản lý phòng rất tiện!' },
+  { name: 'Phạm Văn Đức', role: 'Khách thuê', initial: 'Đ', color: 'bg-amber-100 text-amber-700', content: 'Tìm phòng trên MixStay nhanh hơn nhiều so với đi hỏi từng nơi. Thông tin rõ ràng, giá minh bạch, không bị hét giá.' },
 ];
 
 function formatPrice(price: number) {
@@ -30,7 +30,7 @@ export default function HomePage() {
             <div className="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center shadow-lg shadow-brand-600/20">
               <span className="text-white font-bold text-base">M</span>
             </div>
-            <span className="font-display font-bold text-xl text-stone-900">MiniZen</span>
+            <span className="font-display font-bold text-xl text-stone-900">MixStay</span>
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">
             <Link href="/login" className="btn-ghost text-sm">Đăng nhập</Link>
@@ -279,7 +279,7 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto relative">
           <div className="text-center mb-10 sm:mb-14">
             <h2 className="font-display text-3xl sm:text-4xl font-bold mb-3">Người dùng nói gì?</h2>
-            <p className="text-stone-500">Hàng trăm người đã tin tưởng sử dụng MiniZen</p>
+            <p className="text-stone-500">Hàng trăm người đã tin tưởng sử dụng MixStay</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-5">
@@ -330,7 +330,7 @@ export default function HomePage() {
                 Sẵn sàng tìm phòng hoàn hảo?
               </h2>
               <p className="text-brand-100 text-base sm:text-lg mb-8 max-w-lg mx-auto">
-                Tham gia cùng hàng ngàn người dùng đang sử dụng MiniZen mỗi ngày.
+                Tham gia cùng hàng ngàn người dùng đang sử dụng MixStay mỗi ngày.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-6">
@@ -362,7 +362,7 @@ export default function HomePage() {
                 <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center">
                   <span className="text-white font-bold text-sm">M</span>
                 </div>
-                <span className="font-display font-bold text-lg text-white">MiniZen</span>
+                <span className="font-display font-bold text-lg text-white">MixStay</span>
               </div>
               <p className="text-sm leading-relaxed">
                 Nền tảng kết nối Chủ nhà, Môi giới và Khách thuê chung cư mini.
@@ -387,7 +387,7 @@ export default function HomePage() {
               <ul className="space-y-2.5 text-sm">
                 <li className="flex items-center gap-2">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                  contact@minizen.vn
+                  contact@mixstay.vn
                 </li>
                 <li className="flex items-center gap-2">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
@@ -402,7 +402,7 @@ export default function HomePage() {
           </div>
 
           <div className="border-t border-stone-800 pt-6 text-center text-sm">
-            <p>&copy; 2026 MiniZen. All Copyright Reserved.</p>
+            <p>&copy; 2026 MixStay. All Copyright Reserved.</p>
           </div>
         </div>
       </footer>

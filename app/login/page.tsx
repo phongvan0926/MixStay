@@ -74,7 +74,7 @@ export default function LoginPage() {
             <div className="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center">
               <span className="text-white font-bold">M</span>
             </div>
-            <span className="font-display font-bold text-xl">MiniZen</span>
+            <span className="font-display font-bold text-xl">MixStay</span>
           </Link>
           <h1 className="font-display text-2xl font-bold">Đăng nhập</h1>
           <p className="text-stone-500 text-sm mt-1">Chào mừng bạn trở lại</p>
@@ -163,9 +163,9 @@ export default function LoginPage() {
           <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-3">Tài khoản demo</p>
           <div className="space-y-2">
             {[
-              { role: 'Admin', email: 'admin@minizen.vn' },
-              { role: 'Môi giới', email: 'broker@minizen.vn' },
-              { role: 'Chủ nhà', email: 'landlord@minizen.vn' },
+              { role: 'Admin', email: 'admin@mixstay.vn' },
+              { role: 'Môi giới', email: 'broker@mixstay.vn' },
+              { role: 'Chủ nhà', email: 'landlord@mixstay.vn' },
             ].map(d => (
               <button key={d.role} onClick={() => setForm({ email: d.email, password: '123456' })}
                 className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-stone-50 transition-colors flex justify-between items-center group">

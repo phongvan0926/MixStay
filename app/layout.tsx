@@ -5,17 +5,17 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'MiniZen - Tìm phòng chung cư mini nhanh nhất',
-    template: '%s | MiniZen',
+    default: 'MixStay - Tìm phòng chung cư mini nhanh nhất',
+    template: '%s | MixStay',
   },
   description: 'Nền tảng kết nối chủ nhà, môi giới và khách thuê chung cư mini. Tìm phòng miễn phí, hoa hồng minh bạch.',
-  keywords: ['chung cư mini', 'thuê phòng', 'Hà Nội', 'phòng trọ', 'môi giới', 'MiniZen'],
+  keywords: ['chung cư mini', 'thuê phòng', 'Hà Nội', 'phòng trọ', 'môi giới', 'MixStay'],
   openGraph: {
-    title: 'MiniZen - Tìm phòng chung cư mini',
+    title: 'MixStay - Tìm phòng chung cư mini',
     description: 'Nền tảng kết nối chủ nhà, môi giới và khách thuê chung cư mini.',
     type: 'website',
     locale: 'vi_VN',
-    siteName: 'MiniZen',
+    siteName: 'MixStay',
   },
 };
 

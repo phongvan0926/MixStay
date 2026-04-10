@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: { token: string } }
 
   const rt = link.roomType;
   const prop = rt.property;
-  const title = `${prop?.name} - ${rt.name} | MiniZen`;
+  const title = `${prop?.name} - ${rt.name} | MixStay`;
   const description = `${rt.name} ${rt.areaSqm}m² tại ${prop?.district}. Giá từ ${(rt.priceMonthly / 1000000).toFixed(1)} triệu/tháng.`;
   const image = rt.images?.[0] || undefined;
 
@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: { params: { token: string } }
       ...(image ? { images: [{ url: image }] } : {}),
       type: 'website',
       locale: 'vi_VN',
-      siteName: 'MiniZen',
+      siteName: 'MixStay',
     },
   };
 }

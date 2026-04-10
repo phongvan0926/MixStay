@@ -59,7 +59,7 @@ export default function RegisterPage() {
             <div className="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center">
               <span className="text-white font-bold">M</span>
             </div>
-            <span className="font-display font-bold text-xl">MiniZen</span>
+            <span className="font-display font-bold text-xl">MixStay</span>
           </Link>
           <h1 className="font-display text-2xl font-bold">Tạo tài khoản</h1>
           <p className="text-stone-500 text-sm mt-1">Tham gia nền tảng quản lý chung cư mini</p>

@@ -137,7 +137,7 @@ export default function SystemShareClient() {
             <div className="w-7 h-7 rounded-lg bg-brand-600 flex items-center justify-center">
               <span className="text-white font-bold text-xs">M</span>
             </div>
-            <span className="font-display font-semibold">MiniZen</span>
+            <span className="font-display font-semibold">MixStay</span>
           </div>
           <span className="text-xs text-stone-400">Kho phòng của {landlord?.name}</span>
         </div>
@@ -309,7 +309,7 @@ export default function SystemShareClient() {
             <p className="text-brand-100 text-sm">Liên hệ qua môi giới để được tư vấn và hẹn xem phòng miễn phí.</p>
           </div>
           <p className="text-xs text-stone-400 mt-6">
-            Powered by MiniZen • Kho phòng của {landlord?.name}
+            Powered by MixStay • Kho phòng của {landlord?.name}
           </p>
         </div>
       </div>

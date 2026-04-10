@@ -1,6 +1,6 @@
 {
-  "name": "MiniZen Manager",
-  "short_name": "MiniZen",
+  "name": "MixStay Manager",
+  "short_name": "MixStay",
   "description": "Quản lý chung cư mini",
   "start_url": "/",
   "display": "standalone",

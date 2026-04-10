@@ -75,7 +75,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center">
                 <span className="text-white font-bold text-sm">M</span>
               </div>
-              <span className="font-display font-semibold text-lg hidden sm:inline">MiniZen</span>
+              <span className="font-display font-semibold text-lg hidden sm:inline">MixStay</span>
             </Link>
             <span className="text-stone-300">|</span>
             <span className="text-sm font-medium text-stone-500">

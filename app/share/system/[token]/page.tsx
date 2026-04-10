@@ -16,8 +16,8 @@ export async function generateMetadata({ params }: { params: { token: string } }
     select: { name: true },
   });
 
-  const title = `Kho phòng của ${landlord?.name || 'Chủ nhà'} | MiniZen`;
-  const description = `Xem tất cả phòng trống cho thuê từ ${landlord?.name || 'chủ nhà'}. Tìm phòng miễn phí trên MiniZen.`;
+  const title = `Kho phòng của ${landlord?.name || 'Chủ nhà'} | MixStay`;
+  const description = `Xem tất cả phòng trống cho thuê từ ${landlord?.name || 'chủ nhà'}. Tìm phòng miễn phí trên MixStay.`;
 
   return {
     title,
@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: { params: { token: string } }
       description,
       type: 'website',
       locale: 'vi_VN',
-      siteName: 'MiniZen',
+      siteName: 'MixStay',
     },
   };
 }

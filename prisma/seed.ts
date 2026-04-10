@@ -10,39 +10,39 @@ async function main() {
 
   // Create users
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@minizen.vn' },
+    where: { email: 'admin@mixstay.vn' },
     update: {},
-    create: { name: 'Admin Công ty', email: 'admin@minizen.vn', phone: '0901000001', password, role: 'ADMIN' },
+    create: { name: 'Admin Công ty', email: 'admin@mixstay.vn', phone: '0901000001', password, role: 'ADMIN' },
   });
 
   const broker1 = await prisma.user.upsert({
-    where: { email: 'broker@minizen.vn' },
+    where: { email: 'broker@mixstay.vn' },
     update: {},
-    create: { name: 'Nguyễn Văn Môi Giới', email: 'broker@minizen.vn', phone: '0901000002', password, role: 'BROKER' },
+    create: { name: 'Nguyễn Văn Môi Giới', email: 'broker@mixstay.vn', phone: '0901000002', password, role: 'BROKER' },
   });
 
   const broker2 = await prisma.user.upsert({
-    where: { email: 'broker2@minizen.vn' },
+    where: { email: 'broker2@mixstay.vn' },
     update: {},
-    create: { name: 'Trần Thị Sale', email: 'broker2@minizen.vn', phone: '0901000005', password, role: 'BROKER' },
+    create: { name: 'Trần Thị Sale', email: 'broker2@mixstay.vn', phone: '0901000005', password, role: 'BROKER' },
   });
 
   const landlord = await prisma.user.upsert({
-    where: { email: 'landlord@minizen.vn' },
+    where: { email: 'landlord@mixstay.vn' },
     update: {},
-    create: { name: 'Lê Văn Chủ Nhà', email: 'landlord@minizen.vn', phone: '0901000003', password, role: 'LANDLORD' },
+    create: { name: 'Lê Văn Chủ Nhà', email: 'landlord@mixstay.vn', phone: '0901000003', password, role: 'LANDLORD' },
   });
 
   const landlord2 = await prisma.user.upsert({
-    where: { email: 'landlord2@minizen.vn' },
+    where: { email: 'landlord2@mixstay.vn' },
     update: {},
-    create: { name: 'Phạm Thị Chủ Nhà', email: 'landlord2@minizen.vn', phone: '0901000006', password, role: 'LANDLORD' },
+    create: { name: 'Phạm Thị Chủ Nhà', email: 'landlord2@mixstay.vn', phone: '0901000006', password, role: 'LANDLORD' },
   });
 
   const customer = await prisma.user.upsert({
-    where: { email: 'customer@minizen.vn' },
+    where: { email: 'customer@mixstay.vn' },
     update: {},
-    create: { name: 'Hoàng Minh Khách', email: 'customer@minizen.vn', phone: '0901000004', password, role: 'CUSTOMER' },
+    create: { name: 'Hoàng Minh Khách', email: 'customer@mixstay.vn', phone: '0901000004', password, role: 'CUSTOMER' },
   });
 
   console.log('✅ Users created');
@@ -248,10 +248,10 @@ async function main() {
   console.log('✅ Settings created');
   console.log('\n🎉 Seed complete!');
   console.log('\n📋 Demo accounts (password: 123456):');
-  console.log('   Admin:    admin@minizen.vn');
-  console.log('   Broker:   broker@minizen.vn');
-  console.log('   Landlord: landlord@minizen.vn');
-  console.log('   Customer: customer@minizen.vn');
+  console.log('   Admin:    admin@mixstay.vn');
+  console.log('   Broker:   broker@mixstay.vn');
+  console.log('   Landlord: landlord@mixstay.vn');
+  console.log('   Customer: customer@mixstay.vn');
 }
 
 main()

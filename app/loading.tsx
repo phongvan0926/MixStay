@@ -7,7 +7,7 @@ export default function Loading() {
           <div className="absolute inset-0 rounded-full border-4 border-brand-600 border-t-transparent animate-spin" />
         </div>
         <p className="text-sm font-medium text-brand-700" style={{ fontFamily: 'var(--font-display)' }}>
-          MiniAppart
+          MixStay
         </p>
         <p className="text-xs text-stone-400 mt-1">Dang tai...</p>
       </div>

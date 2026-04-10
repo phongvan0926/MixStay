@@ -1,7 +1,7 @@
 # CLAUDE.md - Hướng dẫn cho Claude Code
 
 ## Dự án
-MiniAppart Manager v2 - Nền tảng phân phối & quản lý chung cư mini.
+MixStay Manager v2 - Nền tảng phân phối & quản lý chung cư mini.
 Kết nối 4 vai trò: Admin (Công ty), Môi giới, Chủ nhà, Khách thuê.
 
 ## Tech stack
@@ -96,7 +96,7 @@ middleware.ts       → Route protection theo role
 - Dùng ở đầu mỗi API route handler
 
 ## SEO & PWA
-- app/layout.tsx: metadata mặc định với title template '%s | MiniZen'
+- app/layout.tsx: metadata mặc định với title template '%s | MixStay'
 - app/share/[token]/page.tsx: generateMetadata() dynamic OG tags (ảnh, giá, khu vực)
 - app/share/system/[token]/page.tsx: generateMetadata() cho kho phòng
 - app/sitemap.ts, app/robots.ts

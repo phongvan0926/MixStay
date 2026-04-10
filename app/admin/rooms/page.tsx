@@ -106,7 +106,7 @@ function downloadTemplate() {
   ws2['!cols'] = [{ wch: 80 }];
   XLSX.utils.book_append_sheet(wb, ws2, 'Hướng dẫn');
 
-  XLSX.writeFile(wb, 'MiniZen_Import_Template.xlsx');
+  XLSX.writeFile(wb, 'MixStay_Import_Template.xlsx');
 }
 
 function parseExcelRow(row: any): Record<string, any> {
@@ -340,8 +340,8 @@ export default function AdminRoomsPage() {
 
     const hasFilters = filterCompany || filterProperty || filterRoomType || filterStatus;
     const filename = hasFilters
-      ? `MiniZen_Phong_Filtered_${new Date().toISOString().slice(0, 10)}.xlsx`
-      : `MiniZen_Phong_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      ? `MixStay_Phong_Filtered_${new Date().toISOString().slice(0, 10)}.xlsx`
+      : `MixStay_Phong_${new Date().toISOString().slice(0, 10)}.xlsx`;
     XLSX.writeFile(wb, filename);
     toast.success(`Đã xuất ${dataToExport.length} loại phòng ra Excel`);
   };

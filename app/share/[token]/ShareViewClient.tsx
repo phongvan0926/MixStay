@@ -202,7 +202,7 @@ export default function ShareViewClient() {
             <div className="w-7 h-7 rounded-lg bg-brand-600 flex items-center justify-center">
               <span className="text-white font-bold text-xs">M</span>
             </div>
-            <span className="font-display font-semibold">MiniZen</span>
+            <span className="font-display font-semibold">MixStay</span>
           </div>
           <span className="text-xs text-stone-400">Chia sẻ bởi {data.broker?.name}</span>
         </div>
@@ -382,7 +382,7 @@ export default function ShareViewClient() {
         </div>
 
         <p className="text-center text-xs text-stone-400 mt-8 mb-4">
-          Powered by MiniZen • Link chia sẻ bởi {data.broker?.name}
+          Powered by MixStay • Link chia sẻ bởi {data.broker?.name}
         </p>
       </div>
     </div>
