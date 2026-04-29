@@ -1,26 +1,26 @@
 'use client';
 import { useCallback } from 'react';
 
-const MIN = 1_000_000;
-const MAX = 20_000_000;
+const MIN = 0;
+const MAX = 50_000_000;
 const STEP = 500_000;
 
 const fmt = new Intl.NumberFormat('vi-VN');
 
 interface Props {
-  /** value in VND. Empty string = "không giới hạn" */
+  /** value in VND. Empty string = "không giới hạn" (handle ở MIN cho min, MAX cho max) */
   minValue: string;
   maxValue: string;
+  /** Parent quyết flow: live update vào filter applied, hoặc lưu vào pending state. */
   onChange: (next: { min: string; max: string }) => void;
 }
 
 /**
- * Dual-handle range slider for VND price (1tr-20tr, step 500k).
- * Uses 2 overlapped <input type="range"> with absolute positioning.
- * Mobile-friendly: 24px touch target on handles via custom CSS.
+ * Dual-handle range slider for VND price (0-50tr, step 500k).
+ * Dumb component — parent controls whether onChange triggers fetch or just local state.
  */
 export default function PriceRangeSlider({ minValue, maxValue, onChange }: Props) {
-  // Resolve current numeric values, defaulting to bounds when empty
+  // Resolve numeric values, defaulting to bounds when empty
   const minNum = minValue ? Math.max(MIN, Math.min(MAX, parseInt(minValue, 10) || MIN)) : MIN;
   const maxNum = maxValue ? Math.max(MIN, Math.min(MAX, parseInt(maxValue, 10) || MAX)) : MAX;
 
@@ -43,9 +43,18 @@ export default function PriceRangeSlider({ minValue, maxValue, onChange }: Props
     });
   }, [minNum, minValue, onChange]);
 
-  // Position percentages for the highlighted track segment between handles
+  // Position percentages for the highlighted track segment
   const minPct = ((minNum - MIN) / (MAX - MIN)) * 100;
   const maxPct = ((maxNum - MIN) / (MAX - MIN)) * 100;
+
+  // Smart label
+  const atLowerBound = minNum <= MIN;
+  const atUpperBound = maxNum >= MAX;
+  let label: string;
+  if (atLowerBound && atUpperBound) label = 'Mọi mức giá';
+  else if (atLowerBound) label = `Đến ${fmt.format(maxNum)}₫`;
+  else if (atUpperBound) label = `Từ ${fmt.format(minNum)}₫`;
+  else label = `${fmt.format(minNum)}₫ — ${fmt.format(maxNum)}₫`;
 
   return (
     <div className="w-full">
@@ -58,7 +67,7 @@ export default function PriceRangeSlider({ minValue, maxValue, onChange }: Props
           style={{ left: `${minPct}%`, right: `${100 - maxPct}%` }}
         />
 
-        {/* Min handle — must be on top so it's clickable on the left edge */}
+        {/* Min handle — z-index swap so right-edge min handle still grabbable */}
         <input
           type="range"
           min={MIN}
@@ -84,13 +93,10 @@ export default function PriceRangeSlider({ minValue, maxValue, onChange }: Props
         />
       </div>
 
-      <div className="flex items-center justify-between mt-2 text-sm">
-        <span className="font-semibold text-stone-700">{fmt.format(minNum)}₫</span>
-        <span className="text-stone-400">—</span>
-        <span className="font-semibold text-stone-700">{fmt.format(maxNum)}₫</span>
+      <div className="mt-2 text-sm font-semibold text-stone-700 text-center">
+        {label}
       </div>
 
-      {/* Slider thumb styling — needs raw CSS for cross-browser appearance */}
       <style jsx>{`
         .price-slider::-webkit-slider-thumb {
           -webkit-appearance: none;

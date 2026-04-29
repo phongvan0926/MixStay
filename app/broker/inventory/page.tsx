@@ -332,6 +332,9 @@ export default function BrokerInventoryPage() {
     parkingCar: false, foreignerOk: false, evCharging: false, petAllowed: false,
     shortTerm: false, status: 'available' as 'available' | 'all',
   });
+  // Pending price range — slider chỉ update local, đợi user bấm "Lọc" mới apply
+  const [pendingPrice, setPendingPrice] = useState({ min: '', max: '' });
+  const priceDirty = pendingPrice.min !== filter.minPrice || pendingPrice.max !== filter.maxPrice;
 
   // Build SWR params from filter
   const swrParams: Record<string, string> = { page: String(page), limit: '20' };
@@ -352,7 +355,11 @@ export default function BrokerInventoryPage() {
   const { stats } = useDashboardStats();
   const { companies } = useCompanies();
 
-  const handleFilter = () => { setPage(1); };
+  const handleFilter = () => {
+    // Apply pending price range vào filter chính (trigger SWR re-fetch)
+    setFilter(prev => ({ ...prev, minPrice: pendingPrice.min, maxPrice: pendingPrice.max }));
+    setPage(1);
+  };
 
   const toggleFilter = (key: string, value: any) => {
     setFilter(prev => ({ ...prev, [key]: value }));
@@ -448,13 +455,18 @@ export default function BrokerInventoryPage() {
           <DistrictPills value={filter.district} onChange={d => { setFilter(prev => ({ ...prev, district: d })); setPage(1); }} />
         </div>
 
-        {/* Row 3: Khoảng giá - dual range slider */}
+        {/* Row 3: Khoảng giá - dual range slider (kéo → pending, bấm "Lọc" để apply) */}
         <div className="mb-4 max-w-md">
-          <label className="block text-xs font-medium text-stone-500 mb-2">Khoảng giá thuê</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-xs font-medium text-stone-500">Khoảng giá thuê</label>
+            {priceDirty && (
+              <span className="text-[11px] font-medium text-amber-600">⚠️ Chưa áp dụng — bấm Lọc</span>
+            )}
+          </div>
           <PriceRangeSlider
-            minValue={filter.minPrice}
-            maxValue={filter.maxPrice}
-            onChange={({ min, max }) => setFilter(prev => ({ ...prev, minPrice: min, maxPrice: max }))}
+            minValue={pendingPrice.min}
+            maxValue={pendingPrice.max}
+            onChange={setPendingPrice}
           />
         </div>
 

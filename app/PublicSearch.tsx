@@ -4,6 +4,7 @@ import Link from 'next/link';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import { formatCurrency } from '@/lib/utils';
 import DistrictPills from '@/components/ui/DistrictPills';
+import PriceRangeSlider from '@/components/ui/PriceRangeSlider';
 
 const ROOM_TYPES: { value: string; label: string }[] = [
   { value: 'don', label: 'Phòng đơn' },
@@ -181,8 +182,8 @@ export default function PublicSearch() {
             <DistrictPills value={district} onChange={setDistrict} />
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="col-span-2 md:col-span-1">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div>
               <label className="block text-xs font-medium text-stone-500 mb-1">Kiểu phòng</label>
               <select
                 className="input-field text-sm"
@@ -195,32 +196,15 @@ export default function PublicSearch() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-stone-500 mb-1">Giá từ (₫)</label>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={0}
-                placeholder="VD: 2.000.000"
-                className="input-field text-sm"
-                value={minPrice}
-                onChange={e => setMinPrice(e.target.value)}
+              <label className="block text-xs font-medium text-stone-500 mb-1">Khoảng giá thuê</label>
+              <PriceRangeSlider
+                minValue={minPrice}
+                maxValue={maxPrice}
+                onChange={({ min, max }) => { setMinPrice(min); setMaxPrice(max); }}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-stone-500 mb-1">Giá đến (₫)</label>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={0}
-                placeholder="VD: 8.000.000"
-                className="input-field text-sm"
-                value={maxPrice}
-                onChange={e => setMaxPrice(e.target.value)}
-              />
-            </div>
-
-            <div className="flex items-end">
               <button
                 type="submit"
                 disabled={loading}

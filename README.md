@@ -224,6 +224,13 @@ mixstay/
 
 ## Changelog
 
+### v8.3.1 — 2026-04-29 (hotfix)
+- **PriceRangeSlider 0 - 50.000.000 step 500.000:** đổi range từ 1tr-20tr sang 0-50tr để cover hết spectrum thị trường (phòng 0₫ rất hiếm nhưng giữ slot, phòng cao cấp lên tới 50tr).
+- **Explicit apply (no live filter):**
+  - **Broker:** thêm `pendingPrice` state. Slider onChange → set pending; bấm nút **Lọc** → copy pending vào filter chính → SWR re-fetch. Badge cảnh báo "⚠️ Chưa áp dụng — bấm Lọc" khi pending lệch applied.
+  - **Public:** đổi 2 input số `priceMin/priceMax` sang slider. Public đã có nút **Tìm phòng** + form `onSubmit={handleSearch}` từ trước → slider onChange chỉ set state, fetch chỉ trigger khi bấm submit. Nhất quán với pills + features (cũng explicit-submit).
+- **Smart label:** "Mọi mức giá" khi cả 2 handle ở 2 đầu, "Đến X₫" khi chỉ giới hạn trên, "Từ X₫" khi chỉ giới hạn dưới, "X — Y₫" khi cả 2.
+
 ### v8.3 — 2026-04-29
 - **Bug fix admin thêm tòa nhà:** Form không có selector chủ nhà → POST không có `landlordId` → Prisma fail nhưng API nuốt lỗi thành "Lỗi server". Fix: thêm landlord selector (search input + select) khi `isAdmin && !isEdit`, API guard early-return 400 khi thiếu, client đọc `error.message` thật từ response, áp cho cả admin + landlord pages.
 - **Schema 3 trạng thái RoomType:** Bỏ `isAvailable Boolean`, thêm `enum RoomStatus { AVAILABLE / UNAVAILABLE / UPCOMING }` + `expectedAvailableDate DateTime?`. Migration script `prisma/migrate-status.ts` backfill từ isAvailable trước khi `prisma db push --accept-data-loss`. Indexes đổi `@@index([isAvailable])` + composite → `@@index([status])` + `@@index([status, isApproved, priceMonthly])`.
