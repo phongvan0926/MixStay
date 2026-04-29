@@ -187,28 +187,28 @@ async function main() {
       areaSqm: 25, priceMonthly: 3500000, deposit: 3500000,
       amenities: ['Điều hoà', 'Nóng lạnh', 'WC riêng', 'Ban công'],
       totalUnits: 3, availableUnits: 2, availableRoomNames: '201, 301',
-      isAvailable: true, isApproved: true,
+      status: 'AVAILABLE' as const, isApproved: true,
     },
     {
       propertyId: prop1.id, name: 'Phòng có bếp 30m²', typeName: 'gac_xep',
       areaSqm: 30, priceMonthly: 4200000, deposit: 4200000,
       amenities: ['Điều hoà', 'Nóng lạnh', 'WC riêng', 'Bếp riêng'],
       totalUnits: 2, availableUnits: 1, availableRoomNames: '202',
-      isAvailable: true, isApproved: true,
+      status: 'AVAILABLE' as const, isApproved: true,
     },
     {
       propertyId: prop1.id, name: 'Studio 35m² cao cấp', typeName: 'studio',
       areaSqm: 35, priceMonthly: 5000000, deposit: 5000000,
       amenities: ['Điều hoà', 'Nóng lạnh', 'WC riêng', 'Bếp riêng', 'Ban công'],
       totalUnits: 2, availableUnits: 1, availableRoomNames: '401',
-      isAvailable: true, isApproved: true,
+      status: 'AVAILABLE' as const, isApproved: true,
     },
     {
       propertyId: prop1.id, name: 'Phòng nhỏ 20m²', typeName: 'don',
       areaSqm: 20, priceMonthly: 2800000, deposit: 2800000,
       amenities: ['Điều hoà', 'Nóng lạnh', 'WC chung'],
       totalUnits: 2, availableUnits: 2, availableRoomNames: '501, 502',
-      isAvailable: true, isApproved: true,
+      status: 'AVAILABLE' as const, isApproved: true,
     },
     // Prop 2 - Đống Đa Green
     {
@@ -216,14 +216,14 @@ async function main() {
       areaSqm: 22, priceMonthly: 2500000, deposit: 2500000,
       amenities: ['Nóng lạnh', 'WC riêng'],
       totalUnits: 2, availableUnits: 1, availableRoomNames: '101',
-      isAvailable: true, isApproved: true,
+      status: 'AVAILABLE' as const, isApproved: true,
     },
     {
       propertyId: prop2.id, name: 'Phòng nội thất 28m²', typeName: 'don',
       areaSqm: 28, priceMonthly: 3200000, deposit: 3200000,
       amenities: ['Điều hoà', 'Nóng lạnh', 'WC riêng', 'Giường tủ'],
       totalUnits: 3, availableUnits: 1, availableRoomNames: '201',
-      isAvailable: true, isApproved: true,
+      status: 'AVAILABLE' as const, isApproved: true,
     },
     // Prop 3 - Thanh Xuân
     {
@@ -231,7 +231,7 @@ async function main() {
       areaSqm: 32, priceMonthly: 4500000, deposit: 4500000,
       amenities: ['Full nội thất', 'Điều hoà', 'Máy giặt riêng', 'Bếp riêng'],
       totalUnits: 2, availableUnits: 2, availableRoomNames: '301, 302',
-      isAvailable: true, isApproved: true,
+      status: 'AVAILABLE' as const, isApproved: true,
       shortTermAllowed: true, shortTermMonths: '1,3', shortTermPrice: 5500000,
     },
     {
@@ -239,14 +239,14 @@ async function main() {
       areaSqm: 40, priceMonthly: 6000000, deposit: 6000000,
       amenities: ['Studio', 'Full nội thất', 'Điều hoà', 'Bếp riêng', 'Ban công'],
       totalUnits: 2, availableUnits: 1, availableRoomNames: '501',
-      isAvailable: true, isApproved: true,
+      status: 'AVAILABLE' as const, isApproved: true,
     },
     {
       propertyId: prop3.id, name: 'Phòng đơn 22m²', typeName: 'don',
       areaSqm: 22, priceMonthly: 2800000, deposit: 2800000,
       amenities: ['Điều hoà', 'WC riêng'],
       totalUnits: 3, availableUnits: 0,
-      isAvailable: false, isApproved: true,
+      status: 'UNAVAILABLE' as const, isApproved: true,
     },
     // MixHome Cầu Giấy - 3 loại phòng
     {
@@ -255,7 +255,7 @@ async function main() {
       description: 'Studio đầy đủ nội thất chuẩn MixHome — bếp riêng, ban công.',
       amenities: ['Điều hoà', 'Nóng lạnh', 'WC riêng', 'Bếp riêng', 'Ban công', 'Smart TV'],
       totalUnits: 4, availableUnits: 3, availableRoomNames: '301, 302, 401',
-      isAvailable: true, isApproved: true,
+      status: 'AVAILABLE' as const, isApproved: true,
     },
     {
       propertyId: propC1.id, name: '1 Khách 1 Ngủ 38m²', typeName: '1k1n',
@@ -263,7 +263,7 @@ async function main() {
       description: 'Phòng khách + ngủ riêng biệt, full nội thất, view thoáng.',
       amenities: ['Điều hoà', 'Nóng lạnh', 'WC riêng', 'Bếp riêng', 'Tủ lạnh', 'Máy giặt riêng'],
       totalUnits: 3, availableUnits: 2, availableRoomNames: '501, 601',
-      isAvailable: true, isApproved: true,
+      status: 'AVAILABLE' as const, isApproved: true,
       shortTermAllowed: true, shortTermMonths: '1,3,6', shortTermPrice: 9000000,
     },
     {
@@ -272,7 +272,7 @@ async function main() {
       description: 'Căn hộ rộng rãi cho gia đình nhỏ — 2 ban công, view phố.',
       amenities: ['Điều hoà', 'Nóng lạnh', 'WC riêng', 'Bếp riêng', 'Tủ lạnh', 'Máy giặt riêng', 'Lò vi sóng'],
       totalUnits: 2, availableUnits: 1, availableRoomNames: '701',
-      isAvailable: true, isApproved: true,
+      status: 'AVAILABLE' as const, isApproved: true,
     },
     // MixHome Đống Đa - 2 loại phòng
     {
@@ -281,7 +281,7 @@ async function main() {
       description: 'Phòng nhỏ gọn, full nội thất cơ bản, dành cho 1-2 người.',
       amenities: ['Điều hoà', 'Nóng lạnh', 'WC riêng', 'Tủ quần áo'],
       totalUnits: 6, availableUnits: 4, availableRoomNames: '102, 202, 302, 402',
-      isAvailable: true, isApproved: true,
+      status: 'AVAILABLE' as const, isApproved: true,
     },
     {
       propertyId: propC2.id, name: 'Gác xép 28m²', typeName: 'gac_xep',
@@ -289,7 +289,7 @@ async function main() {
       description: 'Gác xép sáng sủa, có khu nấu ăn nhỏ.',
       amenities: ['Điều hoà', 'Nóng lạnh', 'WC riêng', 'Bếp mini', 'Tủ quần áo'],
       totalUnits: 4, availableUnits: 2, availableRoomNames: '503, 603',
-      isAvailable: true, isApproved: true,
+      status: 'AVAILABLE' as const, isApproved: true,
     },
   ];
 
@@ -336,7 +336,7 @@ async function main() {
   console.log('✅ Deals created');
 
   // Create share links
-  const availableRoomTypes = await prisma.roomType.findMany({ where: { isAvailable: true }, take: 3 });
+  const availableRoomTypes = await prisma.roomType.findMany({ where: { status: 'AVAILABLE' }, take: 3 });
   for (const rt of availableRoomTypes) {
     await prisma.shareLink.create({
       data: {

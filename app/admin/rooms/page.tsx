@@ -22,7 +22,7 @@ const EXCEL_COLUMNS = [
   { key: 'streetName', label: 'Đường' },
   { key: 'city', label: 'Thành phố' },
   { key: 'totalFloors', label: 'Số tầng' },
-  { key: 'roomTypeName', label: 'Tên loại phòng', required: true },
+  { key: 'roomTypeName', label: 'Tiêu đề bài đăng', required: true },
   { key: 'typeName', label: 'Kiểu phòng' },
   { key: 'areaSqm', label: 'Diện tích (m²)', required: true },
   { key: 'priceMonthly', label: 'Giá thuê (₫/tháng)', required: true },
@@ -72,7 +72,7 @@ function downloadTemplate() {
     ['1. CỘT BẮT BUỘC:'],
     ['   - Tên tòa nhà: tên tòa nhà/chung cư mini'],
     ['   - Quận: quận/huyện (VD: Thanh Xuân, Đống Đa, Cầu Giấy)'],
-    ['   - Tên loại phòng: tên hiển thị của loại phòng (VD: Phòng đơn 20m²)'],
+    ['   - Tiêu đề bài đăng: tiêu đề tin đăng (VD: Phòng đơn 20m² Cầu Giấy)'],
     ['   - Diện tích (m²): diện tích phòng, nhập số (VD: 20, 35, 45)'],
     ['   - Giá thuê (₫/tháng): giá cho thuê hàng tháng, nhập số (VD: 4500000)'],
     [],
@@ -97,7 +97,7 @@ function downloadTemplate() {
     [],
     ['5. HOA HỒNG: nhập số phần trăm (VD: 40 = 40%)'],
     [],
-    ['6. TÒA NHÀ TRÙNG TÊN + QUẬN: nếu tòa nhà đã có trong hệ thống (match tên + quận) thì loại phòng sẽ được thêm vào tòa nhà đó.'],
+    ['6. TÒA NHÀ TRÙNG TÊN + QUẬN: nếu tòa nhà đã có trong hệ thống (match tên + quận) thì tin đăng sẽ được thêm vào tòa nhà đó.'],
     ['   Nếu chưa có → hệ thống sẽ tự tạo tòa nhà mới (trạng thái Chờ duyệt).'],
     [],
     ['7. LƯU Ý: Xoá các dòng mẫu trước khi import. Chỉ giữ lại header ở dòng 1.'],
@@ -122,7 +122,7 @@ function validateRow(row: Record<string, any>, idx: number): string[] {
   const errors: string[] = [];
   if (!row.propertyName) errors.push(`Dòng ${idx + 1}: Thiếu tên tòa nhà`);
   if (!row.district) errors.push(`Dòng ${idx + 1}: Thiếu quận`);
-  if (!row.roomTypeName) errors.push(`Dòng ${idx + 1}: Thiếu tên loại phòng`);
+  if (!row.roomTypeName) errors.push(`Dòng ${idx + 1}: Thiếu tiêu đề bài đăng`);
   if (!row.areaSqm || isNaN(Number(row.areaSqm))) errors.push(`Dòng ${idx + 1}: Diện tích không hợp lệ`);
   if (!row.priceMonthly || isNaN(Number(row.priceMonthly))) errors.push(`Dòng ${idx + 1}: Giá thuê không hợp lệ`);
   const validTypes = ['don', 'gac_xep', '1k1n', '2k1n', 'studio', 'duplex'];
@@ -175,9 +175,9 @@ export default function AdminRoomsPage() {
       if (filterProperty && r.property?.id !== filterProperty) return false;
       if (filterRoomType && r.typeName !== filterRoomType) return false;
       if (filterStatus) {
-        if (filterStatus === 'available' && !(r.isAvailable && r.availableUnits > 0)) return false;
-        if (filterStatus === 'unavailable' && !(r.availableUnits === 0 || !r.isAvailable)) return false;
-        if (filterStatus === 'partial' && !(r.availableUnits > 0 && r.availableUnits < r.totalUnits && r.isAvailable)) return false;
+        if (filterStatus === 'AVAILABLE' && r.status !== 'AVAILABLE') return false;
+        if (filterStatus === 'UPCOMING' && r.status !== 'UPCOMING') return false;
+        if (filterStatus === 'UNAVAILABLE' && r.status !== 'UNAVAILABLE') return false;
       }
       return true;
     });
@@ -191,17 +191,40 @@ export default function AdminRoomsPage() {
     try {
       if (editingRoom) {
         const res = await fetch('/api/rooms', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editingRoom.id, ...data }) });
-        if (res.ok) { toast.success('Đã cập nhật phòng!'); setShowModal(false); mutate(); } else toast.error('Lỗi cập nhật');
+        if (res.ok) { toast.success('Đã cập nhật tin đăng!'); setShowModal(false); mutate(); }
+        else { const err = await res.json().catch(() => ({})); toast.error(err.error || 'Lỗi cập nhật'); }
       } else {
         const res = await fetch('/api/rooms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-        if (res.ok) { toast.success('Đã thêm phòng!'); setShowModal(false); mutate(); } else toast.error('Lỗi thêm phòng');
+        if (res.ok) { toast.success('Đã thêm tin đăng!'); setShowModal(false); mutate(); }
+        else { const err = await res.json().catch(() => ({})); toast.error(err.error || 'Lỗi thêm tin đăng'); }
       }
     } finally { setSubmitting(false); }
   };
 
-  const toggleAvailability = async (id: string, current: boolean) => {
-    await fetch('/api/rooms', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, isAvailable: !current }) });
-    toast.success(!current ? 'Đã bật (Còn phòng)' : 'Đã tắt (Hết phòng)'); mutate();
+  const setStatus = async (id: string, next: 'AVAILABLE' | 'UPCOMING' | 'UNAVAILABLE', expectedAvailableDate?: string) => {
+    const body: any = { id, status: next };
+    if (next === 'UPCOMING' && expectedAvailableDate) body.expectedAvailableDate = expectedAvailableDate;
+    if (next !== 'UPCOMING') body.expectedAvailableDate = null;
+    const res = await fetch('/api/rooms', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (res.ok) {
+      toast.success(next === 'AVAILABLE' ? '🟢 Còn phòng' : next === 'UPCOMING' ? '🟡 Sắp trống' : '🔴 Hết phòng');
+      mutate();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      toast.error(err.error || 'Lỗi cập nhật');
+    }
+  };
+
+  const cycleStatus = async (r: any) => {
+    const next: 'AVAILABLE' | 'UPCOMING' | 'UNAVAILABLE' =
+      r.status === 'AVAILABLE' ? 'UPCOMING' : r.status === 'UPCOMING' ? 'UNAVAILABLE' : 'AVAILABLE';
+    if (next === 'UPCOMING') {
+      const dateStr = prompt('Ngày phòng sẽ trống (YYYY-MM-DD):', new Date(Date.now() + 14 * 86400_000).toISOString().slice(0, 10));
+      if (!dateStr) return;
+      await setStatus(r.id, 'UPCOMING', new Date(dateStr).toISOString());
+    } else {
+      await setStatus(r.id, next);
+    }
   };
 
   const toggleApproval = async (id: string, current: boolean) => {
@@ -215,13 +238,9 @@ export default function AdminRoomsPage() {
   };
 
   const getAvailabilityBadge = (r: any) => {
-    if (!r.isAvailable || r.availableUnits === 0) {
-      return { label: 'Hết phòng', cls: 'bg-red-100 text-red-700' };
-    }
-    if (r.availableUnits < r.totalUnits) {
-      return { label: 'Sắp trống', cls: 'bg-amber-100 text-amber-700' };
-    }
-    return { label: 'Còn trống', cls: 'bg-emerald-100 text-emerald-700' };
+    if (r.status === 'UNAVAILABLE') return { label: '🔴 Hết phòng', cls: 'bg-red-100 text-red-700' };
+    if (r.status === 'UPCOMING') return { label: '🟡 Sắp trống', cls: 'bg-amber-100 text-amber-700' };
+    return { label: '🟢 Còn phòng', cls: 'bg-emerald-100 text-emerald-700' };
   };
 
   // === EXCEL FUNCTIONS ===
@@ -322,14 +341,14 @@ export default function AdminRoomsPage() {
         r.property?.evCharging ? 'TRUE' : 'FALSE',
         companyName,
         r.availableUnits || 0,
-        r.isAvailable ? 'TRUE' : 'FALSE',
+        r.status || 'AVAILABLE',
         r.isApproved ? 'TRUE' : 'FALSE',
       ];
     });
 
     const headers = [
       ...EXCEL_COLUMNS.map(c => c.label),
-      'Công ty', 'Phòng trống', 'Đang bật', 'Đã duyệt',
+      'Công ty', 'Phòng trống', 'Trạng thái', 'Đã duyệt',
     ];
 
     const ws = XLSX.utils.aoa_to_sheet([headers, ...dataToExport]);
@@ -343,7 +362,7 @@ export default function AdminRoomsPage() {
       ? `MixStay_Phong_Filtered_${new Date().toISOString().slice(0, 10)}.xlsx`
       : `MixStay_Phong_${new Date().toISOString().slice(0, 10)}.xlsx`;
     XLSX.writeFile(wb, filename);
-    toast.success(`Đã xuất ${dataToExport.length} loại phòng ra Excel`);
+    toast.success(`Đã xuất ${dataToExport.length} tin đăng ra Excel`);
   };
 
   if (loading) return <div className="p-8"><SkeletonTable rows={6} cols={8} /></div>;
@@ -354,8 +373,8 @@ export default function AdminRoomsPage() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="font-display text-2xl font-bold">Quản lý phòng</h1>
-          <p className="text-sm text-stone-500 mt-1">{rooms.length} loại phòng</p>
+          <h1 className="font-display text-2xl font-bold">Tin đăng (theo loại phòng)</h1>
+          <p className="text-sm text-stone-500 mt-1">{rooms.length} tin đăng</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {/* Excel buttons */}
@@ -371,7 +390,7 @@ export default function AdminRoomsPage() {
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors border border-orange-200">
             📤 Xuất Excel {hasFilters ? '(lọc)' : ''}
           </button>
-          <button onClick={openCreate} className="btn-primary">+ Thêm phòng</button>
+          <button onClick={openCreate} className="btn-primary">+ Thêm tin đăng</button>
         </div>
       </div>
 
@@ -388,14 +407,14 @@ export default function AdminRoomsPage() {
           {filteredProperties.map((p: any) => <option key={p.id} value={p.id}>{p.name} — {p.district}</option>)}
         </select>
         <select className="input-field w-full sm:!w-auto sm:min-w-[150px]" value={filterRoomType} onChange={e => setFilterRoomType(e.target.value)}>
-          <option value="">Tất cả loại phòng</option>
+          <option value="">Tất cả kiểu phòng</option>
           {Object.entries(ROOM_TYPE_LABELS).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
         </select>
         <select className="input-field w-full sm:!w-auto sm:min-w-[140px]" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="">Tất cả trạng thái</option>
-          <option value="available">Còn trống</option>
-          <option value="partial">Sắp trống</option>
-          <option value="unavailable">Hết phòng</option>
+          <option value="AVAILABLE">🟢 Còn phòng</option>
+          <option value="UPCOMING">🟡 Sắp trống</option>
+          <option value="UNAVAILABLE">🔴 Hết phòng</option>
         </select>
         {hasFilters && (
           <button onClick={() => { setFilterCompany(''); setFilterProperty(''); setFilterRoomType(''); setFilterStatus(''); }}
@@ -410,7 +429,7 @@ export default function AdminRoomsPage() {
             <thead className="bg-stone-50/80">
               <tr>
                 <th className="table-header">Ảnh</th>
-                <th className="table-header">Phòng</th>
+                <th className="table-header">Tin đăng</th>
                 <th className="table-header">Tòa nhà</th>
                 <th className="table-header">Công ty</th>
                 <th className="table-header">Loại</th>
@@ -477,10 +496,16 @@ export default function AdminRoomsPage() {
                       )}
                     </td>
                     <td className="table-cell">
-                      <button onClick={() => toggleAvailability(r.id, r.isAvailable)}
+                      <button onClick={() => cycleStatus(r)}
+                        title="Bấm để đổi trạng thái: Còn → Sắp trống → Hết → Còn"
                         className={`badge cursor-pointer transition-colors ${badge.cls} hover:opacity-80`}>
                         {badge.label}
                       </button>
+                      {r.status === 'UPCOMING' && r.expectedAvailableDate && (
+                        <p className="text-[10px] text-amber-600 mt-0.5">
+                          từ {new Date(r.expectedAvailableDate).toLocaleDateString('vi-VN')}
+                        </p>
+                      )}
                     </td>
                     <td className="table-cell">
                       <button onClick={() => toggleApproval(r.id, r.isApproved)}
@@ -529,7 +554,7 @@ export default function AdminRoomsPage() {
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto mx-4 z-10">
             <div className="sticky top-0 bg-white border-b border-stone-200 px-6 py-4 rounded-t-2xl flex items-center justify-between z-20">
               <h2 className="font-display text-lg font-bold text-stone-900">
-                {editingRoom ? 'Sửa loại phòng' : 'Thêm loại phòng mới'}
+                {editingRoom ? 'Sửa tin đăng' : 'Thêm tin đăng mới'}
               </h2>
               <button onClick={() => setShowModal(false)}
                 className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-stone-100 transition-colors text-stone-500">
@@ -594,7 +619,7 @@ export default function AdminRoomsPage() {
                       <th className="px-3 py-2 text-left text-xs font-semibold text-stone-600">#</th>
                       <th className="px-3 py-2 text-left text-xs font-semibold text-stone-600">Tòa nhà</th>
                       <th className="px-3 py-2 text-left text-xs font-semibold text-stone-600">Quận</th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-stone-600">Loại phòng</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-stone-600">Tiêu đề bài đăng</th>
                       <th className="px-3 py-2 text-left text-xs font-semibold text-stone-600">Kiểu</th>
                       <th className="px-3 py-2 text-left text-xs font-semibold text-stone-600">Diện tích</th>
                       <th className="px-3 py-2 text-left text-xs font-semibold text-stone-600">Giá thuê</th>

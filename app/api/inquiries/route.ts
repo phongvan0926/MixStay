@@ -117,7 +117,7 @@ export async function PUT(req: NextRequest) {
     if (reply === 'HẾT') {
       await prisma.roomType.update({
         where: { id: inquiry.roomTypeId },
-        data: { availableUnits: 0, isAvailable: false },
+        data: { availableUnits: 0, status: 'UNAVAILABLE' },
       });
     }
 

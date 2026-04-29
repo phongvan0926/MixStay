@@ -44,6 +44,8 @@ export async function GET(req: NextRequest) {
       amenities: true,
       images: true,
       availableUnits: true,
+      status: true,
+      expectedAvailableDate: true,
       shortTermAllowed: true,
       property: {
         select: {
@@ -56,8 +58,7 @@ export async function GET(req: NextRequest) {
     const baseWhere = {
       id: { not: roomTypeId },
       isApproved: true,
-      isAvailable: true,
-      availableUnits: { gt: 0 },
+      status: { in: ['AVAILABLE', 'UPCOMING'] as ('AVAILABLE' | 'UPCOMING')[] },
       property: { status: 'APPROVED' as const, isActive: true },
     };
 
@@ -124,7 +125,8 @@ export async function GET(req: NextRequest) {
       sameDistrict: sameDistrict.map(withToken),
       all: all.map(withToken),
     });
-  } catch (error) {
-    return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
+  } catch (error: any) {
+    console.error('/api/rooms/related error:', error);
+    return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });
   }
 }

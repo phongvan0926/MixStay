@@ -7,6 +7,8 @@ import VideoUpload from '@/components/ui/VideoUpload';
 import VideoLinkInput from '@/components/ui/VideoLinkInput';
 import { formatCurrency } from '@/lib/utils';
 
+type RoomStatusValue = 'AVAILABLE' | 'UNAVAILABLE' | 'UPCOMING';
+
 interface RoomTypeData {
   propertyId: string;
   name: string;
@@ -21,7 +23,8 @@ interface RoomTypeData {
   totalUnits: number;
   availableUnits: number;
   availableRoomNames: string;
-  isAvailable: boolean;
+  status: RoomStatusValue;
+  expectedAvailableDate: string; // ISO date string yyyy-MM-dd or ''
   amenities: string[];
   images: string[];
   videos: string[];
@@ -30,6 +33,12 @@ interface RoomTypeData {
   landlordNotes: string;
   isApproved: boolean;
 }
+
+const STATUS_OPTIONS: { value: RoomStatusValue; label: string; cls: string }[] = [
+  { value: 'AVAILABLE',   label: '🟢 Còn phòng',   cls: 'bg-emerald-50 border-emerald-300 text-emerald-700' },
+  { value: 'UPCOMING',    label: '🟡 Sắp trống',   cls: 'bg-amber-50 border-amber-300 text-amber-700' },
+  { value: 'UNAVAILABLE', label: '🔴 Hết phòng',   cls: 'bg-red-50 border-red-300 text-red-700' },
+];
 
 interface Property {
   id: string;
@@ -74,7 +83,8 @@ const defaultData: RoomTypeData = {
   totalUnits: 1,
   availableUnits: 1,
   availableRoomNames: '',
-  isAvailable: true,
+  status: 'AVAILABLE',
+  expectedAvailableDate: '',
   amenities: [],
   images: [],
   videos: [],
@@ -117,6 +127,8 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
   const [priceDisplay, setPriceDisplay] = useState('');
   const [depositDisplay, setDepositDisplay] = useState('');
   const [shortTermPriceDisplay, setShortTermPriceDisplay] = useState('');
+  // Track whether user manually edited deposit. true → don't auto-sync with priceMonthly.
+  const [depositTouched, setDepositTouched] = useState(false);
   const isEdit = !!initialData?.id;
 
   useEffect(() => {
@@ -135,7 +147,10 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
         totalUnits: initialData.totalUnits || 1,
         availableUnits: initialData.availableUnits ?? 1,
         availableRoomNames: initialData.availableRoomNames || '',
-        isAvailable: initialData.isAvailable ?? true,
+        status: (initialData.status as RoomStatusValue) || (initialData.isAvailable === false ? 'UNAVAILABLE' : 'AVAILABLE'),
+        expectedAvailableDate: initialData.expectedAvailableDate
+          ? new Date(initialData.expectedAvailableDate).toISOString().slice(0, 10)
+          : '',
         amenities: initialData.amenities || [],
         images: initialData.images || [],
         videos: initialData.videos || [],
@@ -148,6 +163,9 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
       setPriceDisplay(data.priceMonthly ? formatVndInput(data.priceMonthly) : '');
       setDepositDisplay(data.deposit ? formatVndInput(data.deposit) : '');
       setShortTermPriceDisplay(data.shortTermPrice ? formatVndInput(data.shortTermPrice) : '');
+      // When editing existing record, treat deposit as user-set unless it equals price (then assume default).
+      // Bỏ check > 0 để tôn trọng cả "deposit = 0" (không yêu cầu cọc) khi khác price.
+      setDepositTouched(data.deposit !== data.priceMonthly);
     }
   }, [initialData]);
 
@@ -169,12 +187,29 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
     const num = parseVndInput(e.target.value);
     setPriceDisplay(num ? formatVndInput(num) : '');
     updateField('priceMonthly', num);
+    // Auto-sync deposit if user hasn't manually edited it
+    if (!depositTouched) {
+      updateField('deposit', num);
+      setDepositDisplay(num ? formatVndInput(num) : '');
+    }
   };
 
   const handleDepositChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const num = parseVndInput(e.target.value);
+    const raw = e.target.value;
+    const num = parseVndInput(raw);
     setDepositDisplay(num ? formatVndInput(num) : '');
     updateField('deposit', num);
+    // CHỈ reset dirty flag khi user xoá hẳn input (truly empty).
+    // Nếu user gõ "0" → respect intent "không cọc", giữ touched = true.
+    if (raw.trim() === '') {
+      setDepositTouched(false);
+      if (form.priceMonthly > 0) {
+        updateField('deposit', form.priceMonthly);
+        setDepositDisplay(formatVndInput(form.priceMonthly));
+      }
+    } else {
+      setDepositTouched(true);
+    }
   };
 
   const handleShortTermPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -182,14 +217,6 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
     setShortTermPriceDisplay(num ? formatVndInput(num) : '');
     updateField('shortTermPrice', num);
   };
-
-  // Auto-set deposit = priceMonthly when price changes and deposit is 0
-  useEffect(() => {
-    if (form.priceMonthly > 0 && form.deposit === 0 && !isEdit) {
-      updateField('deposit', form.priceMonthly);
-      setDepositDisplay(formatVndInput(form.priceMonthly));
-    }
-  }, [form.priceMonthly]);
 
   // Commission rows management
   const addCommissionRow = () => {
@@ -229,11 +256,20 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
     e.preventDefault();
 
     if (!form.propertyId) return toast.error('Vui lòng chọn tòa nhà');
-    if (!form.name.trim()) return toast.error('Vui lòng nhập tên loại phòng');
+    if (!form.name.trim()) return toast.error('Vui lòng nhập tiêu đề bài đăng');
     if (!form.typeName) return toast.error('Vui lòng chọn kiểu phòng');
     if (!form.areaSqm || form.areaSqm <= 0) return toast.error('Vui lòng nhập diện tích');
     if (!form.priceMonthly || form.priceMonthly <= 0) return toast.error('Vui lòng nhập giá thuê');
     if (form.availableUnits > form.totalUnits) return toast.error('Số phòng trống không được lớn hơn tổng số phòng');
+    if (form.status === 'UPCOMING' && !form.expectedAvailableDate) {
+      return toast.error('Vui lòng chọn ngày phòng sẽ trống');
+    }
+    if (form.status === 'UPCOMING' && form.expectedAvailableDate) {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      if (new Date(form.expectedAvailableDate) < today) {
+        return toast.error('Ngày sắp trống không được ở quá khứ');
+      }
+    }
 
     // Build commissionJson from rows
     const commissionObj: Record<string, number> = {};
@@ -257,7 +293,10 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
       totalUnits: form.totalUnits,
       availableUnits: form.availableUnits,
       availableRoomNames: form.availableRoomNames || null,
-      isAvailable: form.isAvailable,
+      status: form.status,
+      expectedAvailableDate: form.status === 'UPCOMING' && form.expectedAvailableDate
+        ? new Date(form.expectedAvailableDate).toISOString()
+        : null,
       amenities: form.amenities,
       images: form.images,
       videos: form.videos,
@@ -298,12 +337,12 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-stone-700 mb-1.5">
-              Tên loại phòng <span className="text-red-500">*</span>
+              Tiêu đề bài đăng <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               className="input-field"
-              placeholder='VD: "Loại 1 - Phòng đơn 25m²"'
+              placeholder='VD: "Phòng đơn 25m² Cầu Giấy — full nội thất, ban công"'
               value={form.name}
               onChange={e => updateField('name', e.target.value)}
             />
@@ -337,13 +376,13 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
             />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-stone-700 mb-1.5">Mô tả</label>
+            <label className="block text-sm font-medium text-stone-700 mb-1.5">Mô tả và giá dịch vụ</label>
             <textarea
               className="input-field min-h-[80px] resize-y"
-              placeholder="Mô tả chi tiết loại phòng: hướng cửa, view, nội thất..."
+              placeholder="Mô tả chi tiết: hướng cửa, view, nội thất... Kèm giá điện, nước, mạng, vệ sinh, gửi xe..."
               value={form.description}
               onChange={e => updateField('description', e.target.value)}
-              rows={3}
+              rows={4}
             />
           </div>
         </div>
@@ -375,12 +414,17 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
             <input
               type="text"
               className="input-field"
-              placeholder="Mặc định = 1 tháng tiền thuê"
+              placeholder="Mặc định = giá thuê/tháng"
               value={depositDisplay}
               onChange={handleDepositChange}
             />
+            <p className="text-xs text-stone-400 mt-1">
+              {depositTouched
+                ? '✏️ Bạn đã sửa thủ công. Xoá trống để tự đồng bộ lại theo giá thuê.'
+                : 'Mặc định = giá thuê/tháng. Sửa nếu muốn đặt cọc khác.'}
+            </p>
             {form.deposit > 0 && (
-              <p className="text-xs text-stone-400 mt-1">{formatCurrency(form.deposit)}</p>
+              <p className="text-xs text-stone-400 mt-0.5">{formatCurrency(form.deposit)}</p>
             )}
           </div>
         </div>
@@ -486,21 +530,56 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
               onChange={e => updateField('availableRoomNames', e.target.value)}
               rows={2}
             />
+            <p className="text-xs text-stone-400 mt-1">
+              🔒 Chỉ hiển thị nội bộ cho bạn, admin và môi giới. Khách xem tin đăng chỉ thấy số lượng phòng trống.
+            </p>
           </div>
+
+          {/* Trạng thái 3 mức */}
           <div className="md:col-span-2">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <div className="relative">
+            <label className="block text-sm font-medium text-stone-700 mb-2">Trạng thái tin đăng</label>
+            <div className="flex flex-wrap gap-2">
+              {STATUS_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => updateField('status', opt.value)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${
+                    form.status === opt.value
+                      ? opt.cls
+                      : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {form.status === 'UPCOMING' && (
+              <div className="mt-3">
+                <label className="block text-sm font-medium text-stone-700 mb-1.5">
+                  Ngày phòng sẽ trống <span className="text-red-500">*</span>
+                </label>
                 <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={form.isAvailable}
-                  onChange={e => updateField('isAvailable', e.target.checked)}
+                  type="date"
+                  className="input-field max-w-xs"
+                  min={new Date().toISOString().slice(0, 10)}
+                  value={form.expectedAvailableDate}
+                  onChange={e => updateField('expectedAvailableDate', e.target.value)}
                 />
-                <div className="w-10 h-6 bg-stone-200 rounded-full peer-checked:bg-emerald-600 transition-colors" />
-                <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow peer-checked:translate-x-4 transition-transform" />
+                <p className="text-xs text-stone-400 mt-1">
+                  Khách sẽ thấy &ldquo;Sắp trống từ {form.expectedAvailableDate
+                    ? new Date(form.expectedAvailableDate).toLocaleDateString('vi-VN')
+                    : 'DD/MM/YYYY'}&rdquo; để chủ động liên hệ sớm.
+                </p>
               </div>
-              <span className="text-sm font-medium text-stone-700">Bật/tắt nhanh toàn bộ loại phòng này</span>
-            </label>
+            )}
+
+            {form.status === 'AVAILABLE' && form.availableUnits === 0 && (
+              <p className="text-xs text-amber-600 mt-2">
+                ⚠️ Đang chọn &ldquo;Còn phòng&rdquo; nhưng số phòng trống = 0. Cập nhật lại?
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -649,34 +728,19 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
       {isAdmin && (
         <div className="card">
           <h3 className="text-lg font-semibold text-stone-900 mb-4">Quản trị</h3>
-          <div className="flex flex-wrap gap-6">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <div className="relative">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={form.isApproved}
-                  onChange={e => updateField('isApproved', e.target.checked)}
-                />
-                <div className="w-10 h-6 bg-stone-200 rounded-full peer-checked:bg-brand-600 transition-colors" />
-                <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow peer-checked:translate-x-4 transition-transform" />
-              </div>
-              <span className="text-sm font-medium text-stone-700">Đã duyệt (isApproved)</span>
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <div className="relative">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={form.isAvailable}
-                  onChange={e => updateField('isAvailable', e.target.checked)}
-                />
-                <div className="w-10 h-6 bg-stone-200 rounded-full peer-checked:bg-emerald-600 transition-colors" />
-                <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow peer-checked:translate-x-4 transition-transform" />
-              </div>
-              <span className="text-sm font-medium text-stone-700">Còn phòng trống (isAvailable)</span>
-            </label>
-          </div>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <div className="relative">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={form.isApproved}
+                onChange={e => updateField('isApproved', e.target.checked)}
+              />
+              <div className="w-10 h-6 bg-stone-200 rounded-full peer-checked:bg-brand-600 transition-colors" />
+              <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow peer-checked:translate-x-4 transition-transform" />
+            </div>
+            <span className="text-sm font-medium text-stone-700">Đã duyệt (isApproved)</span>
+          </label>
         </div>
       )}
 
@@ -689,7 +753,7 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
               Đang lưu...
             </span>
           ) : (
-            isEdit ? 'Cập nhật loại phòng' : 'Tạo loại phòng'
+            isEdit ? 'Cập nhật tin đăng' : 'Tạo tin đăng'
           )}
         </button>
       </div>

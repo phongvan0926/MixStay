@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
           shortTermAllowed: row.shortTermAllowed === true || row.shortTermAllowed === 'TRUE',
           shortTermMonths: row.shortTermMonths ? String(row.shortTermMonths) : null,
           shortTermPrice: row.shortTermPrice ? parseFloat(row.shortTermPrice) : null,
-          isAvailable: true,
+          status: 'AVAILABLE',
           isApproved: true,
         },
       });
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
       success: true,
       createdProperties,
       createdRoomTypes,
-      message: `Đã import ${createdRoomTypes} loại phòng thuộc ${Object.keys(propertyCache).length} tòa nhà (${createdProperties} tòa mới)`,
+      message: `Đã import ${createdRoomTypes} tin đăng thuộc ${Object.keys(propertyCache).length} tòa nhà (${createdProperties} tòa mới)`,
     });
   } catch (error) {
     console.error('Import error:', error);

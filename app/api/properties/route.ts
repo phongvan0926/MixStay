@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
           roomTypes: {
             select: {
               id: true,
-              isAvailable: true,
+              status: true,
               priceMonthly: true,
               availableUnits: true,
               totalUnits: true,
@@ -73,8 +73,9 @@ export async function GET(req: NextRequest) {
     ]);
 
     return NextResponse.json(paginatedResponse(properties, total, page, limit));
-  } catch (error) {
-    return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
+  } catch (error: any) {
+    console.error('/api/properties error:', error);
+    return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });
   }
 }
 
@@ -93,6 +94,9 @@ export async function POST(req: NextRequest) {
     }
 
     const landlordId = session.user.role === 'LANDLORD' ? session.user.id : body.landlordId;
+    if (!landlordId) {
+      return NextResponse.json({ error: 'Vui lòng chọn chủ nhà cho tòa nhà này' }, { status: 400 });
+    }
 
     const property = await prisma.property.create({
       data: {
@@ -121,8 +125,9 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(property, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
+  } catch (error: any) {
+    console.error('/api/properties error:', error);
+    return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });
   }
 }
 
@@ -174,8 +179,9 @@ export async function PUT(req: NextRequest) {
     });
 
     return NextResponse.json(property);
-  } catch (error) {
-    return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
+  } catch (error: any) {
+    console.error('/api/properties error:', error);
+    return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });
   }
 }
 
@@ -198,7 +204,8 @@ export async function DELETE(req: NextRequest) {
 
     await prisma.property.delete({ where: { id } });
     return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
+  } catch (error: any) {
+    console.error('/api/properties error:', error);
+    return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });
   }
 }

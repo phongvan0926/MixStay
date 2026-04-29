@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import VideoGallery from '@/components/ui/VideoGallery';
+import ZaloFab from '@/components/ui/ZaloFab';
+import { getZaloLink } from '@/lib/zalo';
 
 const roomTypeLabels: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1 khách 1 ngủ',
@@ -158,7 +160,7 @@ export default function ShareViewClient() {
       <div className="text-center">
         <p className="text-5xl mb-4">😔</p>
         <h1 className="font-display text-2xl font-bold mb-2">Không tìm thấy phòng</h1>
-        <p className="text-stone-500 mb-6">Loại phòng đã bị xoá hoặc link không hợp lệ</p>
+        <p className="text-stone-500 mb-6">Tin đăng đã bị xoá hoặc link không hợp lệ</p>
         <Link href="/" className="btn-primary">Về trang chủ</Link>
       </div>
     </div>
@@ -173,6 +175,7 @@ export default function ShareViewClient() {
 
   const contactPhone: string | null = data.broker?.phone || null;
   const contactName: string = data.broker?.name || 'hỗ trợ';
+  const zaloLink = getZaloLink(roomType);
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -196,14 +199,22 @@ export default function ShareViewClient() {
         <div className="card">
           <div className="flex items-start justify-between mb-3 gap-3">
             <div className="min-w-0">
-              <h1 className="font-display text-2xl font-bold">{property?.name}</h1>
-              <p className="text-stone-500 mt-1">{roomType.name}</p>
+              <h1 className="font-display text-2xl font-bold">{roomType.name}</h1>
+              <p className="text-sm text-stone-400 mt-1">Thuộc tòa: <span className="text-stone-600 font-medium">{property?.name}</span></p>
             </div>
-            {roomType.availableUnits > 0 && (
-              <span className="badge bg-emerald-100 text-emerald-700 text-sm py-1 flex-shrink-0">
-                Còn {roomType.availableUnits} phòng trống
+            {roomType.status === 'UPCOMING' ? (
+              <span className="badge bg-amber-100 text-amber-700 text-sm py-1 flex-shrink-0">
+                🟡 Sắp trống{roomType.expectedAvailableDate ? ` từ ${new Date(roomType.expectedAvailableDate).toLocaleDateString('vi-VN')}` : ''}
               </span>
-            )}
+            ) : roomType.status === 'UNAVAILABLE' ? (
+              <span className="badge bg-red-100 text-red-700 text-sm py-1 flex-shrink-0">
+                🔴 Hết phòng
+              </span>
+            ) : roomType.availableUnits > 0 ? (
+              <span className="badge bg-emerald-100 text-emerald-700 text-sm py-1 flex-shrink-0">
+                🟢 Còn {roomType.availableUnits} phòng trống
+              </span>
+            ) : null}
           </div>
 
           {roomType.typeName && (
@@ -248,12 +259,6 @@ export default function ShareViewClient() {
             </div>
           </div>
 
-          {roomType.availableRoomNames && (
-            <p className="text-sm text-stone-500 mb-4">
-              Phòng trống: <span className="font-medium text-stone-700">{roomType.availableRoomNames}</span>
-            </p>
-          )}
-
           {roomType.description && (
             <div className="p-3 bg-stone-50 rounded-xl">
               <p className="text-sm text-stone-600 leading-relaxed whitespace-pre-line">{roomType.description}</p>
@@ -261,15 +266,27 @@ export default function ShareViewClient() {
           )}
         </div>
 
-        {/* Section 3: Tiện ích phòng */}
-        {roomType.amenities?.length > 0 && (
+        {/* Section 3: Tiện ích (phòng + tòa nhà gộp chung) */}
+        {(roomType.amenities?.length > 0 || hasPropertyAmenities) && (
           <div className="card">
-            <h2 className="font-display font-semibold text-lg mb-3">🛋️ Tiện ích phòng</h2>
-            <div className="flex flex-wrap gap-2">
-              {roomType.amenities.map((a: string) => (
-                <span key={a} className="px-3 py-1.5 bg-brand-50 text-brand-700 text-sm rounded-lg border border-brand-100 font-medium">{a}</span>
-              ))}
-            </div>
+            <h2 className="font-display font-semibold text-lg mb-3">🛋️ Tiện ích</h2>
+            {roomType.amenities?.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {roomType.amenities.map((a: string) => (
+                  <span key={a} className="px-3 py-1.5 bg-brand-50 text-brand-700 text-sm rounded-lg border border-brand-100 font-medium">{a}</span>
+                ))}
+              </div>
+            )}
+            {hasPropertyAmenities && (
+              <div className={roomType.amenities?.length > 0 ? 'mt-4 pt-4 border-t border-stone-100' : ''}>
+                <p className="text-xs font-semibold text-stone-500 uppercase mb-2">Tiện ích tòa nhà</p>
+                <div className="flex flex-wrap gap-2">
+                  {property.amenities.map((a: string) => (
+                    <span key={a} className="px-3 py-1.5 bg-stone-100 text-stone-700 text-sm rounded-lg">{a}</span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -311,44 +328,6 @@ export default function ShareViewClient() {
             </div>
           </div>
         )}
-
-        {/* Section 5: Thông tin tòa nhà */}
-        <div className="card">
-          <h2 className="font-display font-semibold text-lg mb-3">🏢 Thông tin tòa nhà</h2>
-          <div className="grid sm:grid-cols-2 gap-3 mb-3">
-            <div className="p-3 bg-stone-50 rounded-xl">
-              <p className="text-[11px] text-stone-400 uppercase">Tên tòa nhà</p>
-              <p className="text-sm font-semibold text-stone-800 mt-0.5">{property?.name}</p>
-            </div>
-            <div className="p-3 bg-stone-50 rounded-xl">
-              <p className="text-[11px] text-stone-400 uppercase">Số tầng</p>
-              <p className="text-sm font-semibold text-stone-800 mt-0.5">{property?.totalFloors || 1} tầng</p>
-            </div>
-            <div className="p-3 bg-stone-50 rounded-xl">
-              <p className="text-[11px] text-stone-400 uppercase">Khu vực</p>
-              <p className="text-sm font-semibold text-stone-800 mt-0.5">{property?.district}, {property?.city}</p>
-            </div>
-            <div className="p-3 bg-stone-50 rounded-xl">
-              <p className="text-[11px] text-stone-400 uppercase">Tuyến phố</p>
-              <p className="text-sm font-semibold text-stone-800 mt-0.5">{property?.streetName}</p>
-            </div>
-          </div>
-
-          {hasPropertyAmenities && (
-            <div>
-              <p className="text-sm font-semibold text-stone-700 mb-2">Tiện ích chung</p>
-              <div className="flex flex-wrap gap-2">
-                {property.amenities.map((a: string) => (
-                  <span key={a} className="px-3 py-1.5 bg-stone-100 text-stone-700 text-sm rounded-lg">{a}</span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-100">
-            <p className="text-xs text-amber-700">🔒 Địa chỉ chi tiết sẽ được cung cấp khi hẹn xem phòng qua hỗ trợ</p>
-          </div>
-        </div>
 
         {/* Section 5b: Đơn vị vận hành (chỉ hiện nếu property thuộc công ty) */}
         {property?.company && (
@@ -402,19 +381,18 @@ export default function ShareViewClient() {
         <div className="card bg-gradient-to-br from-brand-600 to-brand-700 text-white border-0">
           <h2 className="font-display font-semibold text-lg mb-2">Quan tâm phòng này?</h2>
           <p className="text-brand-100 text-sm mb-4">Liên hệ hỗ trợ để được tư vấn và hẹn xem phòng miễn phí.</p>
-          <div className="flex gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <a href={zaloLink} target="_blank" rel="noopener noreferrer"
+              className="bg-[#0068FF] text-white font-medium py-3 rounded-xl text-center text-sm hover:opacity-90 transition-all">
+              💬 Tư vấn qua Zalo
+            </a>
             {contactPhone ? (
-              <>
-                <a href={`tel:${contactPhone}`} className="flex-1 bg-white text-brand-700 font-medium py-3 rounded-xl text-center text-sm hover:bg-brand-50 transition-all">
-                  📞 Gọi hỗ trợ trực tiếp
-                </a>
-                <a href={`sms:${contactPhone}`} className="flex-1 bg-white/20 text-white font-medium py-3 rounded-xl text-center text-sm hover:bg-white/30 transition-all border border-white/20">
-                  💬 Nhắn tin
-                </a>
-              </>
+              <a href={`tel:${contactPhone}`} className="bg-white text-brand-700 font-medium py-3 rounded-xl text-center text-sm hover:bg-brand-50 transition-all">
+                📞 Gọi hỗ trợ trực tiếp
+              </a>
             ) : (
-              <div className="flex-1 bg-white/20 text-white font-medium py-3 rounded-xl text-center text-sm border border-white/20">
-                Liên hệ hỗ trợ: {contactName}
+              <div className="bg-white/20 text-white font-medium py-3 rounded-xl text-center text-sm border border-white/20">
+                Liên hệ {contactName}
               </div>
             )}
           </div>
@@ -423,10 +401,13 @@ export default function ShareViewClient() {
         {/* Section 8: Tin đăng liên quan */}
         {roomType.id && <RelatedSection roomTypeId={roomType.id} />}
 
-        <p className="text-center text-xs text-stone-400 mt-4 mb-4">
+        <p className="text-center text-xs text-stone-400 mt-4 mb-20">
           Powered by MixStay • Hỗ trợ bởi {contactName}
         </p>
       </div>
+
+      {/* Floating Zalo button (shortcut khi user scroll xa Section 7) */}
+      <ZaloFab href={zaloLink} />
     </div>
   );
 }

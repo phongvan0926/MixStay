@@ -32,8 +32,8 @@ export async function GET(req: NextRequest) {
 
     const where: any = {
       isApproved: true,
-      isAvailable: true,
-      availableUnits: { gt: 0 },
+      // Public search: include AVAILABLE + UPCOMING (khách thấy phòng sắp trống để hỏi sớm), ẩn UNAVAILABLE
+      status: { in: ['AVAILABLE', 'UPCOMING'] as ('AVAILABLE' | 'UPCOMING')[] },
       property: propertyWhere,
     };
 
@@ -58,6 +58,8 @@ export async function GET(req: NextRequest) {
           videos: true,
           videoLinks: true,
           availableUnits: true,
+          status: true,
+          expectedAvailableDate: true,
           shortTermAllowed: true,
           property: {
             select: {
@@ -74,7 +76,12 @@ export async function GET(req: NextRequest) {
             },
           },
         },
-        orderBy: [{ createdAt: 'desc' }],
+        // AVAILABLE trước (status asc), trong UPCOMING xếp theo ngày sắp trống gần nhất, còn lại mới nhất trước
+        orderBy: [
+          { status: 'asc' },
+          { expectedAvailableDate: { sort: 'asc', nulls: 'last' } },
+          { createdAt: 'desc' },
+        ],
         skip,
         take: limit,
       }),
@@ -108,6 +115,8 @@ export async function GET(req: NextRequest) {
         hasVideo,
         videoLinks: rt.videoLinks || [],
         availableUnits: rt.availableUnits,
+        status: rt.status,
+        expectedAvailableDate: rt.expectedAvailableDate,
         shortTermAllowed: rt.shortTermAllowed,
         property: rt.property,
         shareToken: tokenByRoomType.get(rt.id) || null,
@@ -115,7 +124,8 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(paginatedResponse(withShareToken, total, page, limit));
-  } catch (error) {
-    return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
+  } catch (error: any) {
+    console.error('/api/rooms/public error:', error);
+    return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });
   }
 }

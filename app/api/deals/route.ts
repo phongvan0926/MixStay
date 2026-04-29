@@ -177,7 +177,7 @@ export async function PUT(req: NextRequest) {
           where: { id: deal.roomTypeId },
           data: {
             availableUnits: newAvailable,
-            isAvailable: newAvailable > 0,
+            ...(newAvailable === 0 ? { status: 'UNAVAILABLE' as const } : {}),
           },
         });
       }

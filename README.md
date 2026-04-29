@@ -224,6 +224,22 @@ mixstay/
 
 ## Changelog
 
+### v8.3 — 2026-04-29
+- **Bug fix admin thêm tòa nhà:** Form không có selector chủ nhà → POST không có `landlordId` → Prisma fail nhưng API nuốt lỗi thành "Lỗi server". Fix: thêm landlord selector (search input + select) khi `isAdmin && !isEdit`, API guard early-return 400 khi thiếu, client đọc `error.message` thật từ response, áp cho cả admin + landlord pages.
+- **Schema 3 trạng thái RoomType:** Bỏ `isAvailable Boolean`, thêm `enum RoomStatus { AVAILABLE / UNAVAILABLE / UPCOMING }` + `expectedAvailableDate DateTime?`. Migration script `prisma/migrate-status.ts` backfill từ isAvailable trước khi `prisma db push --accept-data-loss`. Indexes đổi `@@index([isAvailable])` + composite → `@@index([status])` + `@@index([status, isApproved, priceMonthly])`.
+- **UI 3-state:** RoomTypeForm có 3-button chooser (🟢 Còn / 🟡 Sắp trống / 🔴 Hết) + date picker bắt buộc khi UPCOMING. Cycle toggle ở admin/rooms + landlord/properties (bấm badge → chọn xoay vòng, chọn UPCOMING → prompt date). Customer share link hiện badge "🟡 Sắp trống từ DD/MM/YYYY".
+- **Sort UPCOMING:** rooms/public + share-links + share-links/system orderBy `[status: asc, expectedAvailableDate: asc nulls-last, createdAt: desc]` → AVAILABLE trước, UPCOMING (sắp trống sớm nhất) tiếp, UNAVAILABLE ẩn ở public.
+- **Rename text:** "Loại phòng" → "Tin đăng (theo loại phòng)" (menu/title/breadcrumb), "Tên loại phòng" → "Tiêu đề bài đăng", "Mô tả" → "Mô tả và giá dịch vụ", "Loại phòng" filter → "Kiểu phòng" (đồng bộ toàn app).
+- **Security: bỏ leak `availableRoomNames`:** Customer-facing API (`/api/share-links` single+system, `/api/rooms/public`, `/api/rooms/related`) chuyển từ `include` sang `select` rõ ràng, KHÔNG select `availableRoomNames`. Verified `curl` 3 endpoint → CLEAN. Internal pages (broker/landlord/admin) vẫn thấy đầy đủ. Field giữ ở DB + Zod schema để admin/landlord/broker quản trị, helper text trong RoomTypeForm cảnh báo "🔒 Chỉ hiển thị nội bộ".
+- **Auto-fill deposit:** RoomTypeForm theo dõi `depositTouched` flag. Auto sync deposit = priceMonthly khi user chưa chỉnh tay; xoá hẳn deposit → reset flag, sync lại với current price; gõ "0" → respect intent "không cọc"; load existing record với deposit ≠ price → giữ touched.
+- **Broker filter:** Thêm `district` filter qua hybrid pills + dropdown (`components/ui/DistrictPills.tsx` — 7 quận chính + dropdown 23 quận/huyện còn lại Hà Nội). Thay 2 input số "từ/đến" bằng dual-handle range slider (`components/ui/PriceRangeSlider.tsx` — 1tr-20tr step 500k, 24px touch target, format VND vi-VN). Backend không đổi.
+- **Public search homepage:** Áp pills quận giống broker (component dùng chung `DistrictPills`). GIỮ 2 input số giá (khách lần đầu cần ô số trực quan hơn slider).
+- **Share link polish:**
+  - Bỏ Section 5 "🏢 Thông tin tòa nhà" trên `share/[token]`. Tên tòa merge vào header dưới dạng "Thuộc tòa: {name}". Tiện ích chung tòa nhà merge vào Section 3 thành subsection.
+  - Đổi "Tạo link gửi khách" → "Chia sẻ link" (broker + landlord).
+  - Floating Zalo button (`components/ui/ZaloFab.tsx`): fixed góc dưới phải, 56px, safe-area-inset iOS, z-50. Logic resolve qua `lib/zalo.ts` chain: company `zaloGroupLink` → landlord phone deeplink (`zalo.me/{digits}`, KHÔNG render UI) → env `NEXT_PUBLIC_SUPPORT_ZALO` → fallback. FAB + Section 7 "Liên hệ" cùng dùng helper → luôn point đến cùng destination. Modal trong SystemShareClient bump z-50 → z-[60] để FAB không che.
+- **Sau khi pull code v8.3:** chạy `npm install`, rồi `npx ts-node --compiler-options '{"module":"CommonJS"}' prisma/migrate-status.ts` để backfill, sau đó `npx prisma db push --accept-data-loss` để drop `isAvailable` và sync indexes. Không có production data thật → an toàn one-shot.
+
 ### v8.2 (ff6103a) — 2026-04-23
 - Filter "Đặc điểm nổi bật" trên trang chủ public (5 toggle AND): 🚗 Ô tô đỗ cửa, 🏍️ Để xe máy, ⚡ Sạc xe điện, 🐾 Thú cưng OK, 🌍 Người nước ngoài
 - API `/api/rooms/public`: đọc 5 query params (`parkingCar`, `parkingBike`, `evCharging`, `petAllowed`, `foreignerOk`) và nest vào `property: {}` filter

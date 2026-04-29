@@ -43,21 +43,28 @@ export async function GET(req: NextRequest) {
           parkingCar: true, parkingBike: true, evCharging: true, petAllowed: true, foreignerOk: true,
           company: { select: { id: true, name: true, logo: true, zaloGroupLink: true, description: true } },
           roomTypes: {
-            where: { isAvailable: true, isApproved: true, availableUnits: { gt: 0 } },
+            where: { isApproved: true, status: { in: ['AVAILABLE', 'UPCOMING'] } },
             select: {
               id: true, name: true, typeName: true, areaSqm: true,
               priceMonthly: true, deposit: true, description: true,
               amenities: true, images: true, videos: true, videoLinks: true,
-              totalUnits: true, availableUnits: true, availableRoomNames: true,
+              totalUnits: true, availableUnits: true,
+              // KHÔNG select availableRoomNames — leak sang khách
+              status: true, expectedAvailableDate: true,
               shortTermAllowed: true, shortTermMonths: true, shortTermPrice: true,
             },
+            orderBy: [
+              { status: 'asc' },
+              { expectedAvailableDate: { sort: 'asc', nulls: 'last' } },
+              { createdAt: 'desc' },
+            ],
           },
         },
       });
 
       const landlord = await prisma.user.findUnique({
         where: { id: landlordId },
-        select: { name: true },
+        select: { name: true, phone: true }, // phone dùng cho FAB Zalo deeplink (KHÔNG render UI)
       });
 
       return NextResponse.json({
@@ -71,9 +78,18 @@ export async function GET(req: NextRequest) {
     if (token) {
       const link = await prisma.shareLink.findUnique({
         where: { token },
-        include: {
+        select: {
+          id: true, token: true, viewCount: true, isActive: true, isSystem: true,
+          expiresAt: true, createdAt: true, roomTypeId: true, brokerId: true,
           roomType: {
-            include: {
+            select: {
+              id: true, name: true, typeName: true, areaSqm: true,
+              priceMonthly: true, deposit: true, description: true,
+              amenities: true, images: true, videos: true, videoLinks: true,
+              totalUnits: true, availableUnits: true,
+              // KHÔNG select availableRoomNames — khách chỉ thấy số lượng
+              status: true, expectedAvailableDate: true,
+              shortTermAllowed: true, shortTermMonths: true, shortTermPrice: true,
               property: {
                 select: {
                   id: true, name: true, district: true, streetName: true, city: true,
@@ -81,6 +97,7 @@ export async function GET(req: NextRequest) {
                   parkingCar: true, parkingBike: true, evCharging: true, petAllowed: true, foreignerOk: true,
                   // NO fullAddress, lat, lng, landlord phone
                   company: { select: { id: true, name: true, logo: true, zaloGroupLink: true, description: true } },
+                  landlord: { select: { id: true, name: true, phone: true } }, // phone dùng cho FAB Zalo deeplink (KHÔNG render trên UI)
                 },
               },
             },
@@ -132,8 +149,9 @@ export async function GET(req: NextRequest) {
     ]);
 
     return NextResponse.json(paginatedResponse(links, total, page, limit));
-  } catch (error) {
-    return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
+  } catch (error: any) {
+    console.error('/api/share-links error:', error);
+    return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });
   }
 }
 
@@ -226,8 +244,9 @@ export async function POST(req: NextRequest) {
       ...link,
       url: `${appUrl}/p/${token}`,
     }, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
+  } catch (error: any) {
+    console.error('/api/share-links error:', error);
+    return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });
   }
 }
 
@@ -245,7 +264,8 @@ export async function DELETE(req: NextRequest) {
 
     await prisma.shareLink.delete({ where: { id } });
     return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
+  } catch (error: any) {
+    console.error('/api/share-links error:', error);
+    return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });
   }
 }

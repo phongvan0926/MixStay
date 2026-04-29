@@ -31,6 +31,7 @@ interface PropertyFormProps {
   isAdmin?: boolean;
   loading?: boolean;
   companies?: { id: string; name: string }[];
+  landlords?: { id: string; name: string; email?: string }[];
 }
 
 const AMENITY_OPTIONS = [
@@ -68,10 +69,19 @@ const defaultData: PropertyData = {
   status: 'PENDING',
 };
 
-export default function PropertyForm({ initialData, onSubmit, isAdmin = false, loading = false, companies = [] }: PropertyFormProps) {
+export default function PropertyForm({ initialData, onSubmit, isAdmin = false, loading = false, companies = [], landlords = [] }: PropertyFormProps) {
   const [form, setForm] = useState<PropertyData>(defaultData);
   const [companyId, setCompanyId] = useState<string>(initialData?.companyId || '');
+  const [landlordId, setLandlordId] = useState<string>(initialData?.landlordId || '');
+  const [landlordSearch, setLandlordSearch] = useState('');
   const isEdit = !!initialData?.id;
+
+  const filteredLandlords = landlordSearch.trim()
+    ? landlords.filter(l => {
+        const q = landlordSearch.toLowerCase();
+        return l.name?.toLowerCase().includes(q) || l.email?.toLowerCase().includes(q);
+      })
+    : landlords;
 
   useEffect(() => {
     if (initialData) {
@@ -121,8 +131,13 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, l
     if (!form.fullAddress.trim()) return toast.error('Vui lòng nhập địa chỉ chi tiết');
     if (!form.district.trim()) return toast.error('Vui lòng nhập quận/huyện');
     if (!form.streetName.trim()) return toast.error('Vui lòng nhập tên đường');
+    if (isAdmin && !isEdit && !landlordId) return toast.error('Vui lòng chọn chủ nhà cho tòa nhà này');
 
-    onSubmit({ ...form, companyId: companyId || null });
+    onSubmit({
+      ...form,
+      companyId: companyId || null,
+      ...(isAdmin && landlordId ? { landlordId } : {}),
+    });
   };
 
   return (
@@ -139,6 +154,43 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, l
                 <option value="">— Không thuộc công ty nào —</option>
                 {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
+            </div>
+          )}
+
+          {/* Landlord selector (admin only — required when creating) */}
+          {isAdmin && (
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-stone-700 mb-1.5">
+                Chủ nhà {!isEdit && <span className="text-red-500">*</span>}
+              </label>
+              {landlords.length > 8 && (
+                <input
+                  type="text"
+                  className="input-field mb-2"
+                  placeholder="Tìm theo tên hoặc email…"
+                  value={landlordSearch}
+                  onChange={e => setLandlordSearch(e.target.value)}
+                />
+              )}
+              <select
+                className="input-field"
+                value={landlordId}
+                onChange={e => setLandlordId(e.target.value)}
+                disabled={isEdit}
+              >
+                <option value="">-- Chọn chủ nhà --</option>
+                {filteredLandlords.map(l => (
+                  <option key={l.id} value={l.id}>
+                    {l.name}{l.email ? ` — ${l.email}` : ''}
+                  </option>
+                ))}
+              </select>
+              {isEdit && (
+                <p className="text-xs text-stone-400 mt-1">Không thể đổi chủ nhà khi sửa tòa nhà.</p>
+              )}
+              {!isEdit && landlords.length === 0 && (
+                <p className="text-xs text-amber-600 mt-1">Chưa có user role LANDLORD nào. Tạo user chủ nhà ở mục Quản lý người dùng trước.</p>
+              )}
             </div>
           )}
           <div className="md:col-span-2">

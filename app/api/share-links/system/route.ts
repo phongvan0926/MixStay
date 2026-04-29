@@ -44,27 +44,36 @@ export async function GET(req: NextRequest) {
         id: true, name: true, district: true, streetName: true, city: true,
         amenities: true, images: true, totalFloors: true,
         parkingCar: true, parkingBike: true, evCharging: true, petAllowed: true, foreignerOk: true,
+        company: { select: { id: true, name: true, logo: true, zaloGroupLink: true } },
         roomTypes: {
-          where: { isAvailable: true, isApproved: true, availableUnits: { gt: 0 } },
+          where: { isApproved: true, status: { in: ['AVAILABLE', 'UPCOMING'] } },
           select: {
             id: true, name: true, typeName: true, areaSqm: true,
             priceMonthly: true, deposit: true, description: true,
             amenities: true, images: true,
-            totalUnits: true, availableUnits: true, availableRoomNames: true,
+            totalUnits: true, availableUnits: true,
+            // KHÔNG select availableRoomNames — leak sang khách
+            status: true, expectedAvailableDate: true,
             shortTermAllowed: true, shortTermMonths: true, shortTermPrice: true,
           },
+          orderBy: [
+            { status: 'asc' },
+            { expectedAvailableDate: { sort: 'asc', nulls: 'last' } },
+            { createdAt: 'desc' },
+          ],
         },
       },
     });
 
     const landlord = await prisma.user.findUnique({
       where: { id: landlordId },
-      select: { name: true },
+      select: { name: true, phone: true }, // phone dùng cho FAB Zalo deeplink (KHÔNG render UI)
     });
 
     return NextResponse.json({ link, landlord, properties });
-  } catch (error) {
-    return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
+  } catch (error: any) {
+    console.error('/api/share-links/system error:', error);
+    return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });
   }
 }
 
@@ -100,7 +109,8 @@ export async function POST(req: NextRequest) {
       ...link,
       url: `${appUrl}/share/system/${token}`,
     }, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
+  } catch (error: any) {
+    console.error('/api/share-links/system error:', error);
+    return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });
   }
 }

@@ -28,6 +28,12 @@ enum DealStatus {
   CANCELLED
 }
 
+enum RoomStatus {
+  AVAILABLE     // 🟢 Còn phòng
+  UNAVAILABLE   // 🔴 Hết phòng
+  UPCOMING      // 🟡 Sắp trống
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -170,11 +176,12 @@ model RoomType {
   videoLinks          String[]  @default([])  // link YouTube/TikTok/Facebook Video
 
   // Quản lý số lượng theo loại
-  totalUnits          Int       @default(1)    // tổng số phòng loại này
-  availableUnits      Int       @default(1)    // số phòng đang trống
-  availableRoomNames  String?                  // "101, 201, 301" — tên cụ thể phòng trống
-  isAvailable         Boolean   @default(true) // bật/tắt nhanh toàn bộ loại này
-  isApproved          Boolean   @default(false)
+  totalUnits             Int          @default(1)    // tổng số phòng loại này
+  availableUnits         Int          @default(1)    // số phòng đang trống
+  availableRoomNames     String?                     // "101, 201, 301" — tên cụ thể phòng trống (CHỈ nội bộ — landlord/admin/broker)
+  status                 RoomStatus   @default(AVAILABLE) // 🟢 AVAILABLE / 🟡 UPCOMING / 🔴 UNAVAILABLE
+  expectedAvailableDate  DateTime?                   // bắt buộc khi status = UPCOMING
+  isApproved             Boolean      @default(false)
 
   // Chính sách hoa hồng & cho thuê
   commissionJson      String?   // {"6":40, "12":50} = 6 tháng 40%, 12 tháng 50%
@@ -194,11 +201,11 @@ model RoomType {
   inquiries           RoomInquiry[]
 
   @@index([propertyId])
-  @@index([isAvailable])
+  @@index([status])
   @@index([isApproved])
   @@index([priceMonthly])
   @@index([typeName])
-  @@index([isAvailable, isApproved, priceMonthly])
+  @@index([status, isApproved, priceMonthly])
   @@map("room_types")
 }
 

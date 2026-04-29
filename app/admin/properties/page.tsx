@@ -5,7 +5,7 @@ import { formatCurrency, getStatusColor, getStatusLabel } from '@/lib/utils';
 import PropertyForm from '@/components/forms/PropertyForm';
 import Pagination from '@/components/ui/Pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage';
-import { useProperties, useCompanies, useDashboardStats } from '@/hooks/useData';
+import { useProperties, useCompanies, useDashboardStats, useUsers } from '@/hooks/useData';
 import { SkeletonStats, SkeletonTable } from '@/components/ui/Skeleton';
 
 export default function AdminPropertiesPage() {
@@ -14,6 +14,7 @@ export default function AdminPropertiesPage() {
   const { stats } = useDashboardStats();
   const { properties, pagination, isLoading: loading, mutate } = useProperties({ page: String(page), limit: '20' });
   const { companies } = useCompanies();
+  const { users: landlordUsers } = useUsers({ role: 'LANDLORD', limit: '500' });
 
   const [showModal, setShowModal] = useState(false);
   const [editingProperty, setEditingProperty] = useState<any>(null);
@@ -80,7 +81,10 @@ export default function AdminPropertiesPage() {
           body: JSON.stringify({ id: editingProperty.id, ...data }),
         });
         if (res.ok) { toast.success('Đã cập nhật tòa nhà!'); setShowModal(false); mutate(); }
-        else toast.error('Lỗi cập nhật');
+        else {
+          const err = await res.json().catch(() => ({}));
+          toast.error(err.error || 'Lỗi cập nhật tòa nhà');
+        }
       } else {
         const res = await fetch('/api/properties', {
           method: 'POST',
@@ -88,7 +92,10 @@ export default function AdminPropertiesPage() {
           body: JSON.stringify(data),
         });
         if (res.ok) { toast.success('Đã thêm tòa nhà!'); setShowModal(false); mutate(); }
-        else toast.error('Lỗi thêm tòa nhà');
+        else {
+          const err = await res.json().catch(() => ({}));
+          toast.error(err.error || 'Lỗi thêm tòa nhà');
+        }
       }
     } finally { setSubmitting(false); }
   };
@@ -172,7 +179,7 @@ export default function AdminPropertiesPage() {
                 <th className="table-header">Công ty</th>
                 <th className="table-header">Khu vực</th>
                 <th className="table-header">Chủ nhà</th>
-                <th className="table-header">Phòng</th>
+                <th className="table-header">Tin đăng</th>
                 <th className="table-header">Trạng thái</th>
                 <th className="table-header">Thao tác</th>
               </tr>
@@ -216,7 +223,7 @@ export default function AdminPropertiesPage() {
                       <p className="text-xs text-stone-500">{p.landlord.phone}</p>
                     </td>
                     <td className="table-cell">
-                      <span className="text-emerald-600 font-bold">{p.roomTypes.filter((r: any) => r.isAvailable).length}</span>
+                      <span className="text-emerald-600 font-bold">{p.roomTypes.filter((r: any) => r.status === 'AVAILABLE').length}</span>
                       <span className="text-stone-400 font-medium">/{p.roomTypes.length}</span>
                     </td>
                     <td className="table-cell">
@@ -280,6 +287,7 @@ export default function AdminPropertiesPage() {
                 isAdmin={true}
                 loading={submitting}
                 companies={companies}
+                landlords={(landlordUsers || []).map((u: any) => ({ id: u.id, name: u.name, email: u.email }))}
               />
             </div>
           </div>

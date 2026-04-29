@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
       const [totalProperties, totalRoomTypes, availableRoomTypes, totalDeals, confirmedDeals, totalBrokers, totalLandlords, pendingProperties] = await Promise.all([
         prisma.property.count(),
         prisma.roomType.count(),
-        prisma.roomType.count({ where: { isAvailable: true, isApproved: true } }),
+        prisma.roomType.count({ where: { status: 'AVAILABLE', isApproved: true } }),
         prisma.deal.count(),
         prisma.deal.count({ where: { status: 'CONFIRMED' } }),
         prisma.user.count({ where: { role: 'BROKER' } }),
@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
       const [totalProperties, totalRoomTypes, availableRoomTypes] = await Promise.all([
         prisma.property.count({ where: { landlordId: session.user.id } }),
         prisma.roomType.count({ where: { property: { landlordId: session.user.id } } }),
-        prisma.roomType.count({ where: { property: { landlordId: session.user.id }, isAvailable: true } }),
+        prisma.roomType.count({ where: { property: { landlordId: session.user.id }, status: 'AVAILABLE' } }),
       ]);
 
       const totalViews = await prisma.roomType.aggregate({

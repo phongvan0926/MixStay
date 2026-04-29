@@ -143,7 +143,10 @@ export default function LandlordPropertiesPage() {
           toast.success('Đã cập nhật tòa nhà!');
           closePropModal();
           mutate();
-        } else toast.error('Lỗi cập nhật');
+        } else {
+          const err = await res.json().catch(() => ({}));
+          toast.error(err.error || 'Lỗi cập nhật');
+        }
       } else {
         const res = await fetch('/api/properties', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -154,8 +157,11 @@ export default function LandlordPropertiesPage() {
           setWizardPropertyData({ ...data, name: created.name });
           setCreatedPropertyId(created.id);
           setWizardStep(2);
-          toast.success('Đã tạo tòa nhà! Bây giờ thêm loại phòng.');
-        } else toast.error('Lỗi thêm tòa nhà');
+          toast.success('Đã tạo tòa nhà! Bây giờ thêm tin đăng.');
+        } else {
+          const err = await res.json().catch(() => ({}));
+          toast.error(err.error || 'Lỗi thêm tòa nhà');
+        }
       }
     } finally { setSubmitting(false); }
   };
@@ -193,14 +199,14 @@ export default function LandlordPropertiesPage() {
             deposit: rt.deposit,
             totalUnits: rt.totalUnits,
             availableUnits: rt.totalUnits,
-            isAvailable: true,
+            status: 'AVAILABLE',
             amenities: rt.amenities,
             commissionJson: rt.commissionJson,
           }),
         });
         if (res.ok) success++;
       }
-      toast.success(`Hoàn tất! Đã tạo ${success} loại phòng. Chờ Admin duyệt.`);
+      toast.success(`Hoàn tất! Đã tạo ${success} tin đăng. Chờ Admin duyệt.`);
       closePropModal();
       mutate();
       if (propId) setFocusPropertyId(propId);
@@ -233,7 +239,7 @@ export default function LandlordPropertiesPage() {
           body: JSON.stringify({ id: editingRT.id, ...data }),
         });
         if (res.ok) {
-          toast.success('Đã cập nhật loại phòng!');
+          toast.success('Đã cập nhật tin đăng!');
           closeRTModal();
           mutate();
         } else {
@@ -246,25 +252,42 @@ export default function LandlordPropertiesPage() {
           body: JSON.stringify(data),
         });
         if (res.ok) {
-          toast.success('Đã thêm loại phòng! Chờ Admin duyệt.');
+          toast.success('Đã thêm tin đăng! Chờ Admin duyệt.');
           closeRTModal();
           mutate();
         } else {
           const err = await res.json().catch(() => ({}));
-          toast.error(err.error || 'Lỗi thêm loại phòng');
+          toast.error(err.error || 'Lỗi thêm tin đăng');
         }
       }
     } finally { setSubmitting(false); }
   };
 
-  // Toggle availability
-  const toggleAvailability = async (id: string, current: boolean) => {
-    await fetch('/api/rooms', {
+  // Cycle status: AVAILABLE → UPCOMING → UNAVAILABLE → AVAILABLE
+  const cycleStatus = async (id: string, current: 'AVAILABLE' | 'UPCOMING' | 'UNAVAILABLE') => {
+    const next: 'AVAILABLE' | 'UPCOMING' | 'UNAVAILABLE' =
+      current === 'AVAILABLE' ? 'UPCOMING' : current === 'UPCOMING' ? 'UNAVAILABLE' : 'AVAILABLE';
+
+    const body: any = { id, status: next };
+    if (next === 'UPCOMING') {
+      const dateStr = prompt('Ngày phòng sẽ trống (YYYY-MM-DD):', new Date(Date.now() + 14 * 86400_000).toISOString().slice(0, 10));
+      if (!dateStr) return;
+      body.expectedAvailableDate = new Date(dateStr).toISOString();
+    } else {
+      body.expectedAvailableDate = null;
+    }
+
+    const res = await fetch('/api/rooms', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, isAvailable: !current }),
+      body: JSON.stringify(body),
     });
-    toast.success(!current ? 'Đã bật (Còn phòng)' : 'Đã tắt (Hết phòng)');
-    mutate();
+    if (res.ok) {
+      toast.success(next === 'AVAILABLE' ? '🟢 Còn phòng' : next === 'UPCOMING' ? '🟡 Sắp trống' : '🔴 Hết phòng');
+      mutate();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      toast.error(err.error || 'Lỗi cập nhật');
+    }
   };
 
   // Inline edits
@@ -328,7 +351,7 @@ export default function LandlordPropertiesPage() {
         <div>
           <h1 className="font-display text-2xl font-bold">Tòa nhà của tôi</h1>
           <p className="text-sm text-stone-500 mt-1">
-            {properties.length} tòa nhà • {roomTypes.length} loại phòng
+            {properties.length} tòa nhà • {roomTypes.length} tin đăng
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -398,7 +421,7 @@ export default function LandlordPropertiesPage() {
       <div className="space-y-6">
         {properties.map((p: any) => {
           const rts = rtByProperty[p.id] || [];
-          const availableCount = rts.filter(r => r.isAvailable && r.availableUnits > 0).length;
+          const availableCount = rts.filter(r => r.status === 'AVAILABLE').length;
 
           return (
             <div key={p.id} id={`property-${p.id}`} className="card transition-all scroll-mt-20">
@@ -421,7 +444,7 @@ export default function LandlordPropertiesPage() {
                       {availableCount} còn phòng
                     </span>
                     <span className="text-stone-400">•</span>
-                    <span className="text-xs text-stone-600">{rts.length} loại phòng</span>
+                    <span className="text-xs text-stone-600">{rts.length} tin đăng</span>
                     {p.zaloPhone && (
                       <>
                         <span className="text-stone-400">•</span>
@@ -449,12 +472,12 @@ export default function LandlordPropertiesPage() {
               {/* Room types */}
               <div className="border-t border-stone-100 pt-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-stone-700">Loại phòng ({rts.length})</h3>
+                  <h3 className="text-sm font-semibold text-stone-700">Tin đăng (theo loại phòng) ({rts.length})</h3>
                 </div>
 
                 {rts.length === 0 ? (
                   <p className="text-sm text-stone-400 text-center py-6 bg-stone-50 rounded-xl">
-                    Chưa có loại phòng nào. Bấm nút bên dưới để thêm.
+                    Chưa có tin đăng nào. Bấm nút bên dưới để thêm.
                   </p>
                 ) : viewMode === 'card' ? (
                   <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -473,7 +496,7 @@ export default function LandlordPropertiesPage() {
                         onChangeAvailableUnits={setEditAvailableUnits}
                         onChangeAvailableNames={setEditAvailableNames}
                         onEdit={() => openEditRT(rt)}
-                        onToggle={() => toggleAvailability(rt.id, rt.isAvailable)}
+                        onToggle={() => cycleStatus(rt.id, rt.status || (rt.isAvailable === false ? 'UNAVAILABLE' : 'AVAILABLE'))}
                         onReplyInquiry={replyInquiry}
                         onShare={() => shareRoomType(rt.id)}
                         sharing={sharingRT === rt.id}
@@ -493,7 +516,7 @@ export default function LandlordPropertiesPage() {
                     onChangeAvailableUnits={setEditAvailableUnits}
                     onChangeAvailableNames={setEditAvailableNames}
                     onEdit={openEditRT}
-                    onToggle={toggleAvailability}
+                    onToggle={cycleStatus}
                     onShare={shareRoomType}
                     sharingId={sharingRT}
                   />
@@ -507,7 +530,7 @@ export default function LandlordPropertiesPage() {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  + Thêm loại phòng vào {p.name}
+                  + Thêm tin đăng vào {p.name}
                 </button>
               </div>
             </div>
@@ -537,7 +560,7 @@ export default function LandlordPropertiesPage() {
                     ? 'Sửa tòa nhà'
                     : wizardStep === 1
                       ? 'Bước 1: Thông tin tòa nhà'
-                      : 'Bước 2: Thêm loại phòng'}
+                      : 'Bước 2: Thêm tin đăng'}
                 </h2>
                 {!editingProperty && (
                   <div className="flex items-center gap-2 mt-1.5">
@@ -568,7 +591,7 @@ export default function LandlordPropertiesPage() {
                 <div className="space-y-5">
                   <div className="p-4 bg-brand-50 rounded-xl border border-brand-100">
                     <p className="text-sm text-brand-800">
-                      Tòa nhà: <strong>{wizardPropertyData?.name}</strong>. Bây giờ thêm các loại phòng:
+                      Tòa nhà: <strong>{wizardPropertyData?.name}</strong>. Bây giờ thêm các tin đăng:
                     </p>
                   </div>
 
@@ -604,13 +627,13 @@ export default function LandlordPropertiesPage() {
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
-                      + Thêm loại phòng
+                      + Thêm tin đăng
                     </button>
                   )}
 
                   <div className="flex items-center justify-between pt-4 border-t border-stone-200">
                     <p className="text-sm text-stone-400">
-                      {wizardRoomTypes.length === 0 ? 'Bạn có thể thêm loại phòng sau' : `${wizardRoomTypes.length} loại phòng`}
+                      {wizardRoomTypes.length === 0 ? 'Bạn có thể thêm tin đăng sau' : `${wizardRoomTypes.length} tin đăng`}
                     </p>
                     <button onClick={handleFinishWizard} disabled={submitting} className="btn-primary px-8">
                       {submitting ? (
@@ -635,7 +658,7 @@ export default function LandlordPropertiesPage() {
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto mx-4 z-10">
             <div className="sticky top-0 bg-white border-b border-stone-200 px-6 py-4 rounded-t-2xl flex items-center justify-between z-20">
               <h2 className="font-display text-lg font-bold text-stone-900">
-                {editingRT ? 'Sửa loại phòng' : 'Thêm loại phòng mới'}
+                {editingRT ? 'Sửa tin đăng' : 'Thêm tin đăng mới'}
               </h2>
               <button onClick={closeRTModal}
                 className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-stone-100 transition-colors text-stone-500">
@@ -792,7 +815,7 @@ function RoomTypeCard({
         {/* Actions */}
         <div className="pt-2 border-t border-stone-100 space-y-1.5">
           <button onClick={onShare} disabled={sharing || !rt.isApproved}
-            title={rt.isApproved ? 'Tạo & copy link tin đăng' : 'Cần duyệt trước khi chia sẻ'}
+            title={rt.isApproved ? 'Chia sẻ link tin đăng' : 'Cần duyệt trước khi chia sẻ'}
             className="w-full py-1.5 rounded-lg text-xs font-medium bg-violet-50 text-violet-700 hover:bg-violet-100 transition-all border border-violet-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1">
             {sharing ? (
               <>
@@ -806,11 +829,19 @@ function RoomTypeCard({
             Sửa chi tiết
           </button>
           <button onClick={onToggle}
-            className={'w-full py-1.5 rounded-lg text-xs font-medium transition-all ' +
-              (rt.isAvailable
-                ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
-                : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200')}>
-            {rt.isAvailable ? '🟢 Còn phòng' : '🔴 Hết phòng'}
+            title="Bấm để đổi trạng thái: Còn → Sắp trống → Hết → Còn"
+            className={'w-full py-1.5 rounded-lg text-xs font-medium transition-all border ' +
+              (rt.status === 'UNAVAILABLE'
+                ? 'bg-red-50 text-red-700 hover:bg-red-100 border-red-200'
+                : rt.status === 'UPCOMING'
+                  ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-200'
+                  : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200')}>
+            {rt.status === 'UNAVAILABLE' ? '🔴 Hết phòng' : rt.status === 'UPCOMING' ? '🟡 Sắp trống' : '🟢 Còn phòng'}
+            {rt.status === 'UPCOMING' && rt.expectedAvailableDate && (
+              <span className="block text-[10px] font-normal mt-0.5 opacity-80">
+                từ {new Date(rt.expectedAvailableDate).toLocaleDateString('vi-VN')}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -829,7 +860,7 @@ function RoomTypeListView({
   editingAvailable: string | null; editAvailableUnits: number; editAvailableNames: string;
   onStartEdit: (rt: any) => void; onCancelEdit: () => void; onSaveAvailable: (id: string) => void;
   onChangeAvailableUnits: (n: number) => void; onChangeAvailableNames: (s: string) => void;
-  onEdit: (rt: any) => void; onToggle: (id: string, current: boolean) => void;
+  onEdit: (rt: any) => void; onToggle: (id: string, current: 'AVAILABLE' | 'UPCOMING' | 'UNAVAILABLE') => void;
   onShare: (id: string) => void; sharingId: string | null;
 }) {
   return (
@@ -913,13 +944,23 @@ function RoomTypeListView({
                 </td>
                 <td className="px-3 py-2 text-center">
                   <button
-                    onClick={() => onToggle(rt.id, rt.isAvailable)}
-                    className={'inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium transition-all ' +
-                      (rt.isAvailable
-                        ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
-                        : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200')}
+                    onClick={() => onToggle(rt.id, rt.status || (rt.isAvailable === false ? 'UNAVAILABLE' : 'AVAILABLE'))}
+                    title="Bấm để đổi: Còn → Sắp trống → Hết → Còn"
+                    className={'inline-flex flex-col items-center px-2 py-1 rounded-lg text-xs font-medium transition-all border ' +
+                      (rt.status === 'UNAVAILABLE'
+                        ? 'bg-red-50 text-red-700 hover:bg-red-100 border-red-200'
+                        : rt.status === 'UPCOMING'
+                          ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-200'
+                          : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200')}
                   >
-                    {rt.isAvailable ? '🟢 Còn phòng' : '🔴 Hết phòng'}
+                    <span>
+                      {rt.status === 'UNAVAILABLE' ? '🔴 Hết phòng' : rt.status === 'UPCOMING' ? '🟡 Sắp trống' : '🟢 Còn phòng'}
+                    </span>
+                    {rt.status === 'UPCOMING' && rt.expectedAvailableDate && (
+                      <span className="text-[9px] opacity-80">
+                        từ {new Date(rt.expectedAvailableDate).toLocaleDateString('vi-VN')}
+                      </span>
+                    )}
                   </button>
                 </td>
                 <td className="px-3 py-2 text-right">

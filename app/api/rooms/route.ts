@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     const shortTerm = url.searchParams.get('shortTerm');
     const companyId = url.searchParams.get('companyId');
     const landlordId = url.searchParams.get('landlordId');
-    const status = url.searchParams.get('status'); // available/unavailable/all
+    const status = url.searchParams.get('status'); // AVAILABLE/UPCOMING/UNAVAILABLE/all
 
     const where: any = {};
 
@@ -43,10 +43,10 @@ export async function GET(req: NextRequest) {
     if (maxPrice) where.priceMonthly = { ...where.priceMonthly, lte: parseFloat(maxPrice) };
     if (shortTerm === 'true') where.shortTermAllowed = true;
 
-    // Status filter
-    if (status === 'available' || available === 'true') where.isAvailable = true;
-    else if (status === 'unavailable' || available === 'false') where.isAvailable = false;
-    // status === 'all' → no filter
+    // Status filter (status enum)
+    if (status === 'AVAILABLE' || status === 'available' || available === 'true') where.status = 'AVAILABLE';
+    else if (status === 'UNAVAILABLE' || status === 'unavailable' || available === 'false') where.status = 'UNAVAILABLE';
+    else if (status === 'UPCOMING' || status === 'upcoming') where.status = 'UPCOMING';
 
     // Property-level filters
     const propertyWhere: any = {};
@@ -81,6 +81,8 @@ export async function GET(req: NextRequest) {
     }
 
     const isBrokerOrAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'BROKER';
+    const isLandlord = session?.user?.role === 'LANDLORD';
+    const isInternal = isBrokerOrAdmin || isLandlord; // landlord/admin/broker được thấy availableRoomNames
     const isCustomerOrPublic = !session || session?.user?.role === 'CUSTOMER';
 
     const { page, limit, skip } = getPaginationParams(url);
@@ -103,8 +105,9 @@ export async function GET(req: NextRequest) {
           videoLinks: true,
           totalUnits: true,
           availableUnits: true,
-          availableRoomNames: true,
-          isAvailable: true,
+          availableRoomNames: isInternal ? true : false,
+          status: true,
+          expectedAvailableDate: true,
           isApproved: true,
           commissionJson: isBrokerOrAdmin ? true : false,
           shortTermAllowed: true,
@@ -161,8 +164,9 @@ export async function GET(req: NextRequest) {
     ]);
 
     return NextResponse.json(paginatedResponse(roomTypes, total, page, limit));
-  } catch (error) {
-    return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
+  } catch (error: any) {
+    console.error('GET /api/rooms error:', error);
+    return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });
   }
 }
 
@@ -203,14 +207,16 @@ export async function POST(req: NextRequest) {
         shortTermMonths: body.shortTermMonths || null,
         shortTermPrice: body.shortTermPrice ? parseFloat(body.shortTermPrice) : null,
         landlordNotes: body.landlordNotes || null,
-        isAvailable: body.isAvailable ?? true,
+        status: body.status || 'AVAILABLE',
+        expectedAvailableDate: body.expectedAvailableDate ? new Date(body.expectedAvailableDate) : null,
         isApproved: session.user.role === 'ADMIN' ? (body.isApproved ?? true) : false,
       },
     });
 
     return NextResponse.json(roomType, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
+  } catch (error: any) {
+    console.error('POST /api/rooms error:', error);
+    return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });
   }
 }
 
@@ -252,14 +258,18 @@ export async function PUT(req: NextRequest) {
         ...(data.shortTermMonths !== undefined && { shortTermMonths: data.shortTermMonths }),
         ...(data.shortTermPrice !== undefined && { shortTermPrice: data.shortTermPrice ? parseFloat(data.shortTermPrice) : null }),
         ...(data.landlordNotes !== undefined && { landlordNotes: data.landlordNotes }),
-        ...(data.isAvailable !== undefined && { isAvailable: data.isAvailable }),
+        ...(data.status !== undefined && { status: data.status }),
+        ...(data.expectedAvailableDate !== undefined && {
+          expectedAvailableDate: data.expectedAvailableDate ? new Date(data.expectedAvailableDate) : null,
+        }),
         ...(data.isApproved !== undefined && { isApproved: data.isApproved }),
       },
     });
 
     return NextResponse.json(roomType);
-  } catch (error) {
-    return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
+  } catch (error: any) {
+    console.error('PUT /api/rooms error:', error);
+    return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });
   }
 }
 
@@ -277,7 +287,8 @@ export async function DELETE(req: NextRequest) {
 
     await prisma.roomType.delete({ where: { id } });
     return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
+  } catch (error: any) {
+    console.error('DELETE /api/rooms error:', error);
+    return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });
   }
 }

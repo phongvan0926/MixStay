@@ -7,6 +7,8 @@ import OptimizedImage from '@/components/ui/OptimizedImage';
 import VideoGallery from '@/components/ui/VideoGallery';
 import { useRoomTypes, useCompanies, useDashboardStats } from '@/hooks/useData';
 import { SkeletonStats, SkeletonCardGrid } from '@/components/ui/Skeleton';
+import DistrictPills from '@/components/ui/DistrictPills';
+import PriceRangeSlider from '@/components/ui/PriceRangeSlider';
 
 const roomTypeLabels: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1K1N',
@@ -305,7 +307,7 @@ function RoomDetailModal({
             <button onClick={() => onCreateLink(room.id)}
               className={'flex-1 py-3 rounded-xl font-medium text-sm transition-all ' +
                 (copied ? 'bg-emerald-100 text-emerald-700' : 'bg-brand-600 text-white hover:bg-brand-700')}>
-              {copied ? '✓ Đã copy link' : '🔗 Tạo link gửi khách'}
+              {copied ? '✓ Đã copy link' : '🔗 Chia sẻ link'}
             </button>
             <button onClick={() => onSendInquiry(room.id)}
               disabled={asked}
@@ -326,7 +328,7 @@ export default function BrokerInventoryPage() {
   const [inquirySent, setInquirySent] = useState<Set<string>>(new Set());
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [filter, setFilter] = useState({
-    search: '', companyId: '', roomType: '', minPrice: '', maxPrice: '',
+    search: '', companyId: '', roomType: '', district: '', minPrice: '', maxPrice: '',
     parkingCar: false, foreignerOk: false, evCharging: false, petAllowed: false,
     shortTerm: false, status: 'available' as 'available' | 'all',
   });
@@ -335,6 +337,7 @@ export default function BrokerInventoryPage() {
   const swrParams: Record<string, string> = { page: String(page), limit: '20' };
   if (filter.status === 'available') swrParams.available = 'true';
   if (filter.companyId) swrParams.companyId = filter.companyId;
+  if (filter.district) swrParams.district = filter.district;
   if (filter.minPrice) swrParams.minPrice = filter.minPrice;
   if (filter.maxPrice) swrParams.maxPrice = filter.maxPrice;
   if (filter.search) swrParams.search = filter.search;
@@ -388,7 +391,7 @@ export default function BrokerInventoryPage() {
   return (
     <div>
       <h1 className="font-display text-2xl font-bold mb-2">Kho hàng</h1>
-      <p className="text-sm text-stone-500 mb-6">{rooms.length} loại phòng</p>
+      <p className="text-sm text-stone-500 mb-6">{rooms.length} tin đăng</p>
 
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -411,8 +414,8 @@ export default function BrokerInventoryPage() {
 
       {/* === FILTERS === */}
       <div className="card mb-6">
-        {/* Row 1: Search + Company + Room type + Price */}
-        <div className="flex flex-wrap gap-3 items-end mb-3">
+        {/* Row 1: Search + Company + Room kind */}
+        <div className="flex flex-wrap gap-3 items-end mb-4">
           <div className="flex-1 min-w-[200px]">
             <label className="block text-xs font-medium text-stone-500 mb-1">Tìm kiếm thông minh</label>
             <input className="input-field" placeholder="Tên phòng, địa chỉ, SĐT, mô tả..." value={filter.search}
@@ -429,24 +432,30 @@ export default function BrokerInventoryPage() {
               ))}
             </select>
           </div>
-          <div className="w-full sm:w-32">
-            <label className="block text-xs font-medium text-stone-500 mb-1">Loại phòng</label>
+          <div className="w-full sm:w-36">
+            <label className="block text-xs font-medium text-stone-500 mb-1">Kiểu phòng</label>
             <select className="input-field" value={filter.roomType}
               onChange={e => setFilter({ ...filter, roomType: e.target.value })}>
               {roomTypeOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
-          <div className="flex-1 min-w-[100px] sm:w-28 sm:flex-none">
-            <label className="block text-xs font-medium text-stone-500 mb-1">Giá từ</label>
-            <input type="number" className="input-field" placeholder="2000000" value={filter.minPrice}
-              onChange={e => setFilter({ ...filter, minPrice: e.target.value })} />
-          </div>
-          <div className="flex-1 min-w-[100px] sm:w-28 sm:flex-none">
-            <label className="block text-xs font-medium text-stone-500 mb-1">Giá đến</label>
-            <input type="number" className="input-field" placeholder="5000000" value={filter.maxPrice}
-              onChange={e => setFilter({ ...filter, maxPrice: e.target.value })} />
-          </div>
           <button onClick={handleFilter} className="btn-primary">Lọc</button>
+        </div>
+
+        {/* Row 2: Quận pills */}
+        <div className="mb-4">
+          <label className="block text-xs font-medium text-stone-500 mb-2">Khu vực</label>
+          <DistrictPills value={filter.district} onChange={d => { setFilter(prev => ({ ...prev, district: d })); setPage(1); }} />
+        </div>
+
+        {/* Row 3: Khoảng giá - dual range slider */}
+        <div className="mb-4 max-w-md">
+          <label className="block text-xs font-medium text-stone-500 mb-2">Khoảng giá thuê</label>
+          <PriceRangeSlider
+            minValue={filter.minPrice}
+            maxValue={filter.maxPrice}
+            onChange={({ min, max }) => setFilter(prev => ({ ...prev, minPrice: min, maxPrice: max }))}
+          />
         </div>
 
         {/* Row 2: Toggle tags */}

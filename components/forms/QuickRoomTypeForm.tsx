@@ -100,13 +100,13 @@ export default function QuickRoomTypeForm({ onAdd, onCancel }: QuickRoomTypeForm
   return (
     <div className="border border-brand-200 bg-brand-50/30 rounded-xl p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="font-semibold text-stone-800">Thêm loại phòng mới</h4>
+        <h4 className="font-semibold text-stone-800">Thêm tin đăng mới</h4>
         <button type="button" onClick={onCancel} className="text-stone-400 hover:text-stone-600 text-sm">Huỷ</button>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-stone-700 mb-1">Tên loại phòng <span className="text-red-500">*</span></label>
+          <label className="block text-sm font-medium text-stone-700 mb-1">Tiêu đề bài đăng <span className="text-red-500">*</span></label>
           <input type="text" className="input-field" placeholder='VD: "Loại 1 - Phòng đơn"' value={name} onChange={e => setName(e.target.value)} />
         </div>
         <div>
@@ -176,7 +176,7 @@ export default function QuickRoomTypeForm({ onAdd, onCancel }: QuickRoomTypeForm
         <button type="button" onClick={handleSubmit}
           className="px-5 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors"
           disabled={!name.trim() || !areaSqm || !priceMonthly}>
-          Thêm loại phòng
+          Thêm tin đăng
         </button>
       </div>
     </div>

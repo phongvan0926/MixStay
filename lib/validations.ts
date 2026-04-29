@@ -46,9 +46,18 @@ export const propertyUpdateSchema = propertyCreateSchema.partial().extend({
 });
 
 // ===== RoomType =====
+export const ROOM_STATUSES = ['AVAILABLE', 'UNAVAILABLE', 'UPCOMING'] as const;
+
+const roomStatusRefine = (data: any) => {
+  if (data?.status === 'UPCOMING') {
+    return data.expectedAvailableDate != null && data.expectedAvailableDate !== '';
+  }
+  return true;
+};
+
 export const roomTypeCreateSchema = z.object({
   propertyId: z.string().min(1, 'Thiếu tòa nhà'),
-  name: z.string().min(1, 'Tên loại phòng không được trống').max(200),
+  name: z.string().min(1, 'Tiêu đề bài đăng không được trống').max(200),
   typeName: z.string().optional(),
   areaSqm: z.union([z.number().positive('Diện tích phải > 0'), z.string()]),
   priceMonthly: z.union([z.number().positive('Giá thuê phải > 0'), z.string()]),
@@ -68,12 +77,43 @@ export const roomTypeCreateSchema = z.object({
   shortTermMonths: z.string().max(100).optional().nullable(),
   shortTermPrice: z.union([z.number(), z.string()]).optional().nullable(),
   landlordNotes: z.string().max(2000).optional().nullable(),
-  isAvailable: z.boolean().optional(),
+  status: z.enum(ROOM_STATUSES).optional(),
+  expectedAvailableDate: z.union([z.string(), z.date()]).optional().nullable(),
   isApproved: z.boolean().optional(),
+}).refine(roomStatusRefine, {
+  message: 'Phải nhập ngày phòng sẽ trống khi chọn trạng thái Sắp trống',
+  path: ['expectedAvailableDate'],
 });
 
-export const roomTypeUpdateSchema = roomTypeCreateSchema.partial().extend({
+export const roomTypeUpdateSchema = z.object({
   id: z.string().min(1, 'Thiếu id'),
+  propertyId: z.string().optional(),
+  name: z.string().min(1).max(200).optional(),
+  typeName: z.string().optional(),
+  areaSqm: z.union([z.number().positive(), z.string()]).optional(),
+  priceMonthly: z.union([z.number().positive(), z.string()]).optional(),
+  deposit: z.union([z.number(), z.string()]).optional().nullable(),
+  description: z.string().max(5000).optional().nullable(),
+  amenities: z.array(z.string()).optional(),
+  images: z.array(z.string()).optional(),
+  videos: z.array(z.string()).optional(),
+  videoLinks: z
+    .array(z.string().refine(isValidVideoUrl, 'Link video phải là YouTube/TikTok/Facebook hợp lệ'))
+    .optional(),
+  totalUnits: z.union([z.number().int().positive(), z.string()]).optional(),
+  availableUnits: z.union([z.number().int().min(0), z.string()]).optional(),
+  availableRoomNames: z.string().optional().nullable(),
+  commissionJson: z.any().optional().nullable(),
+  shortTermAllowed: z.boolean().optional(),
+  shortTermMonths: z.string().max(100).optional().nullable(),
+  shortTermPrice: z.union([z.number(), z.string()]).optional().nullable(),
+  landlordNotes: z.string().max(2000).optional().nullable(),
+  status: z.enum(ROOM_STATUSES).optional(),
+  expectedAvailableDate: z.union([z.string(), z.date()]).optional().nullable(),
+  isApproved: z.boolean().optional(),
+}).refine(roomStatusRefine, {
+  message: 'Phải nhập ngày phòng sẽ trống khi chọn trạng thái Sắp trống',
+  path: ['expectedAvailableDate'],
 });
 
 // ===== Deal =====

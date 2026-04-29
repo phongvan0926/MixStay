@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import VideoGallery from '@/components/ui/VideoGallery';
+import ZaloFab from '@/components/ui/ZaloFab';
+import { getSystemZaloLink } from '@/lib/zalo';
 
 const roomTypeLabels: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1 khách 1 ngủ',
@@ -179,6 +181,7 @@ export default function SystemShareClient() {
   );
 
   const { landlord } = data;
+  const zaloLink = getSystemZaloLink({ landlord, properties: data.properties });
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -200,7 +203,7 @@ export default function SystemShareClient() {
         <div className="mb-6 text-center">
           <h1 className="font-display text-3xl font-bold text-stone-900">Phòng cho thuê</h1>
           <p className="text-stone-500 mt-2">
-            Hệ thống của {landlord?.name} • {allRoomTypes.length} loại phòng trống từ {data.properties?.length || 0} tòa nhà
+            Hệ thống của {landlord?.name} • {allRoomTypes.length} tin đăng còn phòng từ {data.properties?.length || 0} tòa nhà
           </p>
         </div>
 
@@ -333,7 +336,7 @@ export default function SystemShareClient() {
 
             <div className="flex items-center justify-between mt-3 pt-3 border-t border-stone-100">
               <p className="text-xs text-stone-400">
-                Hiển thị <strong className="text-stone-700">{filteredRoomTypes.length}</strong> / {allRoomTypes.length} loại phòng
+                Hiển thị <strong className="text-stone-700">{filteredRoomTypes.length}</strong> / {allRoomTypes.length} tin đăng
               </p>
               {hasActiveFilters && (
                 <button onClick={clearAllFilters}
@@ -381,9 +384,15 @@ export default function SystemShareClient() {
                       )}
                     </div>
                     <div className="absolute top-3 right-3">
-                      <span className="badge bg-emerald-500 text-white text-xs">
-                        {rt.availableUnits} trống
-                      </span>
+                      {rt.status === 'UPCOMING' ? (
+                        <span className="badge bg-amber-500 text-white text-xs">
+                          🟡 Sắp trống{rt.expectedAvailableDate ? ` ${new Date(rt.expectedAvailableDate).toLocaleDateString('vi-VN')}` : ''}
+                        </span>
+                      ) : (
+                        <span className="badge bg-emerald-500 text-white text-xs">
+                          {rt.availableUnits} trống
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -435,15 +444,18 @@ export default function SystemShareClient() {
             <p className="font-display font-semibold text-lg mb-1">Quan tâm phòng nào?</p>
             <p className="text-brand-100 text-sm">Liên hệ hỗ trợ để được tư vấn và hẹn xem phòng miễn phí.</p>
           </div>
-          <p className="text-xs text-stone-400 mt-6">
+          <p className="text-xs text-stone-400 mt-6 mb-16">
             Powered by MixStay • Kho phòng của {landlord?.name}
           </p>
         </div>
       </div>
 
+      {/* Floating Zalo button — group/landlord level */}
+      <ZaloFab href={zaloLink} />
+
       {/* Room detail modal */}
       {selectedRoom && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setSelectedRoom(null)} />
           <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto mx-0 sm:mx-4 z-10">
             {/* Close button */}
@@ -468,9 +480,15 @@ export default function SystemShareClient() {
               <div>
                 <div className="flex items-start justify-between">
                   <h2 className="font-display text-xl font-bold text-stone-900">{selectedRoom.name}</h2>
-                  <span className="badge bg-emerald-100 text-emerald-700 shrink-0 ml-2">
-                    {selectedRoom.availableUnits} trống
-                  </span>
+                  {selectedRoom.status === 'UPCOMING' ? (
+                    <span className="badge bg-amber-100 text-amber-700 shrink-0 ml-2">
+                      🟡 Sắp trống{selectedRoom.expectedAvailableDate ? ` ${new Date(selectedRoom.expectedAvailableDate).toLocaleDateString('vi-VN')}` : ''}
+                    </span>
+                  ) : (
+                    <span className="badge bg-emerald-100 text-emerald-700 shrink-0 ml-2">
+                      🟢 {selectedRoom.availableUnits} trống
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm text-stone-500 mt-1">
                   {selectedRoom.property?.name} • {selectedRoom.property?.district}
@@ -516,10 +534,6 @@ export default function SystemShareClient() {
                   <p className="text-[11px] text-stone-500 mt-0.5">Còn trống</p>
                 </div>
               </div>
-
-              {selectedRoom.availableRoomNames && (
-                <p className="text-sm text-stone-500">Phòng trống: <span className="font-medium text-stone-700">{selectedRoom.availableRoomNames}</span></p>
-              )}
 
               {selectedRoom.description && (
                 <div className="p-3 bg-stone-50 rounded-xl">

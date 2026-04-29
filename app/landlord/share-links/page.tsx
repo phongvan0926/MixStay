@@ -82,7 +82,7 @@ export default function LandlordShareLinksPage() {
           <div>
             <p className="font-medium text-brand-800">Link tổng hệ thống</p>
             <p className="text-sm text-brand-600 mt-1">
-              Gửi 1 link duy nhất cho MG/khách — họ sẽ thấy <strong>tất cả loại phòng trống</strong> của tất cả tòa nhà bạn quản lý.
+              Gửi 1 link duy nhất cho MG/khách — họ sẽ thấy <strong>tất cả tin đăng còn phòng</strong> của tất cả tòa nhà bạn quản lý.
               Khách không thấy địa chỉ chi tiết, SĐT hay hoa hồng.
             </p>
           </div>
@@ -140,7 +140,7 @@ export default function LandlordShareLinksPage() {
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-lg">🚪</span>
                     <p className="font-medium text-stone-800 truncate">
-                      {link.roomType?.name || 'Loại phòng'}
+                      {link.roomType?.name || 'Tin đăng'}
                     </p>
                   </div>
                   <p className="text-xs text-stone-400">

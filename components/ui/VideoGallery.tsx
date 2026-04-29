@@ -249,7 +249,7 @@ export default function VideoGallery({ videos = [], videoLinks = [], images = []
   const videoItems = useMemo<VideoItem[]>(() => {
     const uploads: VideoItem[] = videos.map((url) => ({ url, type: 'upload', thumbnail: null }));
     const linked: VideoItem[] = videoLinks
-      .map((url) => {
+      .map((url): VideoItem | null => {
         const type = getVideoType(url);
         if (type === 'unknown') return null;
         return { url, type, thumbnail: getVideoThumbnail(url) };

@@ -3,12 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import { formatCurrency } from '@/lib/utils';
-
-const DISTRICTS = [
-  'Cầu Giấy', 'Đống Đa', 'Thanh Xuân', 'Ba Đình',
-  'Hai Bà Trưng', 'Nam Từ Liêm', 'Hoàng Mai', 'Hà Đông',
-  'Long Biên', 'Tây Hồ', 'Bắc Từ Liêm', 'Hoàn Kiếm',
-];
+import DistrictPills from '@/components/ui/DistrictPills';
 
 const ROOM_TYPES: { value: string; label: string }[] = [
   { value: 'don', label: 'Phòng đơn' },
@@ -43,6 +38,8 @@ type PublicRoom = {
   images: string[];
   hasVideo: boolean;
   availableUnits: number;
+  status?: 'AVAILABLE' | 'UPCOMING' | 'UNAVAILABLE';
+  expectedAvailableDate?: string | null;
   shortTermAllowed: boolean;
   property: {
     name: string;
@@ -178,19 +175,13 @@ export default function PublicSearch() {
           onSubmit={handleSearch}
           className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 shadow-sm mb-8"
         >
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <div className="col-span-2 md:col-span-1">
-              <label className="block text-xs font-medium text-stone-500 mb-1">Khu vực</label>
-              <select
-                className="input-field text-sm"
-                value={district}
-                onChange={e => setDistrict(e.target.value)}
-              >
-                <option value="">Tất cả khu vực</option>
-                {DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
-              </select>
-            </div>
+          {/* District pills (hybrid 7 + dropdown) */}
+          <div className="mb-4">
+            <label className="block text-xs font-medium text-stone-500 mb-2">Khu vực</label>
+            <DistrictPills value={district} onChange={setDistrict} />
+          </div>
 
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="col-span-2 md:col-span-1">
               <label className="block text-xs font-medium text-stone-500 mb-1">Kiểu phòng</label>
               <select
@@ -229,7 +220,7 @@ export default function PublicSearch() {
               />
             </div>
 
-            <div className="col-span-2 md:col-span-1 flex items-end">
+            <div className="flex items-end">
               <button
                 type="submit"
                 disabled={loading}
@@ -290,7 +281,7 @@ export default function PublicSearch() {
         {results && results.length > 0 && (
           <>
             <p className="text-sm text-stone-500 mb-4">
-              Tìm thấy <span className="font-semibold text-stone-800">{total}</span> loại phòng phù hợp
+              Tìm thấy <span className="font-semibold text-stone-800">{total}</span> tin đăng phù hợp
               {total > results.length && <> • hiển thị {results.length} kết quả đầu</>}
             </p>
 
@@ -321,9 +312,15 @@ export default function PublicSearch() {
                         )}
                       </div>
                       <div className="absolute top-3 right-3">
-                        <span className="inline-flex items-center rounded-full bg-emerald-500 px-2.5 py-1 text-xs font-semibold text-white shadow">
-                          Còn {rt.availableUnits} phòng
-                        </span>
+                        {rt.status === 'UPCOMING' ? (
+                          <span className="inline-flex items-center rounded-full bg-amber-500 px-2.5 py-1 text-xs font-semibold text-white shadow">
+                            🟡 Sắp trống{rt.expectedAvailableDate ? ` ${new Date(rt.expectedAvailableDate).toLocaleDateString('vi-VN')}` : ''}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-emerald-500 px-2.5 py-1 text-xs font-semibold text-white shadow">
+                            Còn {rt.availableUnits} phòng
+                          </span>
+                        )}
                       </div>
                     </div>
 
