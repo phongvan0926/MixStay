@@ -182,8 +182,9 @@ export default function PublicSearch() {
             <DistrictPills value={district} onChange={setDistrict} />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-            <div>
+          {/* Row 1: Kiểu phòng (1/3) + Slider giá (2/3) — mobile stack */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+            <div className="md:col-span-1">
               <label className="block text-xs font-medium text-stone-500 mb-1">Kiểu phòng</label>
               <select
                 className="input-field text-sm"
@@ -195,23 +196,13 @@ export default function PublicSearch() {
               </select>
             </div>
 
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-xs font-medium text-stone-500 mb-1">Khoảng giá thuê</label>
               <PriceRangeSlider
                 minValue={minPrice}
                 maxValue={maxPrice}
                 onChange={({ min, max }) => { setMinPrice(min); setMaxPrice(max); }}
               />
-            </div>
-
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-primary w-full py-2.5 text-sm font-medium"
-              >
-                {loading ? 'Đang tìm...' : 'Tìm phòng'}
-              </button>
             </div>
           </div>
 
@@ -247,6 +238,17 @@ export default function PublicSearch() {
                 );
               })}
             </div>
+          </div>
+
+          {/* Submit ở cuối form */}
+          <div className="mt-5 flex justify-end">
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary w-full sm:w-auto px-8 py-2.5 text-sm font-medium"
+            >
+              {loading ? 'Đang tìm...' : 'Tìm phòng'}
+            </button>
           </div>
         </form>
 
