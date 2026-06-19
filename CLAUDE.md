@@ -7,7 +7,7 @@ Kết nối 4 vai trò: Admin (Công ty), Môi giới, Chủ nhà, Khách thuê.
 ## Tech stack
 - Next.js 14 + React 18 + Tailwind CSS
 - Prisma ORM + PostgreSQL (Supabase)
-- NextAuth.js (JWT, multi-role: ADMIN, BROKER, LANDLORD, CUSTOMER)
+- NextAuth.js (JWT, multi-role: ADMIN, ADMIN_STAFF, BROKER, LANDLORD, CUSTOMER)
 - Deploy: Vercel
 
 ## Cấu trúc quan trọng
@@ -17,14 +17,15 @@ app/PublicSearch.tsx → Client component tìm kiếm phòng public cho trang ch
 app/p/[token]/      → Short share link (/p/{token}) → redirect sang /share/[token] hoặc /share/system/[token]
 app/admin/          → Trang quản trị (companies, properties, rooms, deals, users, settings)
 app/broker/         → Trang môi giới (inventory, deals, share-links)
-app/landlord/       → Trang chủ nhà (chỉ còn properties — đã gộp quản lý phòng vào trang tòa nhà)
+app/landlord/       → Trang chủ nhà (properties — đã gộp quản lý phòng vào trang tòa nhà — + share-links)
 app/share/[token]/  → Trang tin đăng loại phòng (public, ẩn địa chỉ + SĐT, có video + tin đăng liên quan)
 app/share/system/[token]/ → Trang kho phòng hệ thống (public, có toggle grid/list view)
 app/auth/callback/  → Trang chọn vai trò sau OAuth login lần đầu
 app/api/            → API routes (companies, properties, rooms, rooms/public, rooms/related, rooms/import, deals, share-links, share-links/system, inquiries, notifications, users, settings, upload/signed-url)
 app/api/upload/signed-url/ → Tạo Supabase signed upload URL (upload video trực tiếp client → Storage, không qua Vercel serverless)
 components/layout/  → DashboardLayout.tsx (sidebar + topbar + notification badge), AuthProvider.tsx
-components/ui/      → Skeleton.tsx, ImageUpload.tsx, VideoUpload.tsx, VideoLinkInput.tsx, VideoPlayer.tsx, VideoGallery.tsx, OptimizedImage.tsx, Pagination.tsx
+components/ui/      → Skeleton.tsx, ImageUpload.tsx, VideoUpload.tsx, VideoLinkInput.tsx, VideoPlayer.tsx, VideoGallery.tsx, OptimizedImage.tsx, Pagination.tsx, DistrictPills.tsx, PriceRangeSlider.tsx, ZaloFab.tsx
+components/forms/   → PropertyForm.tsx, RoomTypeForm.tsx, RoomForm.tsx, QuickRoomTypeForm.tsx
 lib/video-utils.ts  → Parse YouTube/TikTok/Facebook URL, lấy videoId, thumbnail (img.youtube.com cho YT), detect platform
 hooks/useData.ts    → SWR hooks: useProperties, useRoomTypes, useDeals, useUsers, useShareLinks, useCompanies, useDashboardStats, useInquiries
 lib/auth.ts         → NextAuth config
@@ -34,6 +35,11 @@ lib/fetcher.ts      → SWR fetcher function
 lib/pagination.ts   → getPaginationParams(), paginatedResponse()
 lib/rate-limit.ts   → applyRateLimit() — in-memory rate limiter
 lib/validations.ts  → Zod schemas + validateBody()
+lib/permissions.ts  → Client-safe RBAC: hasPermission(), ALL_ADMIN_PERMISSIONS (ADMIN bypass, ADMIN_STAFF cần permission)
+lib/permissions-server.ts → requirePermission() — API guard kiểm permission trước khi xử lý
+lib/user-company.ts → getUserCompany() — resolve company của user (cho topbar + share link)
+lib/zalo.ts         → Resolve link Zalo (company zaloGroupLink → landlord phone → env → fallback)
+lib/supabase.ts     → Supabase client (storage upload ảnh/video)
 prisma/schema.prisma → 12 bảng: users, accounts, sessions, companies, properties, room_types, deals, share_links, room_inquiries, notifications, settings, verification_tokens
 prisma/seed.ts      → Demo data (password: 123456)
 middleware.ts       → Route protection theo role
@@ -41,27 +47,31 @@ middleware.ts       → Route protection theo role
 
 ## Database schema tóm tắt
 - companies: id, name, description, phone, email, address, logo, zaloGroupLink, isActive
-- users: id, name, email, phone, password, role (ADMIN/BROKER/LANDLORD/CUSTOMER), isActive, setupComplete
+- users: id, name, email, phone, password, role (ADMIN/ADMIN_STAFF/BROKER/LANDLORD/CUSTOMER), avatar, permissions[] (chỉ có hiệu lực khi role=ADMIN_STAFF), isActive, setupComplete
 - accounts: id, userId, type, provider, providerAccountId (OAuth accounts)
-- properties: id, companyId?, landlordId, name, fullAddress, district, streetName, zaloPhone, landlordNotes, parkingCar, evCharging, petAllowed, foreignerOk, status (PENDING/APPROVED/REJECTED)
-- room_types: id, propertyId, name, typeName (don/gac_xep/1k1n/2k1n/studio/duplex), areaSqm, priceMonthly, deposit, description, amenities[], images[], videos[] (URL upload Supabase, tối đa 3), videoLinks[] (YouTube/TikTok/Facebook embed), totalUnits, availableUnits, availableRoomNames, isAvailable, isApproved, commissionJson, shortTermAllowed, shortTermMonths, shortTermPrice, landlordNotes, viewCount
+- properties: id, companyId?, landlordId, name, fullAddress, district, streetName, zaloPhone, landlordNotes, parkingCar, parkingBike, evCharging, petAllowed, foreignerOk, status (PENDING/APPROVED/REJECTED)
+- room_types: id, propertyId, name, typeName (don/gac_xep/1k1n/2k1n/studio/duplex), areaSqm, priceMonthly, deposit, description, amenities[], images[], videos[] (URL upload Supabase, tối đa 3), videoLinks[] (YouTube/TikTok/Facebook embed), totalUnits, availableUnits, availableRoomNames, status (RoomStatus: AVAILABLE/UPCOMING/UNAVAILABLE), expectedAvailableDate (bắt buộc khi UPCOMING), isApproved, commissionJson, shortTermAllowed, shortTermMonths, shortTermPrice, landlordNotes, viewCount
 - deals: id, roomTypeId, brokerId, dealPrice, commissionTotal, commissionBroker, commissionCompany, status (PENDING/CONFIRMED/PAID/CANCELLED)
 - share_links: id, roomTypeId?, brokerId, token (unique), viewCount, isSystem, isActive, expiresAt
 - room_inquiries: id, roomTypeId, brokerId, message, reply (CÒN/HẾT), repliedAt
 - notifications: id, userId, type, title, message, isRead
 - settings: key-value (commission_broker_percent)
+- enum Role: ADMIN, ADMIN_STAFF, BROKER, LANDLORD, CUSTOMER
+- enum Permission (9 quyền, chỉ áp dụng cho ADMIN_STAFF): APPROVE_LISTINGS, MANAGE_USERS, VIEW_FINANCIAL_REPORTS, EXPORT_DATA, MANAGE_COMPANIES, TRANSFER_PROPERTY_OWNERSHIP, DELETE_PROPERTY, EDIT_COMMISSION, MANAGE_SYSTEM_SHARE_LINKS
 
 ## Logic nghiệp vụ RoomType
 - RoomType = 1 loại phòng (VD: "Phòng đơn 25m²"), KHÔNG phải 1 phòng cụ thể
 - Mỗi RoomType có totalUnits (tổng) và availableUnits (trống), availableRoomNames (tên phòng trống cụ thể)
-- Khi deal CONFIRMED → availableUnits giảm 1, nếu =0 thì isAvailable=false
+- Trạng thái phòng dùng `status` (RoomStatus): AVAILABLE 🟢 / UPCOMING 🟡 (sắp trống — cần expectedAvailableDate) / UNAVAILABLE 🔴. KHÔNG còn field `isAvailable` (đã bỏ từ v8.3)
+- Khi deal CONFIRMED → availableUnits giảm 1, nếu =0 thì set status=UNAVAILABLE (🔴 Hết phòng)
 - shortTermAllowed: cho phép thuê ngắn hạn với giá shortTermPrice
 
 ## Phân quyền dữ liệu
 - Môi giới: thấy fullAddress + SĐT/Zalo chủ nhà + hoa hồng + lưu ý
 - Khách (qua share link): chỉ thấy district, streetName, amenities — KHÔNG thấy fullAddress, SĐT
-- Chủ nhà: tự set commissionJson, zaloPhone, landlordNotes, bật/tắt isAvailable
-- Admin: thấy tất cả, duyệt property/roomType, xác nhận deal
+- Chủ nhà: tự set commissionJson, zaloPhone, landlordNotes, đổi status phòng (AVAILABLE/UPCOMING/UNAVAILABLE)
+- Admin (ADMIN): super-admin — thấy tất cả, duyệt property/roomType, xác nhận deal, bypass mọi permission check
+- Admin staff (ADMIN_STAFF): chỉ làm được hành động có trong User.permissions[]. Guard client `lib/permissions.ts` (hasPermission()) + API `lib/permissions-server.ts` (requirePermission()). Thiếu VIEW_FINANCIAL_REPORTS → field-strip: API vẫn trả key nhưng set null cho số liệu tài chính
 
 ## Quy tắc khi sửa code
 - CSS: dùng Tailwind classes, custom classes trong app/globals.css (btn-primary, input-field, card, badge, stat-card, sidebar-link...)

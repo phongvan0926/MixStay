@@ -178,18 +178,24 @@ mixstay/
 │   └── page.tsx         # Landing page
 ├── components/
 │   ├── layout/          # Dashboard layout, AuthProvider
-│   └── ui/              # Skeleton, ImageUpload, VideoUpload, VideoLinkInput, VideoPlayer, VideoGallery, OptimizedImage, Pagination
+│   ├── forms/           # PropertyForm, RoomTypeForm, RoomForm, QuickRoomTypeForm
+│   └── ui/              # Skeleton, ImageUpload, VideoUpload, VideoLinkInput, VideoPlayer, VideoGallery, OptimizedImage, Pagination, DistrictPills, PriceRangeSlider, ZaloFab
 ├── hooks/
 │   └── useData.ts       # SWR hooks (useProperties, useRoomTypes, useDeals, etc.)
 ├── lib/
-│   ├── auth.ts          # NextAuth config
-│   ├── prisma.ts        # Prisma client
-│   ├── utils.ts         # Helper functions
-│   ├── fetcher.ts       # SWR fetcher
-│   ├── pagination.ts    # Server-side pagination helper
-│   ├── rate-limit.ts    # API rate limiter
-│   ├── video-utils.ts   # Parse YouTube/TikTok/Facebook URL, thumbnail, embed
-│   └── validations.ts   # Zod validation schemas
+│   ├── auth.ts                # NextAuth config
+│   ├── prisma.ts              # Prisma client
+│   ├── utils.ts               # Helper functions
+│   ├── fetcher.ts             # SWR fetcher
+│   ├── pagination.ts          # Server-side pagination helper
+│   ├── rate-limit.ts          # API rate limiter
+│   ├── video-utils.ts         # Parse YouTube/TikTok/Facebook URL, thumbnail, embed
+│   ├── validations.ts         # Zod validation schemas
+│   ├── permissions.ts         # RBAC client-safe: hasPermission(), ALL_ADMIN_PERMISSIONS
+│   ├── permissions-server.ts  # requirePermission() — API guard
+│   ├── user-company.ts        # getUserCompany() — resolve company của user
+│   ├── zalo.ts                # Resolve link Zalo (company → landlord → env → fallback)
+│   └── supabase.ts            # Supabase client (storage upload)
 ├── prisma/
 │   ├── schema.prisma    # Database schema
 │   └── seed.ts          # Demo data
@@ -198,16 +204,19 @@ mixstay/
 
 ## 🔐 Phân quyền dữ liệu
 
-| Thông tin | Admin | Môi giới | Chủ nhà | Khách (qua link) |
-|-----------|:-----:|:--------:|:-------:|:-----------------:|
-| Ảnh phòng | ✅ | ✅ | ✅ | ✅ |
-| Giá thuê | ✅ | ✅ | ✅ | ✅ |
-| Tiện ích | ✅ | ✅ | ✅ | ✅ |
-| Khu vực / Quận | ✅ | ✅ | ✅ | ✅ |
-| Tuyến phố | ✅ | ✅ | ✅ | ✅ |
-| Địa chỉ chi tiết | ✅ | ✅ | ✅ | ❌ |
-| SĐT Chủ nhà | ✅ | ✅ | — | ❌ |
-| Hoa hồng | ✅ | Của mình | ❌ | ❌ |
+| Thông tin | Admin | Admin Staff | Môi giới | Chủ nhà | Khách (qua link) |
+|-----------|:-----:|:-----------:|:--------:|:-------:|:-----------------:|
+| Ảnh phòng | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Giá thuê | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Tiện ích | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Khu vực / Quận | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Tuyến phố | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Địa chỉ chi tiết | ✅ | ✅ | ✅ | ✅ | ❌ |
+| SĐT Chủ nhà | ✅ | ✅ | ✅ | — | ❌ |
+| Hoa hồng / doanh thu | ✅ | ⚙️* | Của mình | ❌ | ❌ |
+
+> **Admin Staff (`ADMIN_STAFF`):** hành động được phép theo `User.permissions[]` (enum `Permission`, 9 quyền). `ADMIN` là super-admin bypass tất cả; staff chỉ làm được hành động được cấp.
+> `⚙️*` Hoa hồng/doanh thu áp **field-strip**: API vẫn trả key nhưng set `null` nếu thiếu `VIEW_FINANCIAL_REPORTS`. Guard: `lib/permissions.ts` (client `hasPermission()`) + `lib/permissions-server.ts` (`requirePermission()`).
 
 ## Performance & Optimization
 
@@ -223,6 +232,13 @@ mixstay/
 - **PWA:** Web app manifest, SVG icons, standalone display mode
 
 ## Changelog
+
+### v8.4.1 — 2026-06-19 (docs sync)
+- Đồng bộ `CLAUDE.md` + `README.md` với schema v8.4: bổ sung `ADMIN_STAFF` + hệ RBAC (enum `Permission` 9 quyền, `User.permissions[]`, guard `lib/permissions.ts` / `lib/permissions-server.ts`, cơ chế field-strip số liệu tài chính).
+- Sửa mô tả RoomType: bỏ `isAvailable`, dùng `status` (RoomStatus: AVAILABLE/UPCOMING/UNAVAILABLE) + `expectedAvailableDate`. Bổ sung `parkingBike` vào tiện ích Property.
+- Bổ sung file vào cấu trúc thư mục: `lib/{permissions,permissions-server,user-company,zalo,supabase}.ts`, `components/ui/{DistrictPills,PriceRangeSlider,ZaloFab}`, thư mục `components/forms/`.
+- Xác nhận brand chính thức là **MixStay**; `PriceRangeSlider` hiện ở mức **0–20tr** (step 500k).
+- Chỉ cập nhật tài liệu — KHÔNG đổi schema/DB, không chạy `prisma db push`.
 
 ### v8.4 — 2026-04-30
 - **Login page 7 demo cards:** grid 4 cột (2×4, ô cuối trống), mỗi card icon + role + email, click auto-fill. Thêm `company@`, `customer@`, `staff@`, `manager@`. Helper text mật khẩu chung `123456`.
