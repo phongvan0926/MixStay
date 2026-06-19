@@ -2,7 +2,7 @@
 import { useCallback } from 'react';
 
 const MIN = 0;
-const MAX = 50_000_000;
+const MAX = 20_000_000;
 const STEP = 500_000;
 
 const fmt = new Intl.NumberFormat('vi-VN');
@@ -16,7 +16,7 @@ interface Props {
 }
 
 /**
- * Dual-handle range slider for VND price (0-50tr, step 500k).
+ * Dual-handle range slider for VND price (0-20tr, step 500k).
  * Dumb component — parent controls whether onChange triggers fetch or just local state.
  */
 export default function PriceRangeSlider({ minValue, maxValue, onChange }: Props) {
@@ -105,7 +105,7 @@ export default function PriceRangeSlider({ minValue, maxValue, onChange }: Props
           height: 24px;
           border-radius: 9999px;
           background: white;
-          border: 2px solid #2563eb;
+          border: 2px solid #006bc9;
           box-shadow: 0 2px 6px rgba(0,0,0,0.15);
           cursor: pointer;
           pointer-events: auto;
@@ -115,7 +115,7 @@ export default function PriceRangeSlider({ minValue, maxValue, onChange }: Props
           height: 24px;
           border-radius: 9999px;
           background: white;
-          border: 2px solid #2563eb;
+          border: 2px solid #006bc9;
           box-shadow: 0 2px 6px rgba(0,0,0,0.15);
           cursor: pointer;
           pointer-events: auto;
