@@ -96,6 +96,16 @@ export async function PUT(req: NextRequest) {
 
     const { id, reply } = await req.json();
 
+    // Chỉ chủ nhà SỞ HỮU tin đăng của câu hỏi mới được trả lời
+    // (tránh chủ nhà khác sửa inquiry + ép phòng người khác thành HẾT)
+    const owned = await prisma.roomInquiry.findFirst({
+      where: { id, roomType: { property: { landlordId: session.user.id } } },
+      select: { id: true },
+    });
+    if (!owned) {
+      return NextResponse.json({ error: 'Không có quyền với câu hỏi này' }, { status: 403 });
+    }
+
     const inquiry = await prisma.roomInquiry.update({
       where: { id },
       data: { reply, repliedAt: new Date() },

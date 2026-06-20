@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { applyRateLimit } from '@/lib/rate-limit';
+import { requirePermission } from '@/lib/permissions-server';
 
 export async function GET(req: NextRequest) {
   const rateLimited = applyRateLimit(req, 'api');
@@ -10,9 +11,8 @@ export async function GET(req: NextRequest) {
 
   try {
     const session = await getServerSession(authOptions);
-    if (!session || (session.user as any).role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const denial = requirePermission(session, 'MANAGE_COMPANIES');
+    if (denial) return denial;
 
     const url = new URL(req.url);
     const search = url.searchParams.get('search');
@@ -58,9 +58,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const session = await getServerSession(authOptions);
-    if (!session || (session.user as any).role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const denial = requirePermission(session, 'MANAGE_COMPANIES');
+    if (denial) return denial;
 
     const body = await req.json();
     if (!body.name) return NextResponse.json({ error: 'Tên công ty là bắt buộc' }, { status: 400 });
@@ -90,9 +89,8 @@ export async function PUT(req: NextRequest) {
 
   try {
     const session = await getServerSession(authOptions);
-    if (!session || (session.user as any).role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const denial = requirePermission(session, 'MANAGE_COMPANIES');
+    if (denial) return denial;
 
     const body = await req.json();
     const { id, ...data } = body;
@@ -124,9 +122,8 @@ export async function DELETE(req: NextRequest) {
 
   try {
     const session = await getServerSession(authOptions);
-    if (!session || (session.user as any).role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const denial = requirePermission(session, 'MANAGE_COMPANIES');
+    if (denial) return denial;
 
     const url = new URL(req.url);
     const id = url.searchParams.get('id');

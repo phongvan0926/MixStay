@@ -135,11 +135,11 @@ export default function AdminPropertiesPage() {
             { label: 'Tổng tòa nhà', value: stats.totalProperties, color: 'text-brand-600', icon: '🏢' },
             { label: 'Phòng trống', value: `${stats.availableRooms}/${stats.totalRooms}`, color: 'text-emerald-600', icon: '🚪' },
             { label: 'Chờ duyệt', value: stats.pendingProperties, color: 'text-amber-600', icon: '⏳' },
-            { label: 'Doanh thu HH', value: formatCurrency(stats.totalRevenue), color: 'text-purple-600', icon: '💰' },
+            { label: 'Doanh thu HH', value: stats.totalRevenue == null ? '—' : formatCurrency(stats.totalRevenue), color: 'text-purple-600', icon: '💰' },
             { label: 'Giao dịch', value: `${stats.confirmedDeals}/${stats.totalDeals}`, color: 'text-blue-600', icon: '📋' },
             { label: 'Môi giới', value: stats.totalBrokers, color: 'text-orange-600', icon: '🤝' },
             { label: 'Chủ nhà', value: stats.totalLandlords, color: 'text-amber-600', icon: '🏠' },
-            { label: 'Tổng HH', value: formatCurrency(stats.totalCommission), color: 'text-emerald-600', icon: '💵' },
+            { label: 'Tổng HH', value: stats.totalCommission == null ? '—' : formatCurrency(stats.totalCommission), color: 'text-emerald-600', icon: '💵' },
           ].map(s => (
             <div key={s.label} className="stat-card">
               <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">{s.label}</p>

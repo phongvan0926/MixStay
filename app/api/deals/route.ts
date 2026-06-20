@@ -112,6 +112,12 @@ export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+    // Chỉ BROKER (tự tạo), ADMIN, ADMIN_STAFF được tạo giao dịch — chặn CUSTOMER/LANDLORD
+    const role = session.user.role;
+    if (role !== 'BROKER' && role !== 'ADMIN' && role !== 'ADMIN_STAFF') {
+      return NextResponse.json({ error: 'Không có quyền tạo giao dịch' }, { status: 403 });
+    }
+
     const body = await req.json();
     const validated = validateBody(dealCreateSchema, body);
     if (!validated.success) {

@@ -53,8 +53,9 @@ export async function PUT(req: NextRequest) {
         data: { isRead: true },
       });
     } else if (id) {
-      await prisma.notification.update({
-        where: { id },
+      // Scope theo userId để tránh IDOR (không cho đánh dấu đã đọc thông báo của người khác)
+      await prisma.notification.updateMany({
+        where: { id, userId: session.user.id },
         data: { isRead: true },
       });
     }

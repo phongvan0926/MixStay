@@ -11,14 +11,24 @@ export default withAuth(
     }
 
     const role = token.role as string;
+    const permissions = (token.permissions as string[] | undefined) || [];
 
     // Admin routes — cả ADMIN (super) lẫn ADMIN_STAFF
     if (pathname.startsWith('/admin') && role !== 'ADMIN' && role !== 'ADMIN_STAFF') {
       return NextResponse.redirect(new URL('/login', req.url));
     }
-    // Settings route — staff không có quyền (endpoint chưa wrap)
-    if (pathname.startsWith('/admin/settings') && role === 'ADMIN_STAFF') {
-      return NextResponse.redirect(new URL('/admin/properties', req.url));
+    // ADMIN_STAFF: chặn trang theo permission (ADMIN super bypass). Khớp với gate ở
+    // sidebar + API requirePermission để staff thiếu quyền không vào được khung trang.
+    if (role === 'ADMIN_STAFF') {
+      const staffPageGuards: { prefix: string; perm: string }[] = [
+        { prefix: '/admin/settings', perm: 'EDIT_COMMISSION' },
+        { prefix: '/admin/companies', perm: 'MANAGE_COMPANIES' },
+        { prefix: '/admin/users', perm: 'MANAGE_USERS' },
+      ];
+      const blocked = staffPageGuards.find(g => pathname.startsWith(g.prefix) && !permissions.includes(g.perm));
+      if (blocked) {
+        return NextResponse.redirect(new URL('/admin/properties', req.url));
+      }
     }
 
     // Broker routes

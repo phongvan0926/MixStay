@@ -88,6 +88,12 @@ export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+    // Chỉ LANDLORD (tự tạo), ADMIN, ADMIN_STAFF được tạo tòa nhà — chặn BROKER/CUSTOMER
+    const role = session.user.role;
+    if (role !== 'ADMIN' && role !== 'ADMIN_STAFF' && role !== 'LANDLORD') {
+      return NextResponse.json({ error: 'Không có quyền tạo tòa nhà' }, { status: 403 });
+    }
+
     const body = await req.json();
     const validated = validateBody(propertyCreateSchema, body);
     if (!validated.success) {

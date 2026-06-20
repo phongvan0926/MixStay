@@ -6,6 +6,8 @@ import { getPaginationParams, paginatedResponse } from '@/lib/pagination';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { roomTypeCreateSchema, roomTypeUpdateSchema, validateBody } from '@/lib/validations';
 import { requirePermission } from '@/lib/permissions-server';
+import { normalizeListingCode, LISTING_CODE_REGEX } from '@/lib/listing-code';
+import { generateUniqueListingCode } from '@/lib/listing-code-server';
 
 export async function GET(req: NextRequest) {
   const rateLimited = applyRateLimit(req, 'api');
@@ -63,16 +65,23 @@ export async function GET(req: NextRequest) {
       where.property = { ...where.property, ...propertyWhere };
     }
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-        { property: { name: { contains: search, mode: 'insensitive' } } },
-        { property: { district: { contains: search, mode: 'insensitive' } } },
-        { property: { streetName: { contains: search, mode: 'insensitive' } } },
-        { property: { fullAddress: { contains: search, mode: 'insensitive' } } },
-        { property: { zaloPhone: { contains: search, mode: 'insensitive' } } },
-        { property: { landlord: { phone: { contains: search, mode: 'insensitive' } } } },
-      ];
+      const code = normalizeListingCode(search);
+      if (LISTING_CODE_REGEX.test(code)) {
+        // Nhập đúng mã đầy đủ → tra cứu chính xác theo listingCode
+        where.listingCode = code;
+      } else {
+        where.OR = [
+          { name: { contains: search, mode: 'insensitive' } },
+          { listingCode: { contains: search.trim().toUpperCase(), mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+          { property: { name: { contains: search, mode: 'insensitive' } } },
+          { property: { district: { contains: search, mode: 'insensitive' } } },
+          { property: { streetName: { contains: search, mode: 'insensitive' } } },
+          { property: { fullAddress: { contains: search, mode: 'insensitive' } } },
+          { property: { zaloPhone: { contains: search, mode: 'insensitive' } } },
+          { property: { landlord: { phone: { contains: search, mode: 'insensitive' } } } },
+        ];
+      }
     }
 
     // For landlord, show their own room types regardless of approval
@@ -95,6 +104,7 @@ export async function GET(req: NextRequest) {
           id: true,
           propertyId: true,
           name: true,
+          listingCode: true,
           typeName: true,
           areaSqm: true,
           priceMonthly: true,
@@ -179,10 +189,24 @@ export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+    // Chỉ LANDLORD (tòa của mình), ADMIN, ADMIN_STAFF được tạo tin đăng — chặn BROKER/CUSTOMER
+    const role = session.user.role;
+    if (role !== 'ADMIN' && role !== 'ADMIN_STAFF' && role !== 'LANDLORD') {
+      return NextResponse.json({ error: 'Không có quyền tạo tin đăng' }, { status: 403 });
+    }
+
     const body = await req.json();
     const validated = validateBody(roomTypeCreateSchema, body);
     if (!validated.success) {
       return NextResponse.json({ error: validated.error }, { status: 400 });
+    }
+
+    // LANDLORD chỉ được tạo tin đăng trong tòa nhà mình sở hữu
+    if (role === 'LANDLORD') {
+      const prop = await prisma.property.findUnique({ where: { id: body.propertyId }, select: { landlordId: true } });
+      if (!prop || prop.landlordId !== session.user.id) {
+        return NextResponse.json({ error: 'Tòa nhà không thuộc quyền quản lý của bạn' }, { status: 403 });
+      }
     }
 
     // EDIT_COMMISSION: staff cần permission để set commissionJson
@@ -191,9 +215,13 @@ export async function POST(req: NextRequest) {
       if (denial) return denial;
     }
 
+    // Mã tin đăng bất biến, sinh server-side (client KHÔNG gửi được listingCode)
+    const listingCode = await generateUniqueListingCode(prisma);
+
     const roomType = await prisma.roomType.create({
       data: {
         propertyId: body.propertyId,
+        listingCode,
         name: body.name,
         typeName: body.typeName || 'don',
         areaSqm: parseFloat(body.areaSqm),
@@ -243,15 +271,35 @@ export async function PUT(req: NextRequest) {
 
     const { id, ...data } = body;
 
+    // Chặn BROKER/CUSTOMER sửa tin đăng (chỉ ADMIN/ADMIN_STAFF/LANDLORD-sở-hữu)
+    const role = session.user.role;
+    if (role === 'BROKER' || role === 'CUSTOMER') {
+      return NextResponse.json({ error: 'Không có quyền sửa tin đăng' }, { status: 403 });
+    }
+
+    // Load bản hiện tại để (a) kiểm tra sở hữu của LANDLORD, (b) diff isApproved cho staff
+    const existing = await prisma.roomType.findUnique({
+      where: { id },
+      select: { isApproved: true, property: { select: { landlordId: true } } },
+    });
+    if (!existing) return NextResponse.json({ error: 'Không tìm thấy tin đăng' }, { status: 404 });
+    if (role === 'LANDLORD' && existing.property.landlordId !== session.user.id) {
+      return NextResponse.json({ error: 'Tin đăng không thuộc quyền quản lý của bạn' }, { status: 403 });
+    }
+
+    // Chỉ ADMIN/ADMIN_STAFF được đổi trạng thái duyệt — landlord không thể tự duyệt
+    const canSetApproval = role === 'ADMIN' || role === 'ADMIN_STAFF';
+
     // Staff permission checks
-    if (session.user.role === 'ADMIN_STAFF') {
+    if (role === 'ADMIN_STAFF') {
       // EDIT_COMMISSION — chỉ khi đổi commissionJson
       if (data.commissionJson !== undefined) {
         const denial = requirePermission(session, 'EDIT_COMMISSION');
         if (denial) return denial;
       }
-      // APPROVE_LISTINGS — chỉ khi đổi isApproved
-      if (data.isApproved !== undefined) {
+      // APPROVE_LISTINGS — chỉ khi THỰC SỰ đổi isApproved (diff thay vì presence,
+      // để staff thiếu quyền vẫn sửa được các field khác mà form luôn gửi kèm isApproved)
+      if (data.isApproved !== undefined && data.isApproved !== existing.isApproved) {
         const denial = requirePermission(session, 'APPROVE_LISTINGS');
         if (denial) return denial;
       }
@@ -283,7 +331,7 @@ export async function PUT(req: NextRequest) {
         ...(data.expectedAvailableDate !== undefined && {
           expectedAvailableDate: data.expectedAvailableDate ? new Date(data.expectedAvailableDate) : null,
         }),
-        ...(data.isApproved !== undefined && { isApproved: data.isApproved }),
+        ...(canSetApproval && data.isApproved !== undefined && { isApproved: data.isApproved }),
       },
     });
 
@@ -305,6 +353,21 @@ export async function DELETE(req: NextRequest) {
     const url = new URL(req.url);
     const id = url.searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+
+    // Chỉ ADMIN/ADMIN_STAFF, hoặc LANDLORD sở hữu tòa nhà, mới được xóa tin đăng
+    const role = session.user.role;
+    if (role === 'BROKER' || role === 'CUSTOMER') {
+      return NextResponse.json({ error: 'Không có quyền xóa tin đăng' }, { status: 403 });
+    }
+    if (role === 'LANDLORD') {
+      const existing = await prisma.roomType.findUnique({
+        where: { id },
+        select: { property: { select: { landlordId: true } } },
+      });
+      if (!existing || existing.property.landlordId !== session.user.id) {
+        return NextResponse.json({ error: 'Tin đăng không thuộc quyền quản lý của bạn' }, { status: 403 });
+      }
+    }
 
     await prisma.roomType.delete({ where: { id } });
     return NextResponse.json({ success: true });
