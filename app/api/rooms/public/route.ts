@@ -49,6 +49,7 @@ export async function GET(req: NextRequest) {
         select: {
           id: true,
           name: true,
+          listingCode: true,
           typeName: true,
           areaSqm: true,
           priceMonthly: true,
@@ -106,6 +107,7 @@ export async function GET(req: NextRequest) {
       return {
         id: rt.id,
         name: rt.name,
+        listingCode: rt.listingCode,
         typeName: rt.typeName,
         areaSqm: rt.areaSqm,
         priceMonthly: rt.priceMonthly,

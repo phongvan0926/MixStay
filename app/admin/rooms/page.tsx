@@ -141,7 +141,11 @@ export default function AdminRoomsPage() {
   // Pagination
   const [page, setPage] = useState(1);
 
-  const { roomTypes: rooms, pagination, isLoading: loading, mutate } = useRoomTypes({ page: String(page), limit: '20' });
+  // Tìm kiếm (theo mã MS-… / tên / địa chỉ) — server-side qua /api/rooms
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+
+  const { roomTypes: rooms, pagination, isLoading: loading, mutate } = useRoomTypes({ page: String(page), limit: '20', ...(search ? { search } : {}) });
   const { properties } = useProperties({ status: 'APPROVED', limit: '200' });
   const { companies } = useCompanies();
 
@@ -404,6 +408,16 @@ export default function AdminRoomsPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-6">
+        <form onSubmit={e => { e.preventDefault(); setSearch(searchInput.trim()); setPage(1); }}
+          className="flex gap-2 w-full sm:w-auto">
+          <input className="input-field w-full sm:w-64" placeholder="Tìm theo mã (MS-…), tên, địa chỉ…"
+            value={searchInput} onChange={e => setSearchInput(e.target.value)} />
+          <button type="submit" className="btn-primary whitespace-nowrap">Tìm</button>
+          {search && (
+            <button type="button" onClick={() => { setSearchInput(''); setSearch(''); setPage(1); }}
+              className="px-3 py-2 text-sm text-stone-500 hover:text-stone-700 whitespace-nowrap">Xoá</button>
+          )}
+        </form>
         <select className="input-field w-full sm:!w-auto sm:min-w-[160px]" value={filterCompany}
           onChange={e => { setFilterCompany(e.target.value); setFilterProperty(''); }}>
           <option value="">Tất cả công ty</option>
@@ -467,6 +481,9 @@ export default function AdminRoomsPage() {
                     </td>
                     <td className="table-cell">
                       <p className="font-semibold text-stone-900">{r.name}</p>
+                      {r.listingCode && (
+                        <p className="text-[10px] font-mono font-semibold text-stone-400 mt-0.5">Mã: {r.listingCode}</p>
+                      )}
                     </td>
                     <td className="table-cell">
                       <p className="text-stone-700">{r.property?.name}</p>
@@ -562,9 +579,14 @@ export default function AdminRoomsPage() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowModal(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto mx-4 z-10">
             <div className="sticky top-0 bg-white border-b border-stone-200 px-6 py-4 rounded-t-2xl flex items-center justify-between z-20">
-              <h2 className="font-display text-lg font-bold text-stone-900">
-                {editingRoom ? 'Sửa tin đăng' : 'Thêm tin đăng mới'}
-              </h2>
+              <div>
+                <h2 className="font-display text-lg font-bold text-stone-900">
+                  {editingRoom ? 'Sửa tin đăng' : 'Thêm tin đăng mới'}
+                </h2>
+                {editingRoom?.listingCode && (
+                  <p className="text-[11px] font-mono font-semibold text-stone-400 mt-0.5">Mã: {editingRoom.listingCode}</p>
+                )}
+              </div>
               <button onClick={() => setShowModal(false)}
                 className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-stone-100 transition-colors text-stone-500">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

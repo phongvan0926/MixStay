@@ -233,6 +233,26 @@ mixstay/
 
 ## Changelog
 
+### v8.5 — 2026-06-20
+- **Gate API companies + settings ở tầng server (đóng TODO v9 của v8.4):**
+  - `api/companies/*` (GET/POST/PUT/DELETE): thay check `role==='ADMIN'` thô bằng `requirePermission(session,'MANAGE_COMPANIES')` → ADMIN bypass, ADMIN_STAFF có quyền (vd `manager@`) dùng được, thiếu quyền → 403.
+  - `api/settings/*` (GET + POST): `requirePermission(session,'EDIT_COMMISSION')`. Lý do: setting duy nhất là `commission_broker_percent` — đúng phạm vi `EDIT_COMMISSION`; không có permission "view settings" riêng nên gate cả đọc lẫn ghi. GET trước đây KHÔNG có auth (ai cũng đọc) → đã vá.
+  - Sidebar: "Công ty" gate `MANAGE_COMPANIES`, "Cài đặt" gate `EDIT_COMMISSION` (thay vì ẩn cứng). `MenuItem.perm` mở rộng từ literal `'MANAGE_USERS'` → `AdminPermission`. middleware redirect `/admin/{companies,users,settings}` cho ADMIN_STAFF thiếu quyền tương ứng.
+- **Vá 7 lỗ hổng phân quyền (authz) tự phát hiện khi rà — KHÔNG nằm trong 9 permission nhưng nghiêm trọng:**
+  - `rooms` PUT/POST/DELETE: thêm chặn role + check sở hữu. Trước đây BẤT KỲ ai đăng nhập (kể cả CUSTOMER) cũng sửa/xoá/tạo được mọi tin đăng. Nay: ADMIN/ADMIN_STAFF, hoặc LANDLORD sở hữu tòa; BROKER/CUSTOMER → 403. Chỉ ADMIN-family được đổi `isApproved` (landlord không tự duyệt).
+  - `properties` POST: chỉ LANDLORD/ADMIN/ADMIN_STAFF (chặn BROKER/CUSTOMER tạo property với `landlordId` tuỳ ý).
+  - `deals` POST: chỉ BROKER/ADMIN/ADMIN_STAFF (chặn CUSTOMER/LANDLORD tạo deal với `brokerId` tuỳ ý).
+  - `inquiries` PUT: thêm check sở hữu (chủ nhà chỉ trả lời câu hỏi của tin đăng MÌNH) — trước đây chủ nhà A reply "HẾT" ép phòng chủ nhà B về UNAVAILABLE.
+  - `notifications` PUT: scope `updateMany({id, userId})` chống IDOR (trước đây đọc/đánh dấu được thông báo người khác).
+- **APPROVE_LISTINGS — sửa lỗi chức năng:** `rooms` PUT đổi guard từ presence-check sang **diff** `isApproved`. Trước đây staff thiếu APPROVE_LISTINGS bị 403 khi lưu BẤT KỲ sửa đổi nào của tin đăng (vì form luôn gửi kèm `isApproved`); nay chỉ chặn khi thực sự đổi trạng thái duyệt.
+- **VIEW_FINANCIAL_REPORTS UI:** card "Doanh thu HH"/"Tổng HH" ở admin Tổng quan hiện "—" thay vì "0 ₫" gây hiểu nhầm khi staff bị field-strip.
+- **`listingCode` — mã tin đăng cho mỗi RoomType:**
+  - Schema: `RoomType.listingCode String? @unique` (nullable trước cho an toàn dữ liệu cũ; backfill phủ hết → thực tế không còn null; chưa siết NOT NULL).
+  - Format: `"MS-" + 6 ký tự IN HOA` từ bảng `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (bỏ 0/O, 1/I/L dễ nhầm) → vd `MS-7K3P9Q`. Random (không tăng dần) ⇒ không lộ tổng số tin, không đoán được tin khác. **Bất biến** (sinh server-side khi tạo, client không gửi/sửa được).
+  - Helper: `lib/listing-code.ts` (client-safe: `LISTING_CODE_REGEX`, `normalizeListingCode`) + `lib/listing-code-server.ts` (server-only, dùng `crypto`: `generateListingCode`, `generateUniqueListingCode` — retry chống trùng, `@unique` là chốt chặn cuối). Tách 2 file để KHÔNG kéo `crypto` vào client bundle.
+  - Gắn vào `POST /api/rooms` (tin mới tự có mã). Hiển thị badge "Mã: MS-…" ở: card+list chủ nhà, card+modal inventory môi giới, bảng + modal Phòng admin, và trang tin đăng share link (khách/đối tác trích dẫn được). Tìm kiếm theo mã (admin có ô tìm server-side; broker dùng ô "Tìm kiếm thông minh"; landlord lọc client) — nhập mã đầy đủ → tra chính xác, nhập 1 phần → contains. API trả `listingCode`: rooms, share-links, rooms/public, rooms/related.
+- **Sau khi pull code v8.5:** `npx prisma db push --accept-data-loss` (additive: thêm cột `listingCode` nullable + unique index — cảnh báo data-loss là generic, cột mới toàn NULL nên 0 trùng, an toàn) → `npm run db:backfill-codes` (idempotent, sinh mã cho tin cũ, tự verify 100% có mã & không null).
+
 ### v8.4.1 — 2026-06-19 (docs sync)
 - Đồng bộ `CLAUDE.md` + `README.md` với schema v8.4: bổ sung `ADMIN_STAFF` + hệ RBAC (enum `Permission` 9 quyền, `User.permissions[]`, guard `lib/permissions.ts` / `lib/permissions-server.ts`, cơ chế field-strip số liệu tài chính).
 - Sửa mô tả RoomType: bỏ `isAvailable`, dùng `status` (RoomStatus: AVAILABLE/UPCOMING/UNAVAILABLE) + `expectedAvailableDate`. Bổ sung `parkingBike` vào tiện ích Property.
@@ -252,7 +272,7 @@ mixstay/
   - middleware: `/admin/*` cho cả ADMIN + ADMIN_STAFF; `/admin/settings` chặn staff.
 - **Admin chuyển sở hữu tòa nhà:** PropertyForm khi edit hiện selector chủ nhà — enabled nếu có TRANSFER_PROPERTY_OWNERSHIP, disabled + tooltip nếu không. Đổi chủ nhà → warning "tin đăng/giao dịch/link share chuyển theo". RoomType ownership qua `property.landlordId` (không cần cascade).
 - **Seed:** thêm `staff@mixstay.vn` `[APPROVE_LISTINGS, VIEW_FINANCIAL_REPORTS]` + `manager@mixstay.vn` `[APPROVE_LISTINGS, EXPORT_DATA, MANAGE_COMPANIES, MANAGE_SYSTEM_SHARE_LINKS]` (không có VIEW_FINANCIAL_REPORTS → demo field-strip).
-- **TODO v9:** wrap permission cho `api/companies` (MANAGE_COMPANIES) + `api/settings` (EDIT_COMMISSION) — hiện skip, staff bị chặn ở UI (ẩn menu).
+- **TODO v9:** wrap permission cho `api/companies` (MANAGE_COMPANIES) + `api/settings` (EDIT_COMMISSION) — hiện skip, staff bị chặn ở UI (ẩn menu). → ✅ **đã làm ở v8.5.**
 - **Sau khi pull code v8.4:** `npx prisma db push --skip-generate` (additive: Permission enum + permissions column), rồi `npm run db:seed`.
 
 ### v8.3.1 — 2026-04-29 (hotfix)

@@ -10,6 +10,7 @@
     "postinstall": "npx prisma generate",
     "db:push": "npx prisma db push",
     "db:seed": "npx tsx prisma/seed.ts",
+    "db:backfill-codes": "npx tsx prisma/backfill-listing-codes.ts",
     "db:studio": "npx prisma studio"
   },
   "dependencies": {

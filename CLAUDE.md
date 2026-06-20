@@ -37,12 +37,15 @@ lib/rate-limit.ts   → applyRateLimit() — in-memory rate limiter
 lib/validations.ts  → Zod schemas + validateBody()
 lib/permissions.ts  → Client-safe RBAC: hasPermission(), ALL_ADMIN_PERMISSIONS (ADMIN bypass, ADMIN_STAFF cần permission)
 lib/permissions-server.ts → requirePermission() — API guard kiểm permission trước khi xử lý
+lib/listing-code.ts → Client-safe: LISTING_CODE_REGEX, normalizeListingCode (mã tin đăng MS-XXXXXX)
+lib/listing-code-server.ts → Server-only (crypto): generateListingCode, generateUniqueListingCode (retry chống trùng) — tách khỏi file client để không kéo crypto vào bundle
 lib/user-company.ts → getUserCompany() — resolve company của user (cho topbar + share link)
 lib/zalo.ts         → Resolve link Zalo (company zaloGroupLink → landlord phone → env → fallback)
 lib/supabase.ts     → Supabase client (storage upload ảnh/video)
 prisma/schema.prisma → 12 bảng: users, accounts, sessions, companies, properties, room_types, deals, share_links, room_inquiries, notifications, settings, verification_tokens
 prisma/seed.ts      → Demo data (password: 123456)
-middleware.ts       → Route protection theo role
+prisma/backfill-listing-codes.ts → Backfill listingCode cho RoomType cũ (idempotent, chạy sau prisma db push)
+middleware.ts       → Route protection theo role (+ chặn /admin/{companies,users,settings} theo permission cho ADMIN_STAFF)
 ```
 
 ## Database schema tóm tắt
@@ -50,7 +53,7 @@ middleware.ts       → Route protection theo role
 - users: id, name, email, phone, password, role (ADMIN/ADMIN_STAFF/BROKER/LANDLORD/CUSTOMER), avatar, permissions[] (chỉ có hiệu lực khi role=ADMIN_STAFF), isActive, setupComplete
 - accounts: id, userId, type, provider, providerAccountId (OAuth accounts)
 - properties: id, companyId?, landlordId, name, fullAddress, district, streetName, zaloPhone, landlordNotes, parkingCar, parkingBike, evCharging, petAllowed, foreignerOk, status (PENDING/APPROVED/REJECTED)
-- room_types: id, propertyId, name, typeName (don/gac_xep/1k1n/2k1n/studio/duplex), areaSqm, priceMonthly, deposit, description, amenities[], images[], videos[] (URL upload Supabase, tối đa 3), videoLinks[] (YouTube/TikTok/Facebook embed), totalUnits, availableUnits, availableRoomNames, status (RoomStatus: AVAILABLE/UPCOMING/UNAVAILABLE), expectedAvailableDate (bắt buộc khi UPCOMING), isApproved, commissionJson, shortTermAllowed, shortTermMonths, shortTermPrice, landlordNotes, viewCount
+- room_types: id, propertyId, name, listingCode? (mã tin "MS-XXXXXX" — @unique, bất biến, sinh tự động khi tạo; nullable cho dữ liệu cũ trước backfill), typeName (don/gac_xep/1k1n/2k1n/studio/duplex), areaSqm, priceMonthly, deposit, description, amenities[], images[], videos[] (URL upload Supabase, tối đa 3), videoLinks[] (YouTube/TikTok/Facebook embed), totalUnits, availableUnits, availableRoomNames, status (RoomStatus: AVAILABLE/UPCOMING/UNAVAILABLE), expectedAvailableDate (bắt buộc khi UPCOMING), isApproved, commissionJson, shortTermAllowed, shortTermMonths, shortTermPrice, landlordNotes, viewCount
 - deals: id, roomTypeId, brokerId, dealPrice, commissionTotal, commissionBroker, commissionCompany, status (PENDING/CONFIRMED/PAID/CANCELLED)
 - share_links: id, roomTypeId?, brokerId, token (unique), viewCount, isSystem, isActive, expiresAt
 - room_inquiries: id, roomTypeId, brokerId, message, reply (CÒN/HẾT), repliedAt
@@ -65,6 +68,7 @@ middleware.ts       → Route protection theo role
 - Trạng thái phòng dùng `status` (RoomStatus): AVAILABLE 🟢 / UPCOMING 🟡 (sắp trống — cần expectedAvailableDate) / UNAVAILABLE 🔴. KHÔNG còn field `isAvailable` (đã bỏ từ v8.3)
 - Khi deal CONFIRMED → availableUnits giảm 1, nếu =0 thì set status=UNAVAILABLE (🔴 Hết phòng)
 - shortTermAllowed: cho phép thuê ngắn hạn với giá shortTermPrice
+- `listingCode`: mã tin "MS-XXXXXX" (6 ký tự, bỏ 0/O/1/I/L), unique, BẤT BIẾN. Sinh server-side ở `POST /api/rooms` qua `generateUniqueListingCode()` (lib/listing-code-server.ts); client KHÔNG gửi/sửa được. Hiển thị badge + tìm kiếm (normalizeListingCode) ở admin/broker/landlord + trang share link
 
 ## Phân quyền dữ liệu
 - Môi giới: thấy fullAddress + SĐT/Zalo chủ nhà + hoa hồng + lưu ý
@@ -72,6 +76,8 @@ middleware.ts       → Route protection theo role
 - Chủ nhà: tự set commissionJson, zaloPhone, landlordNotes, đổi status phòng (AVAILABLE/UPCOMING/UNAVAILABLE)
 - Admin (ADMIN): super-admin — thấy tất cả, duyệt property/roomType, xác nhận deal, bypass mọi permission check
 - Admin staff (ADMIN_STAFF): chỉ làm được hành động có trong User.permissions[]. Guard client `lib/permissions.ts` (hasPermission()) + API `lib/permissions-server.ts` (requirePermission()). Thiếu VIEW_FINANCIAL_REPORTS → field-strip: API vẫn trả key nhưng set null cho số liệu tài chính
+- API gate (v8.5): companies/* → `MANAGE_COMPANIES`; settings/* (GET+POST) → `EDIT_COMMISSION`; đổi landlord Property → `TRANSFER_PROPERTY_OWNERSHIP` (đều ADMIN bypass). middleware chặn trang `/admin/{companies,users,settings}` theo permission
+- Authz nền (v8.5): rooms POST/PUT/DELETE, properties POST, deals POST, inquiries PUT, notifications PUT đều check role + SỞ HỮU (không chỉ "đã đăng nhập"). LANDLORD chỉ thao tác tin/tòa của mình; chỉ ADMIN-family đổi được isApproved
 
 ## Quy tắc khi sửa code
 - CSS: dùng Tailwind classes, custom classes trong app/globals.css (btn-primary, input-field, card, badge, stat-card, sidebar-link...)

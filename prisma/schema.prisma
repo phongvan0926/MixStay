@@ -180,6 +180,7 @@ model RoomType {
   propertyId          String
   name                String    // "Loại 1 - Phòng đơn", "Loại 2 - Studio"...
   typeName            String    @default("don") // don, gac_xep, 1k1n, 2k1n, studio, duplex
+  listingCode         String?   @unique // Mã tin đăng ngắn BẤT BIẾN: MS-XXXXXX (sinh tự động khi tạo, không cho sửa). Nullable trước để backfill an toàn dữ liệu cũ.
   areaSqm             Float
   priceMonthly        Float
   deposit             Float?    // mặc định = priceMonthly (1 tháng tiền thuê)

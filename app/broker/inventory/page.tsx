@@ -136,6 +136,9 @@ function RoomDetailModal({
             <div className="min-w-0">
               <h2 className="font-display text-2xl font-bold text-stone-900">{room.name}</h2>
               <p className="text-sm text-stone-500 mt-0.5">{room.property?.name} • {room.areaSqm}m²</p>
+              {room.listingCode && (
+                <p className="text-[11px] font-mono font-semibold text-stone-400 mt-1">Mã: {room.listingCode}</p>
+              )}
             </div>
             {room.typeName && (
               <span className="badge bg-brand-100 text-brand-700 shrink-0">
@@ -425,7 +428,7 @@ export default function BrokerInventoryPage() {
         <div className="flex flex-wrap gap-3 items-end mb-4">
           <div className="flex-1 min-w-[200px]">
             <label className="block text-xs font-medium text-stone-500 mb-1">Tìm kiếm thông minh</label>
-            <input className="input-field" placeholder="Tên phòng, địa chỉ, SĐT, mô tả..." value={filter.search}
+            <input className="input-field" placeholder="Mã tin (MS-...), tên phòng, địa chỉ, SĐT..." value={filter.search}
               onChange={e => setFilter({ ...filter, search: e.target.value })}
               onKeyDown={e => e.key === 'Enter' && handleFilter()} />
           </div>
@@ -544,6 +547,9 @@ export default function BrokerInventoryPage() {
                 <p className="text-sm text-stone-500">
                   {room.property?.name} • {room.areaSqm}m²
                 </p>
+                {room.listingCode && (
+                  <p className="text-[10px] font-mono font-semibold text-stone-400 mt-0.5">Mã: {room.listingCode}</p>
+                )}
               </div>
 
               {/* Price */}

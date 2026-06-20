@@ -201,6 +201,9 @@ export default function ShareViewClient() {
             <div className="min-w-0">
               <h1 className="font-display text-2xl font-bold">{roomType.name}</h1>
               <p className="text-sm text-stone-400 mt-1">Thuộc tòa: <span className="text-stone-600 font-medium">{property?.name}</span></p>
+              {roomType.listingCode && (
+                <p className="text-xs font-mono font-semibold text-stone-500 mt-1.5 inline-block bg-stone-100 px-2 py-0.5 rounded">Mã tin: {roomType.listingCode}</p>
+              )}
             </div>
             {roomType.status === 'UPCOMING' ? (
               <span className="badge bg-amber-100 text-amber-700 text-sm py-1 flex-shrink-0">

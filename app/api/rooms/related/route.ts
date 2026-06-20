@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
     const commonSelect = {
       id: true,
       name: true,
+      listingCode: true,
       typeName: true,
       areaSqm: true,
       priceMonthly: true,

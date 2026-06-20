@@ -49,6 +49,7 @@ export async function GET(req: NextRequest) {
               id: true, name: true, typeName: true, areaSqm: true,
               priceMonthly: true, deposit: true, description: true,
               amenities: true, images: true, videos: true, videoLinks: true,
+              listingCode: true,
               totalUnits: true, availableUnits: true,
               // KHÔNG select availableRoomNames — leak sang khách
               status: true, expectedAvailableDate: true,
@@ -87,6 +88,7 @@ export async function GET(req: NextRequest) {
               id: true, name: true, typeName: true, areaSqm: true,
               priceMonthly: true, deposit: true, description: true,
               amenities: true, images: true, videos: true, videoLinks: true,
+              listingCode: true,
               totalUnits: true, availableUnits: true,
               // KHÔNG select availableRoomNames — khách chỉ thấy số lượng
               status: true, expectedAvailableDate: true,
