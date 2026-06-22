@@ -6,9 +6,9 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 
 const OAUTH_ENABLED = {
-  google: !!(process.env.NEXT_PUBLIC_GOOGLE_ENABLED),
-  facebook: !!(process.env.NEXT_PUBLIC_FACEBOOK_ENABLED),
-  apple: !!(process.env.NEXT_PUBLIC_APPLE_ENABLED),
+  google: process.env.NEXT_PUBLIC_GOOGLE_ENABLED === 'true',
+  facebook: process.env.NEXT_PUBLIC_FACEBOOK_ENABLED === 'true',
+  apple: process.env.NEXT_PUBLIC_APPLE_ENABLED === 'true',
 };
 
 export default function RegisterPage() {

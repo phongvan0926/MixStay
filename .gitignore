@@ -37,3 +37,6 @@ next-env.d.ts
 
 # prisma
 prisma/*.db
+
+# standalone Python sub-project — local only, NOT part of this public repo
+/realestate-automation/

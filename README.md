@@ -233,6 +233,13 @@ mixstay/
 
 ## Changelog
 
+### v8.6 — 2026-06-22
+- **Bật lại đăng nhập Google (OAuth) cho user tự đăng ký:**
+  - Sửa flag hiển thị nút OAuth ở `app/login/page.tsx` + `app/register/page.tsx`: từ presence-based `!!(process.env.NEXT_PUBLIC_GOOGLE_ENABLED)` (lỗi: `!!"false" === true`) sang `=== 'true'` → để trống/"false" = ẩn nút, "true" = hiện. Áp cho cả google/facebook/apple.
+  - `.env`: dọn block GOOGLE bị trùng (xuất hiện 2 lần) → gom 1, ghi rõ redirect URIs (localhost + mixstay.vn). `.env.example`: default 3 cờ `*_ENABLED=false` cho khớp ngữ nghĩa mới (fresh clone không hiện nút OAuth gãy).
+  - Server provider (`lib/auth.ts`) vốn đã tự bật khi có `GOOGLE_CLIENT_ID`+`SECRET` (không đổi). Luồng tự đăng ký: nút → `signIn('google', {callbackUrl:'/auth/callback'})` → user mới chọn vai trò ở `/auth/callback` → tạo tài khoản.
+  - **Còn lại để bật trên Production (mixstay.vn):** thêm redirect URIs mixstay.vn vào OAuth client (Google Console) + publish OAuth consent screen (Production) + set `GOOGLE_CLIENT_ID/SECRET` + `NEXT_PUBLIC_GOOGLE_ENABLED=true` ở Vercel env + redeploy. Scope cơ bản (email/profile/openid) KHÔNG cần Google "verification" để user đăng nhập được.
+
 ### v8.5 — 2026-06-20
 - **Gate API companies + settings ở tầng server (đóng TODO v9 của v8.4):**
   - `api/companies/*` (GET/POST/PUT/DELETE): thay check `role==='ADMIN'` thô bằng `requirePermission(session,'MANAGE_COMPANIES')` → ADMIN bypass, ADMIN_STAFF có quyền (vd `manager@`) dùng được, thiếu quyền → 403.
