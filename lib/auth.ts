@@ -69,8 +69,34 @@ if (process.env.APPLE_ID && process.env.APPLE_SECRET) {
   );
 }
 
+// --- Adapter shim: map AdapterUser.image -> User.avatar -----------------------
+// The schema stores the profile picture in `avatar`, but @auth/prisma-adapter (and
+// NextAuth's AdapterUser) write/read `image`. Without this mapping the FIRST Google
+// sign-in throws Prisma "Unknown argument `image`" at createUser, so OAuth fails even
+// with valid Google creds. The new user still gets role=CUSTOMER (schema default) and
+// setupComplete=false, then the jwt callback flags needsRoleSetup for /auth/callback.
+// Code-only shim — no DB/schema change; email+password flow is unaffected (it never
+// touches the adapter).
+const baseAdapter = PrismaAdapter(prisma);
+const mixStayAdapter = {
+  ...baseAdapter,
+  async createUser({ id, image, ...rest }: any) {
+    const created = await prisma.user.create({
+      data: { ...rest, ...(image !== undefined ? { avatar: image } : {}) },
+    });
+    return { ...created, image: created.avatar };
+  },
+  async updateUser({ id, image, ...rest }: any) {
+    const updated = await prisma.user.update({
+      where: { id },
+      data: { ...rest, ...(image !== undefined ? { avatar: image } : {}) },
+    });
+    return { ...updated, image: updated.avatar };
+  },
+};
+
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as any,
+  adapter: mixStayAdapter as any,
   providers,
   callbacks: {
     async jwt({ token, user, account, trigger, session }) {
