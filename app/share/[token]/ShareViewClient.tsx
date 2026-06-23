@@ -166,7 +166,9 @@ export default function ShareViewClient() {
     </div>
   );
 
-  const mapsQuery = encodeURIComponent(`${property?.streetName}, ${property?.district}, ${property?.city || 'Hà Nội'}`);
+  const mapsQuery = encodeURIComponent(
+    [property?.streetName, property?.district, property?.city || 'Hà Nội'].filter(Boolean).join(', ')
+  );
   const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${mapsQuery}`;
   const mapsEmbedUrl = `https://maps.google.com/maps?q=${mapsQuery}&output=embed`;
 

@@ -101,7 +101,7 @@ export default function SystemShareClient() {
   const allRoomTypes = useMemo(() => {
     if (!data?.properties) return [];
     return data.properties.flatMap((p: any) =>
-      p.roomTypes.map((rt: any) => ({ ...rt, property: p }))
+      (p.roomTypes || []).map((rt: any) => ({ ...rt, property: p }))
     );
   }, [data]);
 

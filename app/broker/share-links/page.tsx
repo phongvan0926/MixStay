@@ -63,9 +63,11 @@ export default function BrokerShareLinksPage() {
 
       <div className="space-y-3">
         {links.map((link: any) => {
-          const roomImages: string[] = link.room?.images || [];
-          const propImages: string[] = link.room?.property?.images || [];
-          const coverImage = roomImages[0] || propImages[0];
+          const rt = link.roomType;
+          const coverImage = rt?.images?.[0] || rt?.property?.images?.[0];
+          const title = link.isSystem
+            ? 'Kho phòng tổng (tất cả phòng trống)'
+            : (rt ? `${rt.name}${rt.property?.name ? ` — ${rt.property.name}` : ''}` : 'Tin đăng đã xoá');
 
           return (
             <div key={link.id} className="card-hover">
@@ -82,13 +84,11 @@ export default function BrokerShareLinksPage() {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-stone-900 truncate">
-                      P.{link.room?.roomNumber} — {link.room?.property?.name}
-                    </p>
+                    <p className="font-semibold text-stone-900 truncate">{title}</p>
                     <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                      <span className="text-xs text-stone-500">{link.room?.property?.district}</span>
-                      {link.room?.priceMonthly && (
-                        <span className="text-xs font-semibold text-brand-600">{formatCurrency(link.room.priceMonthly)}</span>
+                      {rt?.property?.district && <span className="text-xs text-stone-500">{rt.property.district}</span>}
+                      {rt?.priceMonthly != null && (
+                        <span className="text-xs font-semibold text-brand-600">{formatCurrency(rt.priceMonthly)}</span>
                       )}
                       <span className="text-xs text-stone-400">Tạo: {formatDate(link.createdAt)}</span>
                     </div>

@@ -715,9 +715,14 @@ function RoomTypeCard({
   onReplyInquiry: (id: string, reply: string) => void;
   onShare: () => void; sharing: boolean;
 }) {
-  const commission = rt.commissionJson
-    ? (typeof rt.commissionJson === 'string' ? JSON.parse(rt.commissionJson) : rt.commissionJson)
-    : {};
+  let commission: Record<string, any> = {};
+  if (rt.commissionJson) {
+    try {
+      commission = typeof rt.commissionJson === 'string' ? JSON.parse(rt.commissionJson) : rt.commissionJson;
+    } catch {
+      commission = {}; // malformed/legacy data → don't crash the card
+    }
+  }
   const coverImage = rt.images?.[0] || null;
   const isEditingThis = editingAvailable === rt.id;
 

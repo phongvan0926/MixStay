@@ -41,8 +41,8 @@ export default function AdminDealsPage() {
   if (loading) return <div className="p-8"><SkeletonStats count={4} /><div className="mt-6"><SkeletonTable rows={5} cols={6} /></div></div>;
 
   const activeDeals = filtered.filter(d => d.status === 'CONFIRMED' || d.status === 'PAID');
-  const totalCommission = activeDeals.reduce((s, d) => s + d.commissionTotal, 0);
-  const companyCommission = activeDeals.reduce((s, d) => s + d.commissionCompany, 0);
+  const totalCommission = activeDeals.reduce((s, d) => s + (d.commissionTotal || 0), 0);
+  const companyCommission = activeDeals.reduce((s, d) => s + (d.commissionCompany || 0), 0);
   const confirmedCount = activeDeals.length;
   const pendingCount = filtered.filter(d => d.status === 'PENDING').length;
 

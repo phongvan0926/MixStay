@@ -233,7 +233,9 @@ export default function AdminRoomsPage() {
     if (next === 'UPCOMING') {
       const dateStr = prompt('Ngày phòng sẽ trống (YYYY-MM-DD):', new Date(Date.now() + 14 * 86400_000).toISOString().slice(0, 10));
       if (!dateStr) return;
-      await setStatus(r.id, 'UPCOMING', new Date(dateStr).toISOString());
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) { toast.error('Ngày không hợp lệ'); return; }
+      await setStatus(r.id, 'UPCOMING', d.toISOString());
     } else {
       await setStatus(r.id, next);
     }
