@@ -40,6 +40,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (status === 'unauthenticated') router.push('/login');
   }, [status, router]);
 
+  const role: string = (session?.user as any)?.role ?? '';
+
+  // IMPORTANT: every hook below must run on EVERY render — keep them BEFORE any early
+  // return (React Rules of Hooks). The SWR keys are null until a session exists, so they
+  // simply don't fetch while loading/unauthenticated.
+  // Notification badge - poll every 30s.
+  const { data: notifData } = useSWR(
+    session ? '/api/notifications?limit=1' : null,
+    fetcher,
+    { refreshInterval: 30000, revalidateOnFocus: false }
+  );
+  // Company info (chỉ LANDLORD: hiện logo + tên công ty trên topbar nếu thuộc công ty)
+  const { data: companyData } = useSWR(
+    session && role === 'LANDLORD' ? '/api/me/company' : null,
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 60000 }
+  );
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-50">
@@ -50,7 +68,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!session) return null;
 
-  const role = (session.user as any).role as string;
+  // session is guaranteed here, so role is the user's real role
   // ADMIN_STAFF dùng menu của ADMIN, lọc theo permissions
   const rawItems = menuItems[role === 'ADMIN_STAFF' ? 'ADMIN' : role] || [];
   const items = rawItems.filter(item => {
@@ -59,21 +77,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (item.perm && !hasPermission(session.user as any, item.perm)) return false;
     return true;
   });
-
-  // Notification badge - poll every 30s
-  const { data: notifData } = useSWR(
-    session ? '/api/notifications?limit=1' : null,
-    fetcher,
-    { refreshInterval: 30000, revalidateOnFocus: false }
-  );
   const unreadCount = notifData?.unreadCount || 0;
-
-  // Company info (chỉ LANDLORD: hiện logo + tên công ty trên topbar nếu thuộc công ty)
-  const { data: companyData } = useSWR(
-    session && role === 'LANDLORD' ? '/api/me/company' : null,
-    fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 60000 }
-  );
   const company = companyData?.company || null;
 
   // Which menu item gets the badge

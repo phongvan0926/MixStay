@@ -40,3 +40,6 @@ prisma/*.db
 
 # standalone Python sub-project — local only, NOT part of this public repo
 /realestate-automation/
+
+# Manual DB backups — contain REAL production data (PII + OAuth tokens), never commit
+backups/
