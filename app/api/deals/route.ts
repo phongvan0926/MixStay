@@ -46,6 +46,7 @@ export async function GET(req: NextRequest) {
           commissionRate: true,
           notes: true,
           status: true,
+          dealDate: true,
           confirmedAt: true,
           createdAt: true,
           updatedAt: true,

@@ -20,7 +20,7 @@ export default function AdminDealsPage() {
   const filtered = useMemo(() => {
     return deals.filter(d => {
       if (filterCompany) {
-        const companyId = d.room?.property?.companyId;
+        const companyId = d.roomType?.property?.companyId;
         if (filterCompany === '__none__' && companyId) return false;
         if (filterCompany !== '__none__' && companyId !== filterCompany) return false;
       }
@@ -117,19 +117,19 @@ export default function AdminDealsPage() {
             </thead>
             <tbody className="divide-y divide-stone-100">
               {filtered.map((d: any) => {
-                const companyName = companies.find((c: any) => c.id === d.room?.property?.companyId)?.name;
+                const companyName = companies.find((c: any) => c.id === d.roomType?.property?.companyId)?.name;
                 return (
                   <tr key={d.id} className="hover:bg-stone-50/50 transition-colors">
                     <td className="table-cell">
                       <div className="flex items-center gap-3">
-                        {d.room?.images && d.room.images.length > 0 ? (
-                          <OptimizedImage src={d.room.images[0]} alt={d.room.roomNumber} width={40} height={40} className="w-10 h-10 rounded-lg object-cover border border-stone-200 flex-shrink-0" />
+                        {d.roomType?.property?.images && d.roomType.property.images.length > 0 ? (
+                          <OptimizedImage src={d.roomType.property.images[0]} alt={d.roomType?.name || 'Phòng'} width={40} height={40} className="w-10 h-10 rounded-lg object-cover border border-stone-200 flex-shrink-0" />
                         ) : (
                           <div className="w-10 h-10 rounded-lg bg-stone-100 flex items-center justify-center text-stone-400 text-sm flex-shrink-0">🚪</div>
                         )}
                         <div>
-                          <p className="font-semibold text-stone-900">{d.room?.roomNumber}</p>
-                          <p className="text-xs text-stone-500">{d.room?.property?.name}</p>
+                          <p className="font-semibold text-stone-900">{d.roomType?.name}</p>
+                          <p className="text-xs text-stone-500">{d.roomType?.property?.name}</p>
                         </div>
                       </div>
                     </td>
