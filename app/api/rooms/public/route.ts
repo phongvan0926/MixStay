@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
 
     const { page, limit, skip } = getPaginationParams(url);
 
-    const [roomTypes, total, activeShareLinks] = await Promise.all([
+    const [roomTypes, total] = await Promise.all([
       prisma.roomType.findMany({
         where,
         select: {
@@ -87,12 +87,18 @@ export async function GET(req: NextRequest) {
         take: limit,
       }),
       prisma.roomType.count({ where }),
-      prisma.shareLink.findMany({
-        where: { isActive: true, isSystem: false, roomTypeId: { not: null } },
-        select: { roomTypeId: true, token: true, createdAt: true },
-        orderBy: { createdAt: 'desc' },
-      }),
     ]);
+
+    // Scope the share-link lookup to only the rooms on this page (≤ limit rows),
+    // instead of scanning every active broker share link in the system.
+    const roomIds = roomTypes.map(rt => rt.id);
+    const activeShareLinks = roomIds.length > 0
+      ? await prisma.shareLink.findMany({
+          where: { isActive: true, isSystem: false, roomTypeId: { in: roomIds } },
+          select: { roomTypeId: true, token: true, createdAt: true },
+          orderBy: { createdAt: 'desc' },
+        })
+      : [];
 
     const tokenByRoomType = new Map<string, string>();
     for (const link of activeShareLinks) {
@@ -125,7 +131,14 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return NextResponse.json(paginatedResponse(withShareToken, total, page, limit));
+    // Public, no per-user data → CDN-cacheable. s-maxage keeps listings fresh
+    // within a minute; SWR serves stale instantly while revalidating in the
+    // background. Per-query-string variants cache separately.
+    return NextResponse.json(paginatedResponse(withShareToken, total, page, limit), {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
   } catch (error: any) {
     console.error('/api/rooms/public error:', error);
     return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });

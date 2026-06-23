@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Toaster } from 'react-hot-toast';
-import AuthProvider from '@/components/layout/AuthProvider';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -28,16 +27,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body>
-        <AuthProvider>
-          {children}
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 3000,
-              style: { borderRadius: '12px', padding: '12px 16px', fontSize: '14px' },
-            }}
-          />
-        </AuthProvider>
+        {children}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            style: { borderRadius: '12px', padding: '12px 16px', fontSize: '14px' },
+          }}
+        />
       </body>
     </html>
   );

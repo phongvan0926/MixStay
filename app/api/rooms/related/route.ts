@@ -120,11 +120,17 @@ export async function GET(req: NextRequest) {
 
     const withToken = (r: any) => ({ ...r, shareToken: tokenByRoomType.get(r.id) || null });
 
+    // Public "related listings" widget — tolerates more staleness than the
+    // primary card, so cache a bit longer at the CDN.
     return NextResponse.json({
       sameBuilding: sameBuilding.map(withToken),
       samePrice: samePrice.map(withToken),
       sameDistrict: sameDistrict.map(withToken),
       all: all.map(withToken),
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=600',
+      },
     });
   } catch (error: any) {
     console.error('/api/rooms/related error:', error);

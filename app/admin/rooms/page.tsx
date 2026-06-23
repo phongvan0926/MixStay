@@ -9,7 +9,6 @@ import Pagination from '@/components/ui/Pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import { useRoomTypes, useProperties, useCompanies } from '@/hooks/useData';
 import { SkeletonTable } from '@/components/ui/Skeleton';
-import * as XLSX from 'xlsx';
 
 const ROOM_TYPE_LABELS: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1K1N',
@@ -42,7 +41,9 @@ const EXCEL_COLUMNS = [
   { key: 'evCharging', label: 'Sạc xe (TRUE/FALSE)' },
 ];
 
-function downloadTemplate() {
+async function downloadTemplate() {
+  // Load SheetJS on demand — keeps ~130KB gzip out of the route's First Load JS.
+  const XLSX = await import('xlsx');
   const wb = XLSX.utils.book_new();
 
   // Sheet 1: Template with sample data
@@ -261,7 +262,8 @@ export default function AdminRoomsPage() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
+      const XLSX = await import('xlsx');
       const data = new Uint8Array(evt.target?.result as ArrayBuffer);
       const workbook = XLSX.read(data, { type: 'array' });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -318,7 +320,8 @@ export default function AdminRoomsPage() {
     }
   };
 
-  const exportCurrentData = () => {
+  const exportCurrentData = async () => {
+    const XLSX = await import('xlsx');
     const dataToExport = filteredRooms.map((r: any) => {
       const prop = properties.find(p => p.id === r.property?.id);
       const companyName = companies.find((c: any) => c.id === prop?.companyId)?.name || '';

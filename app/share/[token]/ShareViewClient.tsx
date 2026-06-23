@@ -338,8 +338,10 @@ export default function ShareViewClient() {
             <h2 className="font-display font-semibold text-lg mb-3">🏢 Đơn vị vận hành</h2>
             <div className="flex items-start gap-3">
               {property.company.logo ? (
-                <img src={property.company.logo} alt={property.company.name}
-                  className="w-12 h-12 rounded-xl object-cover border border-brand-100 flex-shrink-0" />
+                <div className="w-12 h-12 rounded-xl overflow-hidden border border-brand-100 flex-shrink-0">
+                  <OptimizedImage src={property.company.logo} alt={property.company.name}
+                    fill sizes="48px" className="object-cover" fallback="property" />
+                </div>
               ) : (
                 <div className="w-12 h-12 rounded-xl bg-brand-100 flex items-center justify-center text-2xl flex-shrink-0">
                   🏢

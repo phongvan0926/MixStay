@@ -11,6 +11,11 @@ const OAUTH_ENABLED = {
   apple: process.env.NEXT_PUBLIC_APPLE_ENABLED === 'true',
 };
 
+// The demo-account quick-fill panel is for LOCAL testing only. process.env.NODE_ENV
+// is statically inlined at build time, so in a production build this is `false` and
+// the panel is dead-code-eliminated from the bundle (explicit compare — never !!()).
+const SHOW_DEMO = process.env.NODE_ENV === 'development';
+
 function OAuthButton({
   provider, label, onClick, loading, icon, className,
 }: {
@@ -158,7 +163,8 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Demo accounts */}
+        {/* Demo accounts — local dev only (hidden in production) */}
+        {SHOW_DEMO && (
         <div className="mt-6 card p-5">
           <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-3">Tài khoản demo</p>
           <p className="text-[11px] text-stone-400 mb-3">Bấm để tự điền email và mật khẩu. Mật khẩu cho tất cả tài khoản demo: <code className="bg-stone-100 px-1 rounded">123456</code></p>
@@ -183,6 +189,7 @@ export default function LoginPage() {
             ))}
           </div>
         </div>
+        )}
       </div>
     </div>
   );

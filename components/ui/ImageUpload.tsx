@@ -10,6 +10,57 @@ interface ImageUploadProps {
   folder: string;
 }
 
+// Client-side downscale before upload: cuts a typical phone photo (3-5MB, 4000px)
+// down to a ~1600px WebP, shrinking upload time, Supabase storage/egress, and the
+// source bytes Next must optimize — without touching the API, URLs, or display.
+// Robust by design: any failure (unsupported codec, no canvas, larger result)
+// falls back to the original File, so behavior never regresses.
+const MAX_EDGE = 1600;
+const WEBP_QUALITY = 0.78;
+
+async function downscaleImage(file: File): Promise<File> {
+  // Skip vector/animated formats and anything that isn't a raster image.
+  if (!file.type.startsWith('image/') || file.type === 'image/gif' || file.type === 'image/svg+xml') {
+    return file;
+  }
+  try {
+    const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' }).catch(() => null);
+    if (!bitmap) return file;
+
+    const { width, height } = bitmap;
+    const scale = Math.min(1, MAX_EDGE / Math.max(width, height));
+    // Already small in both dimensions and bytes → nothing worth doing.
+    if (scale >= 1 && file.size <= 1_200_000) {
+      bitmap.close?.();
+      return file;
+    }
+
+    const w = Math.max(1, Math.round(width * scale));
+    const h = Math.max(1, Math.round(height * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      bitmap.close?.();
+      return file;
+    }
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close?.();
+
+    const blob = await new Promise<Blob | null>(resolve =>
+      canvas.toBlob(resolve, 'image/webp', WEBP_QUALITY)
+    );
+    // No blob, or it ended up bigger than the original → keep the original.
+    if (!blob || blob.size >= file.size) return file;
+
+    const base = file.name.replace(/\.[^.]+$/, '') || 'image';
+    return new File([blob], `${base}.webp`, { type: 'image/webp', lastModified: file.lastModified });
+  } catch {
+    return file;
+  }
+}
+
 export default function ImageUpload({ images, onChange, maxImages = 10, folder }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -45,8 +96,9 @@ export default function ImageUpload({ images, onChange, maxImages = 10, folder }
       }
 
       try {
+        const processed = await downscaleImage(file);
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', processed);
         formData.append('folder', folder);
 
         const res = await fetch('/api/upload', { method: 'POST', body: formData });
