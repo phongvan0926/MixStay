@@ -10,6 +10,12 @@ export default withAuth(
       return NextResponse.redirect(new URL('/login', req.url));
     }
 
+    // OAuth users who haven't chosen a role (setupComplete=false) must finish role setup
+    // before reaching ANY dashboard — enforced server-side so it can't be skipped/raced.
+    if ((token as any).needsRoleSetup === true && !pathname.startsWith('/auth/callback')) {
+      return NextResponse.redirect(new URL('/auth/callback', req.url));
+    }
+
     const role = token.role as string;
     const permissions = (token.permissions as string[] | undefined) || [];
 

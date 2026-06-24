@@ -44,7 +44,9 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      allowDangerousEmailAccountLinking: true,
+      // NOTE: allowDangerousEmailAccountLinking REMOVED — it let an OAuth sign-in attach
+      // to a pre-existing account, which is how dev Google logins inherited seeded ADMIN.
+      // Without it, OAuth either creates a fresh non-privileged user or fails safely.
     })
   );
 }
@@ -54,7 +56,6 @@ if (process.env.FACEBOOK_CLIENT_ID && process.env.FACEBOOK_CLIENT_SECRET) {
     FacebookProvider({
       clientId: process.env.FACEBOOK_CLIENT_ID,
       clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
-      allowDangerousEmailAccountLinking: true,
     })
   );
 }
@@ -64,7 +65,6 @@ if (process.env.APPLE_ID && process.env.APPLE_SECRET) {
     AppleProvider({
       clientId: process.env.APPLE_ID,
       clientSecret: process.env.APPLE_SECRET,
-      allowDangerousEmailAccountLinking: true,
     })
   );
 }
@@ -99,6 +99,21 @@ export const authOptions: NextAuthOptions = {
   adapter: mixStayAdapter as any,
   providers,
   callbacks: {
+    // Defense-in-depth against OAuth account-takeover / privilege escalation:
+    // refuse any OAuth sign-in that resolves to an existing user whose email differs
+    // from the verified OAuth email (i.e. the identity is being linked onto someone
+    // else's account — exactly how Google logins inherited seeded ADMIN). New OAuth
+    // users (createUser sets email = OAuth email) and same-email logins pass unaffected.
+    async signIn({ user, account, profile }) {
+      if (account?.type === 'oauth') {
+        const oauthEmail = ((profile as any)?.email ?? '').toLowerCase();
+        const resolvedEmail = (user?.email ?? '').toLowerCase();
+        if (resolvedEmail && oauthEmail && resolvedEmail !== oauthEmail) {
+          return false;
+        }
+      }
+      return true;
+    },
     async jwt({ token, user, account, trigger, session }) {
       // Handle manual session update (after user selects role)
       if (trigger === 'update' && session) {

@@ -22,7 +22,11 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     if (status === 'loading') return;
     if (status === 'unauthenticated') { router.push('/login'); return; }
-    if (session && !needsRoleSetup) {
+    // Only redirect when role setup is DEFINITIVELY done. Using `!needsRoleSetup` also
+    // matched `undefined` during session hydration → it could redirect a brand-new OAuth
+    // user to a dashboard before the chooser ever rendered (the skip/race). Require an
+    // explicit `false`; while it's still undefined we keep showing the spinner.
+    if (session && needsRoleSetup === false) {
       // Already has role — redirect based on it
       const role = (session.user as any)?.role;
       if (role === 'ADMIN') router.push('/admin/properties');
