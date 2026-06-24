@@ -1,12 +1,25 @@
 import { PrismaClient } from '@prisma/client';
 import { hash } from 'bcryptjs';
+import { randomBytes } from 'crypto';
 
 const prisma = new PrismaClient();
+
+// Strong random password (no ambiguous chars) — used only when SEED_PASSWORD is unset.
+function randomStrongPassword(len = 20): string {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789-_';
+  const bytes = randomBytes(len);
+  let out = '';
+  for (let i = 0; i < len; i++) out += alphabet[bytes[i] % alphabet.length];
+  return out;
+}
 
 async function main() {
   console.log('🌱 Seeding database...');
 
-  const password = await hash('123456', 12);
+  // Seed password comes from the SEED_PASSWORD env var. If unset, generate a STRONG
+  // random one and print it below — never fall back to a weak default like "123456".
+  const seedPassword = process.env.SEED_PASSWORD || randomStrongPassword();
+  const password = await hash(seedPassword, 12);
 
   // Create users
   const admin = await prisma.user.upsert({
@@ -380,7 +393,7 @@ async function main() {
 
   console.log('✅ Settings created');
   console.log('\n🎉 Seed complete!');
-  console.log('\n📋 Demo accounts (password: 123456):');
+  console.log(`\n📋 Demo accounts (password: ${seedPassword}${process.env.SEED_PASSWORD ? ' — from SEED_PASSWORD' : ' — random; set SEED_PASSWORD to choose'}):`);
   console.log('   Admin:    admin@mixstay.vn');
   console.log('   Staff:    staff@mixstay.vn    (APPROVE_LISTINGS, VIEW_FINANCIAL_REPORTS)');
   console.log('   Manager:  manager@mixstay.vn  (APPROVE_LISTINGS, EXPORT_DATA, MANAGE_COMPANIES, MANAGE_SYSTEM_SHARE_LINKS)');
