@@ -105,7 +105,7 @@ export async function GET(req: NextRequest) {
               },
             },
           },
-          broker: { select: { name: true, phone: true } },
+          broker: { select: { name: true, phone: true, role: true } }, // role → biết link do BROKER tạo (đổi đích Zalo)
         },
       });
 
@@ -115,6 +115,13 @@ export async function GET(req: NextRequest) {
 
       if (link.expiresAt && new Date(link.expiresAt) < new Date()) {
         return NextResponse.json({ error: 'Link đã hết hạn' }, { status: 410 });
+      }
+
+      // Link do BROKER tạo: BỎ HẲN SĐT chủ nhà khỏi payload để khách không thể liên hệ
+      // thẳng chủ nhà, bỏ qua broker. CTA Zalo/gọi sẽ trỏ về broker (getZaloLink + data.broker).
+      // Link chủ nhà tự đăng giữ nguyên SĐT chủ nhà (hành vi cũ).
+      if (link.broker?.role === 'BROKER' && link.roomType?.property?.landlord) {
+        (link.roomType.property.landlord as any).phone = null;
       }
 
       // Increment view count

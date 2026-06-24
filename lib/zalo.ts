@@ -1,12 +1,16 @@
 /**
  * Resolve Zalo support link with fallback chain:
- *  1. Company group Zalo (if landlord works for a company)
- *  2. Landlord personal phone → zalo.me/{phone} deeplink
- *  3. NEXT_PUBLIC_SUPPORT_ZALO env (system hotline)
- *  4. Default https://zalo.me/
+ *  1. Company group Zalo (if landlord works for a company) — highest priority
+ *  2. If the share link was created by a BROKER → that broker's phone deeplink
+ *     (protects the broker's lead/commission; otherwise the customer would reach
+ *     the landlord directly and bypass the broker)
+ *  3. Landlord personal phone → zalo.me/{phone} deeplink (landlord self-posted links)
+ *  4. NEXT_PUBLIC_SUPPORT_ZALO env (system hotline)
+ *  5. Default https://zalo.me/
  *
  * Used by both Section 7 "Liên hệ" + floating Zalo FAB so they always
- * point to the same destination.
+ * point to the same destination. `linkBroker` is the share link CREATOR
+ * (ShareLink.broker); only when its role is BROKER does step 2 apply.
  */
 type ContactSource = {
   property?: {
@@ -15,9 +19,17 @@ type ContactSource = {
   } | null;
 };
 
-export function getZaloLink(source: ContactSource | null | undefined): string {
+type LinkBroker = { phone?: string | null; role?: string | null } | null | undefined;
+
+export function getZaloLink(source: ContactSource | null | undefined, linkBroker?: LinkBroker): string {
   const company = source?.property?.company;
   if (company?.zaloGroupLink) return company.zaloGroupLink;
+
+  // Broker-created share link → deeplink to the BROKER (keep the lead with them).
+  if (linkBroker?.role === 'BROKER' && linkBroker.phone) {
+    const brokerDigits = linkBroker.phone.replace(/\D/g, '');
+    if (brokerDigits) return `https://zalo.me/${brokerDigits}`;
+  }
 
   const phone = source?.property?.landlord?.phone;
   if (phone) {

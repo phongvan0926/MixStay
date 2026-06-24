@@ -177,7 +177,8 @@ export default function ShareViewClient() {
 
   const contactPhone: string | null = data.broker?.phone || null;
   const contactName: string = data.broker?.name || 'hỗ trợ';
-  const zaloLink = getZaloLink(roomType);
+  // Pass the link creator (data.broker) so broker-created links deeplink Zalo to the broker.
+  const zaloLink = getZaloLink(roomType, data.broker);
 
   return (
     <div className="min-h-screen bg-stone-50">
