@@ -12,7 +12,7 @@ interface PropertyData {
   district: string;
   streetName: string;
   city: string;
-  totalFloors: number;
+  totalFloors: number | string;
   zaloPhone: string;
   landlordNotes: string;
   amenities: string[];
@@ -58,7 +58,7 @@ const defaultData: PropertyData = {
   district: '',
   streetName: '',
   city: 'Hà Nội',
-  totalFloors: 1,
+  totalFloors: '',
   zaloPhone: '',
   landlordNotes: '',
   amenities: [],
@@ -98,7 +98,7 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
         district: initialData.district || '',
         streetName: initialData.streetName || '',
         city: initialData.city || 'Hà Nội',
-        totalFloors: initialData.totalFloors || 1,
+        totalFloors: initialData.totalFloors || '',
         zaloPhone: initialData.zaloPhone || '',
         landlordNotes: initialData.landlordNotes || '',
         amenities: initialData.amenities || [],
@@ -290,8 +290,9 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
               className="input-field"
               min={1}
               max={50}
+              placeholder="VD: 5"
               value={form.totalFloors}
-              onChange={e => updateField('totalFloors', parseInt(e.target.value) || 1)}
+              onChange={e => updateField('totalFloors', e.target.value)}
             />
           </div>
         </div>
