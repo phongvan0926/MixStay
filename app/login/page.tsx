@@ -43,7 +43,7 @@ export default function LoginPage() {
     try {
       const res = await signIn('credentials', { ...form, redirect: false });
       if (res?.error) {
-        toast.error('Email hoặc mật khẩu không đúng');
+        toast.error('Email/SĐT hoặc mật khẩu không đúng');
       } else {
         toast.success('Đăng nhập thành công!');
         const sessionRes = await fetch('/api/auth/session');
@@ -143,8 +143,8 @@ export default function LoginPage() {
           {/* Email/Password form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1.5">Email</label>
-              <input type="email" className="input-field" placeholder="email@example.com" required
+              <label className="block text-sm font-medium text-stone-700 mb-1.5">Email hoặc Số điện thoại</label>
+              <input type="text" className="input-field" placeholder="email@example.com hoặc 0912 345 678" required
                 value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
             </div>
             <div>

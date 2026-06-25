@@ -3,16 +3,21 @@ import { isValidVideoUrl } from './video-utils';
 
 // ===== Auth =====
 export const loginSchema = z.object({
-  email: z.string().email('Email không hợp lệ'),
+  // Định danh đăng nhập: email HOẶC số điện thoại
+  email: z.string().min(1, 'Nhập email hoặc số điện thoại'),
   password: z.string().min(6, 'Mật khẩu tối thiểu 6 ký tự'),
 });
 
 export const registerSchema = z.object({
   name: z.string().min(2, 'Tên tối thiểu 2 ký tự').max(100, 'Tên tối đa 100 ký tự'),
-  email: z.string().email('Email không hợp lệ'),
-  phone: z.string().max(20).optional().nullable(),
+  // Email KHÔNG bắt buộc. Cần ít nhất 1 trong email/SĐT (định danh đăng nhập) — refine bên dưới.
+  email: z.string().email('Email không hợp lệ').optional().or(z.literal('')),
+  phone: z.string().min(8, 'Số điện thoại không hợp lệ').max(20).optional().or(z.literal('')),
   password: z.string().min(6, 'Mật khẩu tối thiểu 6 ký tự'),
   role: z.enum(['BROKER', 'LANDLORD', 'CUSTOMER'], { message: 'Vai trò không hợp lệ' }),
+}).refine(d => !!(d.email && d.email.trim()) || !!(d.phone && d.phone.trim()), {
+  message: 'Vui lòng nhập Email hoặc Số điện thoại',
+  path: ['phone'],
 });
 
 // ===== Property =====

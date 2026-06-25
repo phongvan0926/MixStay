@@ -109,6 +109,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Email đã tồn tại' }, { status: 400 });
       }
     }
+    // SĐT là định danh đăng nhập → enforce duy nhất ở tầng ứng dụng khi tạo mới.
+    if (phone) {
+      const phoneExists = await prisma.user.findFirst({ where: { phone } });
+      if (phoneExists) {
+        return NextResponse.json({ error: 'Số điện thoại đã được sử dụng' }, { status: 400 });
+      }
+    }
 
     const hashed = await hash(password, 12);
     const user = await prisma.user.create({

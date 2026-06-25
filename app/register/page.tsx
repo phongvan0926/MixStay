@@ -142,12 +142,12 @@ export default function RegisterPage() {
                 value={form.name} onChange={e => set('name', e.target.value)} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1.5">Email</label>
-              <input type="email" className="input-field" placeholder="email@example.com" required
+              <label className="block text-sm font-medium text-stone-700 mb-1.5">Email <span className="text-stone-400 font-normal">(không bắt buộc)</span></label>
+              <input type="email" className="input-field" placeholder="email@example.com (tùy chọn)"
                 value={form.email} onChange={e => set('email', e.target.value)} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1.5">Số điện thoại</label>
+              <label className="block text-sm font-medium text-stone-700 mb-1.5">Số điện thoại <span className="text-stone-400 font-normal">(dùng để đăng nhập nếu không có email)</span></label>
               <input type="tel" className="input-field" placeholder="0912 345 678"
                 value={form.phone} onChange={e => set('phone', e.target.value)} />
             </div>

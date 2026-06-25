@@ -17,9 +17,14 @@ const providers: any[] = [
     async authorize(credentials) {
       if (!credentials?.email || !credentials?.password) return null;
 
-      const user = await prisma.user.findUnique({
-        where: { email: credentials.email },
-      });
+      // Định danh = email HOẶC số điện thoại. Email là @unique (findUnique). Nếu không khớp
+      // email, thử theo SĐT — chỉ chấp nhận khi đúng 1 tài khoản (SĐT trùng → yêu cầu dùng email).
+      const identifier = credentials.email.trim();
+      let user = await prisma.user.findUnique({ where: { email: identifier } });
+      if (!user) {
+        const byPhone = await prisma.user.findMany({ where: { phone: identifier }, take: 2 });
+        if (byPhone.length === 1) user = byPhone[0];
+      }
 
       if (!user || !user.isActive) return null;
       if (!user.password) return null; // OAuth-only account

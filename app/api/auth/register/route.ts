@@ -17,14 +17,24 @@ export async function POST(req: NextRequest) {
 
     const { name, email, phone, password, role } = validated.data;
 
-    const exists = await prisma.user.findUnique({ where: { email } });
-    if (exists) {
-      return NextResponse.json({ error: 'Email đã được sử dụng' }, { status: 400 });
+    // Email không bắt buộc — chỉ chống trùng khi có nhập email
+    if (email) {
+      const exists = await prisma.user.findUnique({ where: { email } });
+      if (exists) {
+        return NextResponse.json({ error: 'Email đã được sử dụng' }, { status: 400 });
+      }
+    }
+    // SĐT là định danh đăng nhập → enforce duy nhất ở tầng ứng dụng (không đổi schema)
+    if (phone) {
+      const phoneExists = await prisma.user.findFirst({ where: { phone } });
+      if (phoneExists) {
+        return NextResponse.json({ error: 'Số điện thoại đã được sử dụng' }, { status: 400 });
+      }
     }
 
     const hashedPassword = await hash(password, 12);
     const user = await prisma.user.create({
-      data: { name, email, phone, password: hashedPassword, role },
+      data: { name, email: email || null, phone: phone || null, password: hashedPassword, role },
       select: { id: true, name: true, email: true, role: true },
     });
 
