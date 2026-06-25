@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { CountUpStats } from './CountUpStats';
 import PublicSearch from './PublicSearch';
+import Logo from '@/components/ui/Logo';
+import CallFab from '@/components/ui/CallFab';
 
 const featuredRooms = [
   { name: 'Chung cư mini Cầu Giấy Premium', district: 'Cầu Giấy', price: 3500000, area: 25, type: 'Gác xép', amenities: ['Điều hoà', 'WC riêng', 'Ban công'], badge: 'Hot' },
@@ -27,11 +29,8 @@ export default function HomePage() {
       {/* ===== NAVBAR ===== */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 supports-[backdrop-filter]:bg-white/80 backdrop-blur-xl border-b border-stone-200/60 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center shadow-lg shadow-brand-600/20">
-              <span className="text-white font-bold text-base">M</span>
-            </div>
-            <span className="font-display font-bold text-xl text-stone-900">MixStay</span>
+          <Link href="/" className="flex items-center" aria-label="MixStay - Trang chủ">
+            <Logo variant="light" className="h-9 w-auto" />
           </Link>
           <div className="flex items-center gap-1.5 sm:gap-3">
             <Link href="/login" className="btn-ghost text-sm px-2.5 sm:px-4 whitespace-nowrap">Đăng nhập</Link>
@@ -47,10 +46,10 @@ export default function HomePage() {
       <section className="relative pt-28 sm:pt-36 pb-20 sm:pb-28 px-4 sm:px-6 overflow-hidden">
         {/* Background */}
         <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-gradient-to-br from-brand-50 via-white to-blue-50" />
+          <div className="absolute inset-0 bg-gradient-to-br from-brand-50 via-white to-gold-50" />
           <div className="absolute top-10 left-[5%] w-[500px] h-[500px] bg-brand-200/25 rounded-full blur-[100px]" />
-          <div className="absolute bottom-0 right-[5%] w-[600px] h-[600px] bg-blue-200/20 rounded-full blur-[120px]" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-violet-100/10 rounded-full blur-[100px]" />
+          <div className="absolute bottom-0 right-[5%] w-[600px] h-[600px] bg-gold-200/20 rounded-full blur-[120px]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gold-100/10 rounded-full blur-[100px]" />
           <svg className="absolute inset-0 w-full h-full opacity-[0.035]" xmlns="http://www.w3.org/2000/svg">
             <defs><pattern id="hero-grid" width="32" height="32" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="currentColor" /></pattern></defs>
             <rect width="100%" height="100%" fill="url(#hero-grid)" />
@@ -69,7 +68,7 @@ export default function HomePage() {
           <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-stone-900 mb-6 leading-[1.1] animate-slide-up">
             Tìm Phòng Khó
             <br />
-            Có <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-blue-500">MixStay</span> Lo
+            Có <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-gold-600">MixStay</span> Lo
           </h1>
 
           <p className="text-base sm:text-lg max-w-2xl mx-auto mb-10 leading-relaxed animate-slide-up text-stone-500">
@@ -125,12 +124,12 @@ export default function HomePage() {
         <div className="absolute inset-0 -z-10 bg-white" />
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-stone-200 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-stone-200 to-transparent" />
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-100/30 rounded-full blur-[100px]" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gold-100/30 rounded-full blur-[100px]" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-brand-100/20 rounded-full blur-[100px]" />
 
         <div className="max-w-6xl mx-auto relative">
           <div className="text-center mb-10 sm:mb-14">
-            <div className="inline-flex items-center gap-2 rounded-full bg-orange-50 border border-orange-100 px-3 py-1 text-xs font-medium text-orange-700 mb-4">
+            <div className="inline-flex items-center gap-2 rounded-full bg-gold-50 border border-gold-200 px-3 py-1 text-xs font-medium text-gold-800 mb-4">
               🔥 Đang hot
             </div>
             <h2 className="font-display text-3xl sm:text-4xl font-bold mb-3">Phòng mới đăng</h2>
@@ -236,7 +235,7 @@ export default function HomePage() {
         {/* Background */}
         <div className="absolute inset-0 -z-10 bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800" />
         <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-brand-500/20 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-blue-500/15 rounded-full blur-[100px]" />
+        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-gold-500/15 rounded-full blur-[100px]" />
         <svg className="absolute inset-0 w-full h-full opacity-[0.05]" xmlns="http://www.w3.org/2000/svg">
           <defs><pattern id="steps-dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="white" /></pattern></defs>
           <rect width="100%" height="100%" fill="url(#steps-dots)" />
@@ -365,11 +364,8 @@ export default function HomePage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-10 mb-12">
             {/* About */}
             <div>
-              <Link href="/" className="flex items-center gap-2.5 mb-4 w-fit">
-                <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">M</span>
-                </div>
-                <span className="font-display font-bold text-lg text-white">MixStay</span>
+              <Link href="/" className="flex items-center mb-4 w-fit" aria-label="MixStay - Trang chủ">
+                <Logo variant="dark" className="h-11 w-auto" />
               </Link>
               <p className="text-sm leading-relaxed">
                 Nền tảng kết nối Chủ nhà, Môi giới và Khách thuê chung cư mini.
@@ -396,9 +392,11 @@ export default function HomePage() {
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                   contact@mixstay.vn
                 </li>
-                <li className="flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                  0901 234 567
+                <li>
+                  <a href="tel:0379838222" aria-label="Gọi hotline 0379 838 222" className="flex items-center gap-2 hover:text-white transition-colors">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                    <span className="font-medium text-white">Hotline: 0379 838 222</span>
+                  </a>
                 </li>
                 <li className="flex items-start gap-2">
                   <svg className="w-4 h-4 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -413,6 +411,9 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* Hotline công ty — FAB gọi nhanh (kênh hỗ trợ chung, KHÔNG qua logic Zalo/share link) */}
+      <CallFab stacked={false} />
     </div>
   );
 }

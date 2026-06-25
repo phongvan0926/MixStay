@@ -4,6 +4,7 @@ import AuthProvider from '@/components/layout/AuthProvider';
 import './globals.css';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://mixstay.vn'),
   title: {
     default: 'MixStay - Tìm phòng chung cư mini nhanh nhất',
     template: '%s | MixStay',
@@ -24,8 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="vi">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#006bc9" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <meta name="theme-color" content="#2f6440" />
       </head>
       <body>
         <AuthProvider>

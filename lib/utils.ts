@@ -52,9 +52,9 @@ export function getStatusColor(status: string): string {
     REJECTED: 'bg-red-100 text-red-800',
     CONFIRMED: 'bg-blue-100 text-blue-800',
     PAID: 'bg-emerald-100 text-emerald-800',
-    CANCELLED: 'bg-gray-100 text-gray-600',
+    CANCELLED: 'bg-stone-100 text-stone-600',
   };
-  return colors[status] || 'bg-gray-100 text-gray-600';
+  return colors[status] || 'bg-stone-100 text-stone-600';
 }
 
 export function getStatusLabel(status: string): string {
@@ -84,9 +84,9 @@ export function getRoleColor(role: string): string {
   const colors: Record<string, string> = {
     ADMIN: 'bg-red-100 text-red-800',
     ADMIN_STAFF: 'bg-blue-100 text-blue-800',
-    BROKER: 'bg-orange-100 text-orange-800',
-    LANDLORD: 'bg-amber-100 text-amber-800',
+    BROKER: 'bg-gold-100 text-gold-800',
+    LANDLORD: 'bg-brand-100 text-brand-800',
     CUSTOMER: 'bg-blue-100 text-blue-800',
   };
-  return colors[role] || 'bg-gray-100 text-gray-600';
+  return colors[role] || 'bg-stone-100 text-stone-600';
 }

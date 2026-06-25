@@ -4,6 +4,7 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import Logo from '@/components/ui/Logo';
 
 const OAUTH_ENABLED = {
   google: process.env.NEXT_PUBLIC_GOOGLE_ENABLED === 'true',
@@ -55,11 +56,8 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-stone-50 px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center">
-              <span className="text-white font-bold">M</span>
-            </div>
-            <span className="font-display font-bold text-xl">MixStay</span>
+          <Link href="/" className="inline-flex items-center mb-6" aria-label="MixStay - Trang chủ">
+            <Logo variant="light" className="h-9 w-auto" />
           </Link>
           <h1 className="font-display text-2xl font-bold">Tạo tài khoản</h1>
           <p className="text-stone-500 text-sm mt-1">Tham gia nền tảng quản lý chung cư mini</p>

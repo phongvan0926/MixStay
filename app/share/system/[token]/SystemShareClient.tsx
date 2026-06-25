@@ -6,6 +6,8 @@ import { formatCurrency } from '@/lib/utils';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import VideoGallery from '@/components/ui/VideoGallery';
 import ZaloFab from '@/components/ui/ZaloFab';
+import CallFab from '@/components/ui/CallFab';
+import Logo from '@/components/ui/Logo';
 import { getSystemZaloLink } from '@/lib/zalo';
 
 const roomTypeLabels: Record<string, string> = {
@@ -188,11 +190,8 @@ export default function SystemShareClient() {
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-stone-200/60">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-brand-600 flex items-center justify-center">
-              <span className="text-white font-bold text-xs">M</span>
-            </div>
-            <span className="font-display font-semibold">MixStay</span>
+          <Link href="/" className="flex items-center" aria-label="MixStay - Trang chủ">
+            <Logo variant="light" className="h-7 w-auto" />
           </Link>
           <span className="text-xs text-stone-400">Kho phòng của {landlord?.name}</span>
         </div>
@@ -452,6 +451,8 @@ export default function SystemShareClient() {
 
       {/* Floating Zalo button — group/landlord level */}
       <ZaloFab href={zaloLink} />
+      {/* Hotline công ty — FAB tĩnh tel:, tách bạch với Zalo nhóm/chủ nhà */}
+      <CallFab />
 
       {/* Room detail modal */}
       {selectedRoom && (

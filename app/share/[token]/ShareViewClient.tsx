@@ -6,6 +6,8 @@ import { formatCurrency } from '@/lib/utils';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import VideoGallery from '@/components/ui/VideoGallery';
 import ZaloFab from '@/components/ui/ZaloFab';
+import CallFab from '@/components/ui/CallFab';
+import Logo from '@/components/ui/Logo';
 import { getZaloLink } from '@/lib/zalo';
 
 const roomTypeLabels: Record<string, string> = {
@@ -189,11 +191,8 @@ export default function ShareViewClient() {
     <div className="min-h-screen bg-stone-50">
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-stone-200/60">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-brand-600 flex items-center justify-center">
-              <span className="text-white font-bold text-xs">M</span>
-            </div>
-            <span className="font-display font-semibold">MixStay</span>
+          <Link href="/" className="flex items-center" aria-label="MixStay - Trang chủ">
+            <Logo variant="light" className="h-7 w-auto" />
           </Link>
           <span className="text-xs text-stone-400">Hỗ trợ bởi {contactName}</span>
         </div>
@@ -404,9 +403,11 @@ export default function ShareViewClient() {
                 📞 Gọi hỗ trợ trực tiếp
               </a>
             ) : (
-              <div className="bg-white/20 text-white font-medium py-3 rounded-xl text-center text-sm border border-white/20">
-                Liên hệ {contactName}
-              </div>
+              // Trang công khai /tin/[id] không gắn môi giới → fallback HOTLINE công ty (số tĩnh,
+              // KHÔNG qua lib/zalo). Nút Zalo bên cạnh vẫn giữ định tuyến riêng → không bị đè.
+              <a href="tel:0379838222" className="bg-white text-brand-700 font-medium py-3 rounded-xl text-center text-sm hover:bg-brand-50 transition-all">
+                📞 Gọi hotline 0379 838 222
+              </a>
             )}
           </div>
         </div>
@@ -419,8 +420,10 @@ export default function ShareViewClient() {
         </p>
       </div>
 
-      {/* Floating Zalo button (shortcut khi user scroll xa Section 7) */}
+      {/* Floating Zalo button (shortcut khi user scroll xa Section 7) — định tuyến broker/chủ nhà */}
       <ZaloFab href={zaloLink} />
+      {/* Hotline công ty — FAB tĩnh tel:, tách bạch hoàn toàn với Zalo broker/chủ nhà */}
+      <CallFab />
     </div>
   );
 }

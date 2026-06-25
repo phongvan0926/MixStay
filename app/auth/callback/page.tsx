@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import Logo from '@/components/ui/Logo';
 
 const ROLES = [
   { value: 'BROKER', label: 'Môi giới', desc: 'Tìm & chia sẻ phòng trống cho khách thuê', icon: '🤝' },
@@ -70,8 +71,8 @@ export default function AuthCallbackPage() {
     <div className="min-h-screen flex items-center justify-center bg-stone-50 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex w-16 h-16 rounded-2xl bg-brand-600 items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-2xl">M</span>
+          <Link href="/" className="inline-flex items-center justify-center mx-auto mb-4" aria-label="MixStay - Trang chủ">
+            <Logo variant="light" className="h-12 w-auto" />
           </Link>
           <h1 className="font-display text-2xl font-bold">Chào mừng!</h1>
           <p className="text-stone-500 text-sm mt-2">

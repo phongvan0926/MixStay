@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/fetcher';
 import { hasPermission, type AdminPermission } from '@/lib/permissions';
+import Logo from '@/components/ui/Logo';
 
 type MenuItem = { label: string; href: string; icon: string; perm?: AdminPermission; staffHidden?: boolean };
 
@@ -92,11 +93,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white/80 backdrop-blur-xl border-b border-stone-200/60">
         <div className="h-full px-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center">
-                <span className="text-white font-bold text-sm">M</span>
-              </div>
-              <span className="font-display font-semibold text-lg hidden sm:inline">MixStay</span>
+            <Link href="/" className="flex items-center" aria-label="MixStay - Trang chủ">
+              <Logo variant="light" className="h-7 w-auto" />
             </Link>
             <span className="text-stone-300">|</span>
             <span className="text-sm font-medium text-stone-500">

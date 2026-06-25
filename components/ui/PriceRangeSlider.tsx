@@ -105,7 +105,7 @@ export default function PriceRangeSlider({ minValue, maxValue, onChange }: Props
           height: 24px;
           border-radius: 9999px;
           background: white;
-          border: 2px solid #006bc9;
+          border: 2px solid #2f6440;
           box-shadow: 0 2px 6px rgba(0,0,0,0.15);
           cursor: pointer;
           pointer-events: auto;
@@ -115,7 +115,7 @@ export default function PriceRangeSlider({ minValue, maxValue, onChange }: Props
           height: 24px;
           border-radius: 9999px;
           background: white;
-          border: 2px solid #006bc9;
+          border: 2px solid #2f6440;
           box-shadow: 0 2px 6px rgba(0,0,0,0.15);
           cursor: pointer;
           pointer-events: auto;

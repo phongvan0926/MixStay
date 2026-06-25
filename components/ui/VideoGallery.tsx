@@ -272,7 +272,7 @@ export default function VideoGallery({ videos = [], videoLinks = [], images = []
   // Empty state
   if (!hasImages && !hasVideos) {
     return (
-      <div className="h-64 md:h-80 bg-gradient-to-br from-brand-100 via-brand-50 to-blue-50 rounded-2xl flex items-center justify-center">
+      <div className="h-64 md:h-80 bg-gradient-to-br from-brand-100 via-brand-50 to-gold-50 rounded-2xl flex items-center justify-center">
         <div className="text-center">
           <span className="text-5xl">🏢</span>
           <p className="text-sm text-stone-400 mt-2">Chưa có ảnh/video</p>
