@@ -159,7 +159,7 @@ export default function PublicSearch() {
   };
 
   return (
-    <section className="relative py-12 sm:py-16 px-4 sm:px-6 overflow-hidden bg-white">
+    <section id="tim-phong" className="relative py-12 sm:py-16 px-4 sm:px-6 overflow-hidden bg-white scroll-mt-20">
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-white via-stone-50 to-white" />
 
       <div className="max-w-6xl mx-auto">
@@ -273,9 +273,8 @@ export default function PublicSearch() {
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {results.map(rt => {
-                const href = rt.shareToken
-                  ? `/share/${rt.shareToken}`
-                  : `/login?redirect=/&message=${encodeURIComponent('Đăng nhập để xem chi tiết')}`;
+                // Trang chi tiết CÔNG KHAI theo id — khách xem không cần đăng nhập.
+                const href = `/tin/${rt.id}`;
                 return (
                   <Link
                     key={rt.id}
@@ -340,7 +339,7 @@ export default function PublicSearch() {
                       )}
 
                       <div className="mt-3 text-center text-xs font-medium text-brand-600 group-hover:underline">
-                        {rt.shareToken ? 'Xem chi tiết phòng →' : 'Đăng nhập để xem chi tiết →'}
+                        Xem chi tiết phòng →
                       </div>
                     </div>
                   </Link>

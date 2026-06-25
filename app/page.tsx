@@ -81,21 +81,21 @@ export default function HomePage() {
           {/* Search Bar */}
           <div className="max-w-2xl mx-auto mb-12 animate-slide-up">
             <div className="flex flex-col sm:flex-row bg-white rounded-2xl p-2 sm:p-2.5 gap-2 shadow-md">
-              <Link href="/login" className="flex-1 flex items-center gap-2 px-3 sm:px-4 cursor-text">
+              <Link href="#tim-phong" className="flex-1 flex items-center gap-2 px-3 sm:px-4 cursor-text">
                 <svg className="w-5 h-5 text-stone-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 <span className="py-2.5 sm:py-3 text-sm sm:text-base text-stone-400">Nhập quận, khu vực hoặc tên tòa nhà...</span>
               </Link>
-              <Link href="/login" className="btn-primary px-6 sm:px-8 py-3 text-sm sm:text-base flex-shrink-0">
+              <Link href="#tim-phong" className="btn-primary px-6 sm:px-8 py-3 text-sm sm:text-base flex-shrink-0">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 Tìm phòng ngay
               </Link>
             </div>
             <div className="flex items-center justify-center flex-wrap gap-2 sm:gap-3 mt-3 text-xs sm:text-sm text-stone-400">
               <span>Phổ biến:</span>
-              <Link href="/login" className="px-2.5 py-1 rounded-full border border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-white transition-all">Cầu Giấy</Link>
-              <Link href="/login" className="px-2.5 py-1 rounded-full border border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-white transition-all">Đống Đa</Link>
-              <Link href="/login" className="px-2.5 py-1 rounded-full border border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-white transition-all hidden sm:inline-block">Thanh Xuân</Link>
-              <Link href="/login" className="px-2.5 py-1 rounded-full border border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-white transition-all hidden sm:inline-block">Ba Đình</Link>
+              <Link href="#tim-phong" className="px-2.5 py-1 rounded-full border border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-white transition-all">Cầu Giấy</Link>
+              <Link href="#tim-phong" className="px-2.5 py-1 rounded-full border border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-white transition-all">Đống Đa</Link>
+              <Link href="#tim-phong" className="px-2.5 py-1 rounded-full border border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-white transition-all hidden sm:inline-block">Thanh Xuân</Link>
+              <Link href="#tim-phong" className="px-2.5 py-1 rounded-full border border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-white transition-all hidden sm:inline-block">Ba Đình</Link>
             </div>
           </div>
 
@@ -139,7 +139,7 @@ export default function HomePage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {featuredRooms.map((room, i) => (
-              <Link key={i} href="/login" className="group rounded-2xl border border-stone-200/60 bg-white overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-stone-300/60">
+              <Link key={i} href="#tim-phong" className="group rounded-2xl border border-stone-200/60 bg-white overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-stone-300/60">
                 {/* Image area — 55% of card */}
                 <div className="relative h-48 flex items-center justify-center bg-stone-100">
                   <svg className="w-12 h-12 text-stone-400 opacity-60 group-hover:scale-110 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>

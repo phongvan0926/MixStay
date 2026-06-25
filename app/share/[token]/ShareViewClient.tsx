@@ -16,7 +16,8 @@ const roomTypeLabels: Record<string, string> = {
 // ==================== Related Room Card ====================
 function RelatedRoomCard({ rt }: { rt: any }) {
   const cover = rt.images?.[0] || rt.property?.images?.[0] || null;
-  const href = rt.shareToken ? `/p/${rt.shareToken}` : null;
+  // Luôn dẫn tới trang chi tiết công khai theo id (khách xem không cần đăng nhập)
+  const href = `/tin/${rt.id}`;
 
   const Wrapper: any = href ? Link : 'div';
   const wrapperProps = href ? { href } : {};
@@ -113,18 +114,22 @@ function RelatedSection({ roomTypeId }: { roomTypeId: string }) {
 // ==================== Main ====================
 export default function ShareViewClient() {
   const params = useParams();
-  const token = params.token as string;
+  const token = params.token as string | undefined;
+  const id = params.id as string | undefined; // trang công khai /tin/[id] (không cần login/token)
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
+  // /share/[token] + /p/[token] → theo share token (gắn môi giới). /tin/[id] → công khai theo id.
+  const fetchUrl = token ? `/api/share-links?token=${token}` : `/api/rooms/public/${id}`;
+
   useEffect(() => {
-    fetch(`/api/share-links?token=${token}`)
+    fetch(fetchUrl)
       .then(res => { if (!res.ok) throw new Error('not found'); return res.json(); })
       .then(setData)
-      .catch(() => setError('Link không tồn tại hoặc đã hết hạn'))
+      .catch(() => setError(token ? 'Link không tồn tại hoặc đã hết hạn' : 'Tin đăng không tồn tại'))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [fetchUrl, token]);
 
   const roomType = data?.roomType;
   const property = roomType?.property;
