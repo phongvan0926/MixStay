@@ -130,7 +130,7 @@ export default function QuickRoomTypeForm({ onAdd, onCancel }: QuickRoomTypeForm
         </div>
         <div>
           <label className="block text-sm font-medium text-stone-700 mb-1">Số phòng loại này</label>
-          <input type="number" className="input-field" min={1} value={totalUnits} onChange={e => setTotalUnits(parseInt(e.target.value) || 1)} />
+          <input type="number" className="input-field" min={1} placeholder="VD: 1" value={totalUnits || ''} onChange={e => setTotalUnits(parseInt(e.target.value) || 0)} />
         </div>
       </div>
 
@@ -155,12 +155,12 @@ export default function QuickRoomTypeForm({ onAdd, onCancel }: QuickRoomTypeForm
         <div className="grid grid-cols-2 gap-3">
           <div className="flex items-center gap-2">
             <span className="text-xs text-stone-500 whitespace-nowrap">6 tháng:</span>
-            <input type="number" className="input-field !py-1.5 text-sm" min={0} max={100} value={com6} onChange={e => setCom6(parseInt(e.target.value) || 0)} />
+            <input type="number" className="input-field !py-1.5 text-sm" min={0} max={100} value={com6 || ''} onChange={e => setCom6(parseInt(e.target.value) || 0)} />
             <span className="text-xs text-stone-500">%</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-stone-500 whitespace-nowrap">12 tháng:</span>
-            <input type="number" className="input-field !py-1.5 text-sm" min={0} max={100} value={com12} onChange={e => setCom12(parseInt(e.target.value) || 0)} />
+            <input type="number" className="input-field !py-1.5 text-sm" min={0} max={100} value={com12 || ''} onChange={e => setCom12(parseInt(e.target.value) || 0)} />
             <span className="text-xs text-stone-500">%</span>
           </div>
         </div>

@@ -777,7 +777,7 @@ function RoomTypeCard({
               <div className="flex items-center gap-2">
                 <label className="text-xs text-stone-500 whitespace-nowrap">Trống:</label>
                 <input type="number" className="input-field !py-1 !text-sm w-16" min={0} max={rt.totalUnits}
-                  value={editAvailableUnits}
+                  value={editAvailableUnits || ''}
                   onChange={e => onChangeAvailableUnits(Math.min(parseInt(e.target.value) || 0, rt.totalUnits))} />
                 <span className="text-xs text-stone-400">/ {rt.totalUnits}</span>
               </div>
@@ -940,7 +940,7 @@ function RoomTypeListView({
                   {isEditingRow ? (
                     <div className="inline-flex items-center gap-1">
                       <input type="number" className="input-field !py-1 !text-xs w-14 text-center" min={0} max={rt.totalUnits}
-                        value={editAvailableUnits}
+                        value={editAvailableUnits || ''}
                         onChange={e => onChangeAvailableUnits(Math.min(parseInt(e.target.value) || 0, rt.totalUnits))} />
                       <span className="text-xs text-stone-400">/{rt.totalUnits}</span>
                     </div>

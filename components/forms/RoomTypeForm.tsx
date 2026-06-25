@@ -498,9 +498,10 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
               type="number"
               className="input-field"
               min={1}
-              value={form.totalUnits}
+              placeholder="VD: 1"
+              value={form.totalUnits || ''}
               onChange={e => {
-                const val = parseInt(e.target.value) || 1;
+                const val = parseInt(e.target.value) || 0;
                 updateField('totalUnits', val);
                 if (form.availableUnits > val) updateField('availableUnits', val);
               }}
@@ -515,10 +516,11 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
               className="input-field"
               min={0}
               max={form.totalUnits}
-              value={form.availableUnits}
+              placeholder="VD: 1"
+              value={form.availableUnits || ''}
               onChange={e => {
                 const val = parseInt(e.target.value) || 0;
-                updateField('availableUnits', Math.min(val, form.totalUnits));
+                updateField('availableUnits', Math.min(val, form.totalUnits || val));
               }}
             />
             {form.availableUnits > form.totalUnits && (
@@ -684,7 +686,8 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
                   className="input-field"
                   min={0}
                   max={100}
-                  value={row.percent}
+                  placeholder="VD: 40"
+                  value={row.percent || ''}
                   onChange={e => updateCommissionRow(index, 'percent', parseInt(e.target.value) || 0)}
                 />
               </div>
