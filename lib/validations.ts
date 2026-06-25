@@ -158,7 +158,9 @@ const PERMISSIONS = [
 
 export const userCreateSchema = z.object({
   name: z.string().min(2, 'Tên tối thiểu 2 ký tự').max(100),
-  email: z.string().email('Email không hợp lệ'),
+  // Email không bắt buộc khi admin tạo user (vd bản ghi chủ nhà/môi giới do admin quản lý).
+  // Lưu ý: email là field đăng nhập — user không email chưa login bằng email/mật khẩu được.
+  email: z.string().email('Email không hợp lệ').optional().or(z.literal('')),
   phone: z.string().max(20).optional().nullable(),
   password: z.string().min(6, 'Mật khẩu tối thiểu 6 ký tự'),
   role: z.enum(ROLES, { message: 'Vai trò không hợp lệ' }),
@@ -169,7 +171,7 @@ export const userCreateSchema = z.object({
 export const userUpdateSchema = z.object({
   id: z.string().min(1, 'Thiếu id'),
   name: z.string().min(2).max(100).optional(),
-  email: z.string().email('Email không hợp lệ').optional(),
+  email: z.string().email('Email không hợp lệ').optional().or(z.literal('')),
   phone: z.string().max(20).optional().nullable(),
   password: z.string().min(6, 'Mật khẩu tối thiểu 6 ký tự').optional().or(z.literal('')),
   role: z.enum(ROLES).optional(),

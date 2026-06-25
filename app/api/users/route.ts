@@ -102,15 +102,18 @@ export async function POST(req: NextRequest) {
     const esc = guardRoleEscalation(session, role);
     if (esc) return esc;
 
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
-      return NextResponse.json({ error: 'Email đã tồn tại' }, { status: 400 });
+    // Email không bắt buộc — chỉ chống trùng khi có nhập email.
+    if (email) {
+      const existing = await prisma.user.findUnique({ where: { email } });
+      if (existing) {
+        return NextResponse.json({ error: 'Email đã tồn tại' }, { status: 400 });
+      }
     }
 
     const hashed = await hash(password, 12);
     const user = await prisma.user.create({
       data: {
-        name, email, phone: phone || null, password: hashed, role,
+        name, email: email || null, phone: phone || null, password: hashed, role,
         isActive: isActive ?? true,
         permissions: role === 'ADMIN_STAFF' ? (permissions ?? []) : [],
       },

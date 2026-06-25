@@ -24,7 +24,7 @@ const EMPTY_FORM = {
 };
 
 type User = {
-  id: string; name: string; email: string; phone: string | null;
+  id: string; name: string; email: string | null; phone: string | null;
   role: string; isActive: boolean; createdAt: string;
   permissions?: AdminPermission[];
 };
@@ -65,7 +65,7 @@ export default function AdminUsersPage() {
       const q = search.trim().toLowerCase();
       list = list.filter(u =>
         u.name.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
+        (u.email || '').toLowerCase().includes(q) ||
         (u.phone || '').includes(q)
       );
     }
@@ -101,7 +101,7 @@ export default function AdminUsersPage() {
   const openEdit = (u: User) => {
     setEditUser(u);
     setForm({
-      name: u.name, email: u.email, phone: u.phone || '', password: '',
+      name: u.name, email: u.email || '', phone: u.phone || '', password: '',
       role: u.role, isActive: u.isActive,
       permissions: u.permissions ?? [],  // pre-check theo permissions hiện có
     });
@@ -124,7 +124,7 @@ export default function AdminUsersPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(form.email)) { toast.error('Email không hợp lệ'); return; }
+    if (form.email && !emailRegex.test(form.email)) { toast.error('Email không hợp lệ'); return; }
     if (!editUser && form.password.length < 6) { toast.error('Mật khẩu tối thiểu 6 ký tự'); return; }
     if (editUser && form.password && form.password.length < 6) { toast.error('Mật khẩu tối thiểu 6 ký tự'); return; }
 
@@ -335,9 +335,9 @@ export default function AdminUsersPage() {
 
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">Email <span className="text-red-500">*</span></label>
-                <input type="email" required value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                  className="input-field w-full" placeholder="email@example.com" />
+                <label className="block text-sm font-medium text-stone-700 mb-1">Email <span className="text-stone-400 font-normal">(không bắt buộc)</span></label>
+                <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                  className="input-field w-full" placeholder="email@example.com (tùy chọn)" />
               </div>
 
               {/* SĐT */}

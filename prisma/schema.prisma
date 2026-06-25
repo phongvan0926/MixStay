@@ -50,7 +50,7 @@ enum RoomStatus {
 model User {
   id            String    @id @default(cuid())
   name          String?
-  email         String    @unique
+  email         String?   @unique  // Nullable: admin có thể tạo user không email (xem userCreateSchema)
   emailVerified DateTime?
   phone         String?
   password      String?   // Nullable: OAuth users have no password
