@@ -37,6 +37,20 @@ function guardRoleEscalation(session: any, targetRole?: string) {
   return null;
 }
 
+/**
+ * Staff (ADMIN_STAFF) KHÔNG được sửa / đặt lại mật khẩu / xoá một tài khoản vốn là ADMIN.
+ * Chống chiếm quyền: nếu không có guard này, staff có MANAGE_USERS có thể đổi mật khẩu của
+ * super-admin rồi đăng nhập chiếm quyền. Chỉ ADMIN mới thao tác được lên ADMIN khác.
+ */
+async function guardModifyAdmin(session: any, targetId: string) {
+  if (session?.user?.role !== 'ADMIN_STAFF') return null;
+  const target = await prisma.user.findUnique({ where: { id: targetId }, select: { role: true } });
+  if (target?.role === 'ADMIN') {
+    return NextResponse.json({ error: 'Chỉ Super Admin mới được thao tác lên tài khoản Admin' }, { status: 403 });
+  }
+  return null;
+}
+
 export async function GET(req: NextRequest) {
   const rateLimited = applyRateLimit(req, 'api');
   if (rateLimited) return rateLimited;
@@ -155,6 +169,10 @@ export async function PUT(req: NextRequest) {
     const esc = guardRoleEscalation(session, role);
     if (esc) return esc;
 
+    // Staff không được sửa/đặt-lại-mật-khẩu tài khoản Admin
+    const adminGuard = await guardModifyAdmin(session, id);
+    if (adminGuard) return adminGuard;
+
     // Không cho đổi role chính mình
     if (id === currentUserId && role) {
       const self = await prisma.user.findUnique({ where: { id } });
@@ -220,6 +238,10 @@ export async function DELETE(req: NextRequest) {
     if (id === currentUserId) {
       return NextResponse.json({ error: 'Không thể xoá tài khoản đang đăng nhập' }, { status: 400 });
     }
+
+    // Staff không được xoá tài khoản Admin
+    const adminGuard = await guardModifyAdmin(session, id);
+    if (adminGuard) return adminGuard;
 
     const [propertyCount, dealCount, shareLinkCount] = await Promise.all([
       prisma.property.count({ where: { landlordId: id } }),
