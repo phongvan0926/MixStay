@@ -1,26 +1,6 @@
 'use client';
 import { useState } from 'react';
-
-const PRIMARY_DISTRICTS = [
-  'Cầu Giấy',
-  'Đống Đa',
-  'Thanh Xuân',
-  'Ba Đình',
-  'Hai Bà Trưng',
-  'Nam Từ Liêm',
-  'Hoàng Mai',
-];
-
-const OTHER_DISTRICTS = [
-  // Nội thành còn lại
-  'Bắc Từ Liêm', 'Hà Đông', 'Hoàn Kiếm', 'Long Biên', 'Tây Hồ',
-  // Thị xã + huyện ngoại thành
-  'Sơn Tây',
-  'Ba Vì', 'Chương Mỹ', 'Đan Phượng', 'Đông Anh', 'Gia Lâm',
-  'Hoài Đức', 'Mê Linh', 'Mỹ Đức', 'Phú Xuyên', 'Phúc Thọ',
-  'Quốc Oai', 'Sóc Sơn', 'Thạch Thất', 'Thanh Oai', 'Thanh Trì',
-  'Thường Tín', 'Ứng Hòa',
-];
+import { PRIMARY_DISTRICTS, OTHER_DISTRICTS } from '@/lib/hanoi-locations';
 
 interface Props {
   value: string; // selected district name, '' = Tất cả

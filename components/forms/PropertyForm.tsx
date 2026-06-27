@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import ImageUpload from '@/components/ui/ImageUpload';
+import Combobox from '@/components/ui/Combobox';
+import { HANOI_DISTRICTS, COMMON_STREETS } from '@/lib/hanoi-locations';
 
 interface PropertyData {
   id?: string;
@@ -254,24 +256,24 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
             <label className="block text-sm font-medium text-stone-700 mb-1.5">
               Quận/Huyện <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              className="input-field"
-              placeholder="VD: Hoàng Mai"
+            <Combobox
+              options={HANOI_DISTRICTS}
               value={form.district}
-              onChange={e => updateField('district', e.target.value)}
+              onChange={v => updateField('district', v)}
+              placeholder="Chọn hoặc gõ quận/huyện…"
+              allowFreeText={false}
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1.5">
               Tên đường <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              className="input-field"
-              placeholder="VD: Lĩnh Nam"
+            <Combobox
+              options={COMMON_STREETS}
               value={form.streetName}
-              onChange={e => updateField('streetName', e.target.value)}
+              onChange={v => updateField('streetName', v)}
+              placeholder="VD: Lĩnh Nam (gõ để gợi ý)"
+              allowFreeText
             />
           </div>
           <div>
