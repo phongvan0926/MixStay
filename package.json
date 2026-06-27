@@ -11,6 +11,7 @@
     "db:push": "npx prisma db push",
     "db:seed": "npx tsx prisma/seed.ts",
     "db:backfill-codes": "npx tsx prisma/backfill-listing-codes.ts",
+    "db:reset-password": "npx tsx prisma/reset-password.ts",
     "db:studio": "npx prisma studio"
   },
   "dependencies": {
