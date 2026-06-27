@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import OptimizedImage from '@/components/ui/OptimizedImage';
+import ListingImageMosaic from '@/components/ui/ListingImageMosaic';
 import VideoPlayer from '@/components/ui/VideoPlayer';
 import { getVideoThumbnail, getVideoType, type VideoType } from '@/lib/video-utils';
 
@@ -60,85 +60,6 @@ function VideoThumb({ item }: { item: VideoItem }) {
           ? 'from-red-500 to-red-700'
           : 'from-brand-500 to-brand-800';
   return <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />;
-}
-
-// ==================== Image Gallery (same style as ShareViewClient) ====================
-function ImagesTab({ images }: { images: string[] }) {
-  const [activeIdx, setActiveIdx] = useState(0);
-  const [lightbox, setLightbox] = useState(false);
-
-  const mainImages = images.slice(0, 3);
-
-  return (
-    <>
-      <div className="relative cursor-pointer" onClick={() => setLightbox(true)}>
-        {mainImages.length === 1 && (
-          <div className="rounded-2xl overflow-hidden relative h-64 md:h-80">
-            <OptimizedImage src={mainImages[0]} alt="Ảnh phòng" fill className="object-cover hover:scale-[1.02] transition-transform duration-300" sizes="100vw" priority />
-          </div>
-        )}
-        {mainImages.length === 2 && (
-          <div className="grid grid-cols-2 gap-2 rounded-2xl overflow-hidden">
-            {mainImages.map((img, i) => (
-              <div key={i} className="relative h-64 md:h-80">
-                <OptimizedImage src={img} alt={`Ảnh ${i + 1}`} fill className="object-cover hover:scale-[1.02] transition-transform duration-300" sizes="50vw" />
-              </div>
-            ))}
-          </div>
-        )}
-        {mainImages.length >= 3 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 rounded-2xl overflow-hidden">
-            <div className="col-span-2 row-span-2 relative h-48 sm:h-64 md:h-80">
-              <OptimizedImage src={mainImages[0]} alt="Ảnh 1" fill className="object-cover hover:scale-[1.02] transition-transform duration-300" sizes="66vw" priority />
-            </div>
-            <div className="flex flex-row sm:flex-col gap-2">
-              <div className="relative flex-1 sm:h-[calc(50%-4px)] md:h-[calc(160px-4px)]">
-                <OptimizedImage src={mainImages[1]} alt="Ảnh 2" fill className="object-cover hover:scale-[1.02] transition-transform duration-300" sizes="33vw" />
-              </div>
-              <div className="relative flex-1 sm:h-[calc(50%-4px)] md:h-[calc(160px-4px)]">
-                <OptimizedImage src={mainImages[2]} alt="Ảnh 3" fill className="object-cover hover:scale-[1.02] transition-transform duration-300" sizes="33vw" />
-                {images.length > 3 && (
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
-                    <span className="text-white font-semibold text-lg">+{images.length - 3} ảnh</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        <span className="absolute bottom-3 right-3 bg-black/50 text-white text-xs font-medium px-3 py-1 rounded-full backdrop-blur-sm">
-          📷 {images.length} ảnh
-        </span>
-      </div>
-
-      {lightbox && (
-        <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4" onClick={() => setLightbox(false)}>
-          <button onClick={() => setLightbox(false)}
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/30 text-xl z-10">
-            ✕
-          </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={images[activeIdx]} alt="" className="max-w-full max-h-[85vh] object-contain rounded-lg" onClick={(e) => e.stopPropagation()} />
-          {images.length > 1 && (
-            <>
-              <button
-                onClick={(e) => { e.stopPropagation(); setActiveIdx((activeIdx - 1 + images.length) % images.length); }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 text-white hover:bg-white/30 flex items-center justify-center"
-              >‹</button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setActiveIdx((activeIdx + 1) % images.length); }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 text-white hover:bg-white/30 flex items-center justify-center"
-              >›</button>
-              <span className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/80 text-sm">
-                {activeIdx + 1} / {images.length}
-              </span>
-            </>
-          )}
-        </div>
-      )}
-    </>
-  );
 }
 
 // ==================== Videos Tab ====================
@@ -282,7 +203,7 @@ export default function VideoGallery({ videos = [], videoLinks = [], images = []
   }
 
   // Chỉ có 1 loại → không hiện tab bar
-  if (hasImages && !hasVideos) return <ImagesTab images={images} />;
+  if (hasImages && !hasVideos) return <ListingImageMosaic images={images} enableLightbox className="h-64 sm:h-80 md:h-96 rounded-2xl" />;
   if (hasVideos && !hasImages) return <VideosTab items={videoItems} />;
 
   return (
@@ -312,7 +233,7 @@ export default function VideoGallery({ videos = [], videoLinks = [], images = []
         </button>
       </div>
 
-      {tab === 'images' ? <ImagesTab images={images} /> : <VideosTab items={videoItems} />}
+      {tab === 'images' ? <ListingImageMosaic images={images} enableLightbox className="h-64 sm:h-80 md:h-96 rounded-2xl" /> : <VideosTab items={videoItems} />}
     </div>
   );
 }

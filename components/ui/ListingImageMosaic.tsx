@@ -15,15 +15,20 @@ export default function ListingImageMosaic({
   images,
   alt = 'Ảnh tin đăng',
   className = 'h-48',
+  enableLightbox = false,
 }: {
   images?: string[] | null;
   alt?: string;
   className?: string;
+  /** true: bấm ảnh mở lightbox (trang chi tiết). false (mặc định): click xuyên qua để
+   *  parent xử lý — vd card trong <Link> sẽ vào thẳng trang chi tiết. */
+  enableLightbox?: boolean;
 }) {
   const [lightbox, setLightbox] = useState(false);
   const [idx, setIdx] = useState(0);
 
   const openAt = (e: React.MouseEvent, i: number) => {
+    if (!enableLightbox) return; // để click bubble lên parent (card → trang chi tiết / modal)
     e.preventDefault();
     e.stopPropagation();
     setIdx(i);
