@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
-import OptimizedImage from '@/components/ui/OptimizedImage';
+import ListingImageMosaic from '@/components/ui/ListingImageMosaic';
 import VideoGallery from '@/components/ui/VideoGallery';
 import ZaloFab from '@/components/ui/ZaloFab';
 import CallFab from '@/components/ui/CallFab';
@@ -14,47 +14,6 @@ const roomTypeLabels: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1 khách 1 ngủ',
   '2k1n': '2 khách 1 ngủ', studio: 'Studio', duplex: 'Duplex',
 };
-
-function CardCarousel({ images }: { images: string[] }) {
-  const [idx, setIdx] = useState(0);
-  const slides = images.slice(0, 3);
-
-  if (slides.length === 0) {
-    return (
-      <div className="w-full h-full bg-gradient-to-br from-brand-100 to-brand-50 flex items-center justify-center">
-        <span className="text-4xl opacity-50">🏠</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative w-full h-full group">
-      <OptimizedImage src={slides[idx]} alt="" fill className="object-cover transition-opacity duration-300" sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw" />
-      {slides.length > 1 && (
-        <>
-          <button
-            onClick={(e) => { e.stopPropagation(); setIdx(i => (i - 1 + slides.length) % slides.length); }}
-            className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 text-stone-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white shadow text-sm"
-          >
-            ‹
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); setIdx(i => (i + 1) % slides.length); }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 text-stone-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white shadow text-sm"
-          >
-            ›
-          </button>
-          {/* Dots */}
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-            {slides.map((_, i) => (
-              <span key={i} className={`w-1.5 h-1.5 rounded-full transition-all ${i === idx ? 'bg-white w-3' : 'bg-white/50'}`} />
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
 
 export default function SystemShareClient() {
   const params = useParams();
@@ -371,7 +330,7 @@ export default function SystemShareClient() {
                   onClick={() => setSelectedRoom(rt)}>
                   {/* Card carousel — 3 ảnh */}
                   <div className="relative h-44 overflow-hidden">
-                    <CardCarousel images={cardImages} />
+                    <ListingImageMosaic images={cardImages} className="h-full" />
                     <div className="absolute top-3 left-3 flex items-center gap-1.5">
                       <span className="badge bg-white/90 text-stone-700 backdrop-blur-sm text-xs">
                         {roomTypeLabels[rt.typeName] || rt.typeName}

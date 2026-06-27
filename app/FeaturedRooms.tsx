@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import OptimizedImage from '@/components/ui/OptimizedImage';
+import ListingImageMosaic from '@/components/ui/ListingImageMosaic';
 
 // Nhãn loại phòng (đồng bộ với PublicSearch / form phòng).
 const TYPE_LABEL: Record<string, string> = {
@@ -78,24 +78,14 @@ export default function FeaturedRooms() {
       {rooms.map(room => (
         <Link key={room.id} href={`/tin/${room.id}`}
           className="group rounded-2xl border border-stone-200/60 bg-white overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-stone-300/60">
-          {/* Ảnh bìa */}
-          <div className="relative h-48 bg-stone-100">
-            {room.images && room.images[0] ? (
-              <OptimizedImage src={room.images[0]} alt={room.name} fill
-                className="object-cover group-hover:scale-[1.03] transition-transform duration-300"
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <svg className="w-12 h-12 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </div>
-            )}
-            <span className="absolute top-3 left-3 inline-flex items-center rounded-full bg-white/90 backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-stone-700 border border-white">
+          {/* Ảnh: 1 to + 2 nhỏ, bấm ảnh mở lightbox */}
+          <div className="relative">
+            <ListingImageMosaic images={room.images} alt={room.name} className="h-48" />
+            <span className="absolute top-3 left-3 z-10 inline-flex items-center rounded-full bg-white/90 backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-stone-700 border border-white">
               {TYPE_LABEL[room.typeName] || room.typeName}
             </span>
             {room.status === 'UPCOMING' && (
-              <span className="absolute top-3 right-3 inline-flex items-center rounded-full bg-amber-500 px-2.5 py-1 text-xs font-semibold text-white shadow">
+              <span className="absolute top-3 right-3 z-10 inline-flex items-center rounded-full bg-amber-500 px-2.5 py-1 text-xs font-semibold text-white shadow">
                 🟡 Sắp trống
               </span>
             )}

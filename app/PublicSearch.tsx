@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import OptimizedImage from '@/components/ui/OptimizedImage';
+import ListingImageMosaic from '@/components/ui/ListingImageMosaic';
 import { formatCurrency } from '@/lib/utils';
 import DistrictPills from '@/components/ui/DistrictPills';
 import PriceRangeSlider from '@/components/ui/PriceRangeSlider';
@@ -55,49 +55,6 @@ type PublicRoom = {
   } | null;
   shareToken: string | null;
 };
-
-function RoomCarousel({ images, alt }: { images: string[]; alt: string }) {
-  const [idx, setIdx] = useState(0);
-  if (images.length === 0) {
-    return (
-      <div className="w-full h-48 bg-gradient-to-br from-brand-100 to-brand-50 flex items-center justify-center">
-        <span className="text-5xl opacity-60">🏠</span>
-      </div>
-    );
-  }
-  return (
-    <div className="relative w-full h-48 overflow-hidden bg-stone-100 group/img">
-      <OptimizedImage
-        src={images[idx]}
-        alt={alt}
-        fill
-        sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-        className="object-cover"
-      />
-      {images.length > 1 && (
-        <>
-          <button
-            type="button"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIdx(i => (i - 1 + images.length) % images.length); }}
-            className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 text-stone-700 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-white shadow text-sm"
-            aria-label="Ảnh trước"
-          >‹</button>
-          <button
-            type="button"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIdx(i => (i + 1) % images.length); }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 text-stone-700 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-white shadow text-sm"
-            aria-label="Ảnh sau"
-          >›</button>
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-            {images.map((_, i) => (
-              <span key={i} className={`h-1.5 rounded-full transition-all ${i === idx ? 'bg-white w-4' : 'bg-white/60 w-1.5'}`} />
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
 
 export default function PublicSearch() {
   const [district, setDistrict] = useState('');
@@ -282,7 +239,7 @@ export default function PublicSearch() {
                     className="group bg-white rounded-2xl border border-stone-200 overflow-hidden hover:shadow-lg hover:-translate-y-0.5 hover:border-stone-300 transition-all"
                   >
                     <div className="relative">
-                      <RoomCarousel images={rt.images} alt={rt.name} />
+                      <ListingImageMosaic images={rt.images} alt={rt.name} className="h-48" />
                       <div className="absolute top-3 left-3 flex items-center gap-1.5">
                         <span className="inline-flex items-center rounded-full bg-white/90 backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-stone-700 border border-white">
                           {TYPE_LABEL[rt.typeName] || rt.typeName}
