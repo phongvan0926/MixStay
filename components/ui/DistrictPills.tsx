@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { PRIMARY_DISTRICTS, OTHER_DISTRICTS } from '@/lib/hanoi-locations';
+import { INNER_CITY_DISTRICTS, OUTER_DISTRICTS } from '@/lib/hanoi-locations';
 
 interface Props {
   value: string; // selected district name, '' = Tất cả
@@ -9,7 +9,7 @@ interface Props {
 
 export default function DistrictPills({ value, onChange }: Props) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const isOtherSelected = !!value && !PRIMARY_DISTRICTS.includes(value);
+  const isOtherSelected = !!value && !INNER_CITY_DISTRICTS.includes(value);
 
   return (
     <div className="flex flex-wrap gap-2 items-center">
@@ -26,8 +26,8 @@ export default function DistrictPills({ value, onChange }: Props) {
         Tất cả
       </button>
 
-      {/* 7 primary pills */}
-      {PRIMARY_DISTRICTS.map(d => (
+      {/* 12 quận nội thành làm pill chính */}
+      {INNER_CITY_DISTRICTS.map(d => (
         <button
           key={d}
           type="button"
@@ -61,7 +61,7 @@ export default function DistrictPills({ value, onChange }: Props) {
             {/* Backdrop để đóng khi click ra ngoài */}
             <div className="fixed inset-0 z-10" onClick={() => setDropdownOpen(false)} />
             <div className="absolute top-full left-0 mt-1 w-56 max-h-64 overflow-y-auto bg-white rounded-xl border border-stone-200 shadow-lg z-20 py-1">
-              {OTHER_DISTRICTS.map(d => (
+              {OUTER_DISTRICTS.map(d => (
                 <button
                   key={d}
                   type="button"

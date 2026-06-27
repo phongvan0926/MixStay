@@ -30,59 +30,7 @@ export default function HomePage() {
         </div>
       </nav>
 
-      {/* ===== HERO (gộp với "Tìm phòng theo nhu cầu" ngay bên dưới) ===== */}
-      <section className="relative pt-24 sm:pt-28 pb-8 sm:pb-10 px-4 sm:px-6 overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-gradient-to-br from-brand-50 via-white to-gold-50" />
-          <div className="absolute top-10 left-[5%] w-[500px] h-[500px] bg-brand-200/25 rounded-full blur-[100px]" />
-          <div className="absolute bottom-0 right-[5%] w-[600px] h-[600px] bg-gold-200/20 rounded-full blur-[120px]" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gold-100/10 rounded-full blur-[100px]" />
-          <svg className="absolute inset-0 w-full h-full opacity-[0.035]" xmlns="http://www.w3.org/2000/svg">
-            <defs><pattern id="hero-grid" width="32" height="32" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="currentColor" /></pattern></defs>
-            <rect width="100%" height="100%" fill="url(#hero-grid)" />
-          </svg>
-        </div>
-
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/80 backdrop-blur border border-brand-100 px-4 py-1.5 text-sm text-brand-700 font-medium mb-5 animate-fade-in shadow-sm">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500" />
-            </span>
-            Nền tảng tìm phòng chung cư mini #1 Việt Nam
-          </div>
-
-          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-stone-900 mb-5 leading-[1.1] animate-slide-up">
-            Tìm Phòng Khó
-            <br />
-            Có <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-gold-600">MixStay</span> Lo
-          </h1>
-
-          <p className="text-lg sm:text-xl max-w-2xl mx-auto mb-6 leading-relaxed animate-slide-up text-stone-600">
-            Nền tảng kết nối trực tiếp Chủ nhà — Môi giới — Khách thuê.{' '}
-            <br className="hidden sm:block" />
-            Minh bạch, nhanh chóng, <strong className="text-stone-800">0 chi phí</strong> cho khách.
-          </p>
-
-          {/* Social proof */}
-          <div className="inline-flex items-center gap-4 sm:gap-10 text-sm text-stone-500 animate-fade-in bg-white/60 backdrop-blur rounded-2xl px-4 sm:px-6 py-3 border border-stone-200/50 shadow-sm">
-            <div className="flex items-center gap-1">
-              <span className="font-display font-bold text-stone-700 text-base sm:text-lg">5000+</span> phòng
-            </div>
-            <div className="w-1 h-1 rounded-full bg-stone-300" />
-            <div className="flex items-center gap-1">
-              <span className="font-display font-bold text-stone-700 text-base sm:text-lg">200+</span> môi giới
-            </div>
-            <div className="w-1 h-1 rounded-full bg-stone-300" />
-            <div className="flex items-center gap-1">
-              <span className="font-display font-bold text-stone-700 text-base sm:text-lg">200+</span> tòa nhà
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ===== TÌM PHÒNG THEO NHU CẦU (module chính — tìm phòng) ===== */}
+      {/* ===== TÌM PHÒNG (module chính, lên đầu trang sau khi ẩn hero) ===== */}
       <PublicSearch />
 
       {/* ===== PHÒNG MỚI ĐĂNG ===== */}

@@ -116,7 +116,7 @@ export default function PublicSearch() {
   };
 
   return (
-    <section id="tim-phong" className="relative pt-6 sm:pt-8 pb-12 sm:pb-16 px-4 sm:px-6 overflow-hidden bg-white scroll-mt-20">
+    <section id="tim-phong" className="relative pt-24 sm:pt-28 pb-12 sm:pb-16 px-4 sm:px-6 overflow-hidden bg-white scroll-mt-20">
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-white via-stone-50 to-white" />
 
       <div className="max-w-6xl mx-auto">
@@ -124,7 +124,7 @@ export default function PublicSearch() {
           <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 border border-brand-100 px-3 py-1 text-xs font-medium text-brand-700 mb-3">
             🔎 Tìm phòng công khai
           </div>
-          <h2 className="font-display text-2xl sm:text-3xl font-bold text-stone-900 mb-2">Tìm phòng theo nhu cầu</h2>
+          <h2 className="font-display text-3xl sm:text-4xl font-bold text-stone-900 mb-2">Tìm Phòng Khó Có <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-gold-600">MixStay</span> Lo</h2>
           <p className="text-stone-500 text-base">Không cần đăng nhập — lọc nhanh theo khu vực, kiểu phòng & giá</p>
         </div>
 
