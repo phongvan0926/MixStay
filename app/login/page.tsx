@@ -37,6 +37,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [form, setForm] = useState({ email: '', password: '' });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,6 +49,17 @@ export default function LoginPage() {
         toast.error('Email/SĐT hoặc mật khẩu không đúng');
       } else {
         toast.success('Đăng nhập thành công!');
+        // Ghi nhớ đăng nhập: bỏ tick → biến cookie phiên thành session cookie (mất khi đóng trình duyệt).
+        // Lỗi ở bước này không chặn đăng nhập (giữ mặc định 30 ngày).
+        if (!rememberMe) {
+          try {
+            await fetch('/api/auth/remember', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ remember: false }),
+            });
+          } catch { /* giữ mặc định */ }
+        }
         const sessionRes = await fetch('/api/auth/session');
         const session = await sessionRes.json();
         const role = session?.user?.role;
@@ -168,6 +180,12 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" checked={rememberMe}
+                onChange={e => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded border-stone-300 accent-brand-600" />
+              <span className="text-sm text-stone-600">Ghi nhớ đăng nhập trên thiết bị này</span>
+            </label>
             <button type="submit" className="btn-primary w-full py-3" disabled={loading}>
               {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
             </button>
