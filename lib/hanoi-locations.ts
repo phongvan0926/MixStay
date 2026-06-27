@@ -29,6 +29,12 @@ export const OTHER_DISTRICTS = [
 // Danh sách đầy đủ 30 quận/huyện (quận hay dùng đứng trước cho tiện chọn).
 export const HANOI_DISTRICTS = [...PRIMARY_DISTRICTS, ...OTHER_DISTRICTS];
 
+// 12 quận nội thành (trước sáp nhập 7/2025) — dùng cho gợi ý nhanh "Phổ biến" ở trang chủ.
+export const INNER_CITY_DISTRICTS = [
+  'Ba Đình', 'Hoàn Kiếm', 'Tây Hồ', 'Long Biên', 'Cầu Giấy', 'Đống Đa',
+  'Hai Bà Trưng', 'Hoàng Mai', 'Thanh Xuân', 'Nam Từ Liêm', 'Bắc Từ Liêm', 'Hà Đông',
+];
+
 // Tên đường/phố phổ biến ở Hà Nội (gợi ý — không phân biệt dấu khi lọc).
 // Sắp xếp tương đối theo khu vực; một số đường nằm ở nhiều quận nên RAW có trùng,
 // COMMON_STREETS đã loại trùng (giữ thứ tự xuất hiện đầu tiên).

@@ -1,27 +1,16 @@
 import Link from 'next/link';
 import { CountUpStats } from './CountUpStats';
 import PublicSearch from './PublicSearch';
+import FeaturedRooms from './FeaturedRooms';
 import Logo from '@/components/ui/Logo';
 import CallFab from '@/components/ui/CallFab';
-
-const featuredRooms = [
-  { name: 'Chung cư mini Cầu Giấy Premium', district: 'Cầu Giấy', price: 3500000, area: 25, type: 'Gác xép', amenities: ['Điều hoà', 'WC riêng', 'Ban công'], badge: 'Hot' },
-  { name: 'Nhà trọ Đống Đa Green', district: 'Đống Đa', price: 2500000, area: 22, type: 'Phòng đơn', amenities: ['Nóng lạnh', 'Wifi', 'Gửi xe'], badge: 'Mới' },
-  { name: 'Mini Apartment Thanh Xuân', district: 'Thanh Xuân', price: 4500000, area: 32, type: 'Studio', amenities: ['Full nội thất', 'Máy giặt', 'Bếp riêng'], badge: 'Hot' },
-  { name: 'HomeStay Ba Đình Central', district: 'Ba Đình', price: 6000000, area: 40, type: 'Duplex', amenities: ['Smart lock', 'Rooftop', 'Thang máy'], badge: 'Mới' },
-  { name: 'Phòng trọ Hai Bà Trưng', district: 'Hai Bà Trưng', price: 3200000, area: 28, type: '1 khách 1 ngủ', amenities: ['Điều hoà', 'Giường tủ', 'WC riêng'], badge: 'Mới' },
-  { name: 'Căn hộ Nam Từ Liêm City', district: 'Nam Từ Liêm', price: 5000000, area: 35, type: 'Studio', amenities: ['Full nội thất', 'Ban công', 'Camera'], badge: 'Hot' },
-];
+import { INNER_CITY_DISTRICTS } from '@/lib/hanoi-locations';
 
 const testimonials = [
   { name: 'Nguyễn Minh Tuấn', role: 'Môi giới', initial: 'T', color: 'bg-brand-100 text-brand-700', content: 'Từ khi dùng MixStay, mình tiết kiệm cả tiếng mỗi ngày. Kho phòng cập nhật real-time, tạo link gửi khách chỉ 1 click. Thu nhập tăng gấp đôi!' },
   { name: 'Lê Thị Hoa', role: 'Chủ nhà', initial: 'H', color: 'bg-emerald-100 text-emerald-700', content: 'Đăng phòng lên MixStay, 3 ngày sau đã có người thuê. Không phải chạy quảng cáo, không mất phí đăng tin. Quản lý phòng rất tiện!' },
   { name: 'Phạm Văn Đức', role: 'Khách thuê', initial: 'Đ', color: 'bg-amber-100 text-amber-700', content: 'Tìm phòng trên MixStay nhanh hơn nhiều so với đi hỏi từng nơi. Thông tin rõ ràng, giá minh bạch, không bị hét giá.' },
 ];
-
-function formatPrice(price: number) {
-  return (price / 1000000).toFixed(1).replace('.0', '') + ' tr';
-}
 
 export default function HomePage() {
   return (
@@ -91,10 +80,12 @@ export default function HomePage() {
             </div>
             <div className="flex items-center justify-center flex-wrap gap-2 sm:gap-3 mt-3 text-xs sm:text-sm text-stone-400">
               <span>Phổ biến:</span>
-              <Link href="#tim-phong" className="px-2.5 py-1 rounded-full border border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-white transition-all">Cầu Giấy</Link>
-              <Link href="#tim-phong" className="px-2.5 py-1 rounded-full border border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-white transition-all">Đống Đa</Link>
-              <Link href="#tim-phong" className="px-2.5 py-1 rounded-full border border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-white transition-all hidden sm:inline-block">Thanh Xuân</Link>
-              <Link href="#tim-phong" className="px-2.5 py-1 rounded-full border border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-white transition-all hidden sm:inline-block">Ba Đình</Link>
+              {INNER_CITY_DISTRICTS.map(d => (
+                <Link key={d} href="#tim-phong"
+                  className="px-2.5 py-1 rounded-full border border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-white transition-all">
+                  {d}
+                </Link>
+              ))}
             </div>
           </div>
 
@@ -136,46 +127,7 @@ export default function HomePage() {
             <p className="text-stone-500">Được cập nhật mỗi ngày từ các chủ nhà uy tín</p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {featuredRooms.map((room, i) => (
-              <Link key={i} href="#tim-phong" className="group rounded-2xl border border-stone-200/60 bg-white overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-stone-300/60">
-                {/* Image area — 55% of card */}
-                <div className="relative h-48 flex items-center justify-center bg-stone-100">
-                  <svg className="w-12 h-12 text-stone-400 opacity-60 group-hover:scale-110 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                  {/* Badge pill */}
-                  <span className={`absolute top-3 left-3 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold text-white ${room.badge === 'Hot' ? 'bg-red-500' : 'bg-emerald-500'}`}>
-                    {room.badge}
-                  </span>
-                </div>
-
-                {/* Info area — 45% of card */}
-                <div className="p-4">
-                  {/* Line 1: Price — biggest, boldest */}
-                  <div className="mb-2">
-                    <span className="font-display text-xl font-bold text-stone-900">{formatPrice(room.price)}</span>
-                    <span className="text-sm text-stone-500">/tháng</span>
-                    <span className="text-xs ml-2 text-stone-400">{room.area}m² · {room.type}</span>
-                  </div>
-
-                  {/* Line 2: Title & address */}
-                  <h3 className="font-display font-semibold text-base mb-1 text-stone-900 group-hover:text-brand-600 transition-colors line-clamp-1">{room.name}</h3>
-                  <p className="text-sm mb-3 flex items-center gap-1 text-stone-500">
-                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    {room.district}, Hà Nội
-                  </p>
-
-                  {/* Line 3: Amenity tags */}
-                  <div className="flex flex-wrap gap-1.5">
-                    {room.amenities.map(a => (
-                      <span key={a} className="px-2 py-0.5 text-xs rounded-md border bg-stone-50 border-stone-200 text-stone-600">{a}</span>
-                    ))}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <FeaturedRooms />
 
           <div className="text-center mt-10">
             <Link href="/register" className="btn-secondary px-8 py-3 text-base group hover:-translate-y-0.5 transition-all">
