@@ -4,7 +4,6 @@ import PublicSearch from './PublicSearch';
 import FeaturedRooms from './FeaturedRooms';
 import Logo from '@/components/ui/Logo';
 import CallFab from '@/components/ui/CallFab';
-import { INNER_CITY_DISTRICTS } from '@/lib/hanoi-locations';
 
 const testimonials = [
   { name: 'Nguyễn Minh Tuấn', role: 'Môi giới', initial: 'T', color: 'bg-brand-100 text-brand-700', content: 'Từ khi dùng MixStay, mình tiết kiệm cả tiếng mỗi ngày. Kho phòng cập nhật real-time, tạo link gửi khách chỉ 1 click. Thu nhập tăng gấp đôi!' },
@@ -31,8 +30,8 @@ export default function HomePage() {
         </div>
       </nav>
 
-      {/* ===== HERO ===== */}
-      <section className="relative pt-28 sm:pt-36 pb-20 sm:pb-28 px-4 sm:px-6 overflow-hidden">
+      {/* ===== HERO (gộp với "Tìm phòng theo nhu cầu" ngay bên dưới) ===== */}
+      <section className="relative pt-24 sm:pt-28 pb-8 sm:pb-10 px-4 sm:px-6 overflow-hidden">
         {/* Background */}
         <div className="absolute inset-0 -z-10">
           <div className="absolute inset-0 bg-gradient-to-br from-brand-50 via-white to-gold-50" />
@@ -46,7 +45,7 @@ export default function HomePage() {
         </div>
 
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/80 backdrop-blur border border-brand-100 px-4 py-1.5 text-sm text-brand-700 font-medium mb-6 animate-fade-in shadow-sm">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/80 backdrop-blur border border-brand-100 px-4 py-1.5 text-sm text-brand-700 font-medium mb-5 animate-fade-in shadow-sm">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500" />
@@ -54,63 +53,40 @@ export default function HomePage() {
             Nền tảng tìm phòng chung cư mini #1 Việt Nam
           </div>
 
-          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-stone-900 mb-6 leading-[1.1] animate-slide-up">
+          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-stone-900 mb-5 leading-[1.1] animate-slide-up">
             Tìm Phòng Khó
             <br />
             Có <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-gold-600">MixStay</span> Lo
           </h1>
 
-          <p className="text-base sm:text-lg max-w-2xl mx-auto mb-10 leading-relaxed animate-slide-up text-stone-500">
+          <p className="text-lg sm:text-xl max-w-2xl mx-auto mb-6 leading-relaxed animate-slide-up text-stone-600">
             Nền tảng kết nối trực tiếp Chủ nhà — Môi giới — Khách thuê.{' '}
             <br className="hidden sm:block" />
             Minh bạch, nhanh chóng, <strong className="text-stone-800">0 chi phí</strong> cho khách.
           </p>
 
-          {/* Search Bar */}
-          <div className="max-w-2xl mx-auto mb-12 animate-slide-up">
-            <div className="flex flex-col sm:flex-row bg-white rounded-2xl p-2 sm:p-2.5 gap-2 shadow-md">
-              <Link href="#tim-phong" className="flex-1 flex items-center gap-2 px-3 sm:px-4 cursor-text">
-                <svg className="w-5 h-5 text-stone-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                <span className="py-2.5 sm:py-3 text-sm sm:text-base text-stone-400">Nhập quận, khu vực hoặc tên tòa nhà...</span>
-              </Link>
-              <Link href="#tim-phong" className="btn-primary px-6 sm:px-8 py-3 text-sm sm:text-base flex-shrink-0">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                Tìm phòng ngay
-              </Link>
-            </div>
-            <div className="flex items-center justify-center flex-wrap gap-2 sm:gap-3 mt-3 text-xs sm:text-sm text-stone-400">
-              <span>Phổ biến:</span>
-              {INNER_CITY_DISTRICTS.map(d => (
-                <Link key={d} href="#tim-phong"
-                  className="px-2.5 py-1 rounded-full border border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-white transition-all">
-                  {d}
-                </Link>
-              ))}
-            </div>
-          </div>
-
           {/* Social proof */}
-          <div className="inline-flex items-center gap-4 sm:gap-10 text-xs sm:text-sm text-stone-400 animate-fade-in bg-white/60 backdrop-blur rounded-2xl px-4 sm:px-6 py-3 border border-stone-200/50 shadow-sm">
+          <div className="inline-flex items-center gap-4 sm:gap-10 text-sm text-stone-500 animate-fade-in bg-white/60 backdrop-blur rounded-2xl px-4 sm:px-6 py-3 border border-stone-200/50 shadow-sm">
             <div className="flex items-center gap-1">
-              <span className="font-display font-bold text-stone-700 text-sm sm:text-base">5000+</span> phòng
+              <span className="font-display font-bold text-stone-700 text-base sm:text-lg">5000+</span> phòng
             </div>
             <div className="w-1 h-1 rounded-full bg-stone-300" />
             <div className="flex items-center gap-1">
-              <span className="font-display font-bold text-stone-700 text-sm sm:text-base">200+</span> môi giới
+              <span className="font-display font-bold text-stone-700 text-base sm:text-lg">200+</span> môi giới
             </div>
             <div className="w-1 h-1 rounded-full bg-stone-300" />
             <div className="flex items-center gap-1">
-              <span className="font-display font-bold text-stone-700 text-sm sm:text-base">200+</span> tòa nhà
+              <span className="font-display font-bold text-stone-700 text-base sm:text-lg">200+</span> tòa nhà
             </div>
           </div>
         </div>
       </section>
 
-      {/* ===== TÌM PHÒNG PUBLIC ===== */}
+      {/* ===== TÌM PHÒNG THEO NHU CẦU (module chính — tìm phòng) ===== */}
       <PublicSearch />
 
-      {/* ===== PHÒNG NỔI BẬT ===== */}
-      <section className="relative py-16 sm:py-20 px-4 sm:px-6 overflow-hidden">
+      {/* ===== PHÒNG MỚI ĐĂNG ===== */}
+      <section className="relative py-12 sm:py-14 px-4 sm:px-6 overflow-hidden">
         {/* Background */}
         <div className="absolute inset-0 -z-10 bg-white" />
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-stone-200 to-transparent" />
@@ -119,106 +95,21 @@ export default function HomePage() {
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-brand-100/20 rounded-full blur-[100px]" />
 
         <div className="max-w-6xl mx-auto relative">
-          <div className="text-center mb-10 sm:mb-14">
+          <div className="text-center mb-8 sm:mb-10">
             <div className="inline-flex items-center gap-2 rounded-full bg-gold-50 border border-gold-200 px-3 py-1 text-xs font-medium text-gold-800 mb-4">
               🔥 Đang hot
             </div>
             <h2 className="font-display text-3xl sm:text-4xl font-bold mb-3">Phòng mới đăng</h2>
-            <p className="text-stone-500">Được cập nhật mỗi ngày từ các chủ nhà uy tín</p>
+            <p className="text-stone-500 text-base">Được cập nhật mỗi ngày từ các chủ nhà uy tín</p>
           </div>
 
           <FeaturedRooms />
 
           <div className="text-center mt-10">
-            <Link href="/register" className="btn-secondary px-8 py-3 text-base group hover:-translate-y-0.5 transition-all">
+            <Link href="/register" className="btn-primary px-8 py-3 text-base group hover:-translate-y-0.5 transition-all">
               Xem thêm 5000+ phòng
               <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ===== DÀNH CHO AI? ===== */}
-      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-stone-50">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-10 sm:mb-14">
-            <h2 className="font-display text-3xl sm:text-4xl font-bold mb-3 text-stone-900">Dành cho ai?</h2>
-            <p className="text-stone-500">Mỗi vai trò có trải nghiệm riêng biệt</p>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[
-              {
-                icon: '👤', title: 'Khách thuê',
-                items: ['Tìm phòng nhanh theo khu vực & giá', 'Xem chi tiết tiện ích, diện tích', 'Hẹn xem phòng miễn phí qua môi giới'],
-                cta: 'Tìm phòng ngay',
-              },
-              {
-                icon: '🤝', title: 'Môi giới',
-                items: ['Kho hàng 5000+ phòng cập nhật', 'Tạo link chia sẻ chỉ 1 click', 'Hoa hồng hấp dẫn, minh bạch'],
-                cta: 'Đăng ký môi giới',
-              },
-              {
-                icon: '🏠', title: 'Chủ nhà',
-                items: ['Đăng phòng hoàn toàn miễn phí', 'Tiếp cận 200+ môi giới uy tín', 'Quản lý phòng dễ dàng'],
-                cta: 'Đăng phòng ngay',
-              },
-            ].map((card) => (
-              <div key={card.title} className="rounded-2xl border border-stone-200/60 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-stone-300/60">
-                <span className="text-4xl block mb-4">{card.icon}</span>
-                <h3 className="font-display font-semibold text-lg mb-1 text-stone-900">Bạn là {card.title}?</h3>
-                <ul className="text-sm space-y-2 mt-3 mb-5 text-stone-600">
-                  {card.items.map(item => (
-                    <li key={item} className="flex items-start gap-2">
-                      <svg className="w-4 h-4 text-brand-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/register" className="btn-primary w-full text-sm py-2.5">{card.cta}</Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== CÁCH HOẠT ĐỘNG ===== */}
-      <section className="relative py-16 sm:py-20 px-4 sm:px-6 overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800" />
-        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-brand-500/20 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-gold-500/15 rounded-full blur-[100px]" />
-        <svg className="absolute inset-0 w-full h-full opacity-[0.05]" xmlns="http://www.w3.org/2000/svg">
-          <defs><pattern id="steps-dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="white" /></pattern></defs>
-          <rect width="100%" height="100%" fill="url(#steps-dots)" />
-        </svg>
-
-        <div className="max-w-4xl mx-auto relative">
-          <div className="text-center mb-10 sm:mb-14">
-            <h2 className="font-display text-3xl sm:text-4xl font-bold mb-3 text-white">Cách hoạt động</h2>
-            <p className="text-brand-200">3 bước đơn giản để kết nối</p>
-          </div>
-
-          <div className="relative">
-            {/* Connecting line */}
-            <div className="hidden md:block absolute top-16 left-[16.67%] right-[16.67%] h-0.5 bg-white/20" />
-
-            <div className="grid md:grid-cols-3 gap-8 md:gap-6">
-              {[
-                { step: '01', icon: '📝', title: 'Chủ nhà đăng phòng', desc: 'Upload thông tin, ảnh phòng. Admin duyệt nhanh trong 24h.' },
-                { step: '02', icon: '🔗', title: 'Môi giới chia sẻ', desc: 'Tạo link thông minh gửi khách. Ẩn SĐT & địa chỉ tự động.' },
-                { step: '03', icon: '🎉', title: 'Khách thuê phòng ưng ý', desc: 'Xem phòng, hẹn lịch qua môi giới. Chốt deal nhanh chóng.' },
-              ].map((s) => (
-                <div key={s.step} className="text-center relative">
-                  <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg relative z-10">
-                    {s.icon}
-                  </div>
-                  <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-white text-brand-700 text-xs font-bold mb-3">{s.step}</div>
-                  <h3 className="font-display font-semibold text-lg mb-2 text-white">{s.title}</h3>
-                  <p className="text-sm text-brand-100 leading-relaxed">{s.desc}</p>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </section>
@@ -227,7 +118,7 @@ export default function HomePage() {
       <CountUpStats />
 
       {/* ===== TESTIMONIALS ===== */}
-      <section className="relative py-16 sm:py-20 px-4 sm:px-6 overflow-hidden">
+      <section className="relative py-12 sm:py-14 px-4 sm:px-6 overflow-hidden">
         {/* Background */}
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-white via-stone-50 to-white" />
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-stone-200 to-transparent" />
@@ -235,9 +126,9 @@ export default function HomePage() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-50/40 rounded-full blur-[100px]" />
 
         <div className="max-w-6xl mx-auto relative">
-          <div className="text-center mb-10 sm:mb-14">
+          <div className="text-center mb-8 sm:mb-10">
             <h2 className="font-display text-3xl sm:text-4xl font-bold mb-3">Người dùng nói gì?</h2>
-            <p className="text-stone-500">Hàng trăm người đã tin tưởng sử dụng MixStay</p>
+            <p className="text-stone-500 text-base">Hàng trăm người đã tin tưởng sử dụng MixStay</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-5">
@@ -250,7 +141,7 @@ export default function HomePage() {
                   ))}
                 </div>
 
-                <p className="text-sm text-stone-600 leading-relaxed mb-5">&ldquo;{t.content}&rdquo;</p>
+                <p className="text-base text-stone-600 leading-relaxed mb-5">&ldquo;{t.content}&rdquo;</p>
 
                 <div className="flex items-center gap-3 pt-4 border-t border-stone-100">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm ${t.color}`}>
@@ -263,46 +154,6 @@ export default function HomePage() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== CTA CUỐI TRANG ===== */}
-      <section className="relative py-16 sm:py-20 px-4 sm:px-6 overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-white to-brand-50/50" />
-
-        <div className="max-w-4xl mx-auto relative">
-          <div className="relative rounded-3xl bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 p-8 sm:p-14 text-center overflow-hidden shadow-2xl shadow-brand-900/20">
-            {/* Decorative elements */}
-            <div className="absolute top-0 right-0 w-72 h-72 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="absolute bottom-0 left-0 w-56 h-56 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-500/10 rounded-full blur-[60px]" />
-            <svg className="absolute inset-0 w-full h-full opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
-              <defs><pattern id="cta-grid" width="16" height="16" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.5" fill="white" /></pattern></defs>
-              <rect width="100%" height="100%" fill="url(#cta-grid)" />
-            </svg>
-
-            <div className="relative z-10">
-              <h2 className="font-display text-3xl sm:text-4xl font-bold text-white mb-4">
-                Sẵn sàng tìm phòng hoàn hảo?
-              </h2>
-              <p className="text-brand-100 text-base sm:text-lg mb-8 max-w-lg mx-auto">
-                Tham gia cùng hàng ngàn người dùng đang sử dụng MixStay mỗi ngày.
-              </p>
-
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-6">
-                <Link href="/register" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-white px-8 py-3.5 text-base font-medium text-brand-700 transition-all hover:bg-brand-50 hover:-translate-y-0.5 active:scale-[0.98] shadow-lg">
-                  Đăng ký miễn phí
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-                </Link>
-                <Link href="/register" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/10 px-8 py-3.5 text-base font-medium text-white transition-all hover:bg-white/20 hover:-translate-y-0.5 active:scale-[0.98] backdrop-blur-sm">
-                  Tôi là chủ nhà
-                </Link>
-              </div>
-
-              <p className="text-brand-200 text-sm">Hoàn toàn miễn phí. Không cần thẻ tín dụng.</p>
-            </div>
           </div>
         </div>
       </section>

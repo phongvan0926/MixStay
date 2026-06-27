@@ -116,7 +116,7 @@ export default function PublicSearch() {
   };
 
   return (
-    <section id="tim-phong" className="relative py-12 sm:py-16 px-4 sm:px-6 overflow-hidden bg-white scroll-mt-20">
+    <section id="tim-phong" className="relative pt-6 sm:pt-8 pb-12 sm:pb-16 px-4 sm:px-6 overflow-hidden bg-white scroll-mt-20">
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-white via-stone-50 to-white" />
 
       <div className="max-w-6xl mx-auto">
@@ -125,7 +125,7 @@ export default function PublicSearch() {
             🔎 Tìm phòng công khai
           </div>
           <h2 className="font-display text-2xl sm:text-3xl font-bold text-stone-900 mb-2">Tìm phòng theo nhu cầu</h2>
-          <p className="text-stone-500 text-sm">Không cần đăng nhập — lọc nhanh theo khu vực, kiểu phòng & giá</p>
+          <p className="text-stone-500 text-base">Không cần đăng nhập — lọc nhanh theo khu vực, kiểu phòng & giá</p>
         </div>
 
         {/* Filter card */}
