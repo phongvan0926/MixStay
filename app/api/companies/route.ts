@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { requirePermission } from '@/lib/permissions-server';
+import { normalizeZaloInput } from '@/lib/zalo';
 
 export async function GET(req: NextRequest) {
   const rateLimited = applyRateLimit(req, 'api');
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
         email: body.email || null,
         address: body.address || null,
         logo: body.logo || null,
-        zaloGroupLink: body.zaloGroupLink || null,
+        zaloGroupLink: normalizeZaloInput(body.zaloGroupLink),
         isActive: body.isActive ?? true,
       },
     });
@@ -105,7 +106,7 @@ export async function PUT(req: NextRequest) {
         ...(data.email !== undefined && { email: data.email || null }),
         ...(data.address !== undefined && { address: data.address || null }),
         ...(data.logo !== undefined && { logo: data.logo || null }),
-        ...(data.zaloGroupLink !== undefined && { zaloGroupLink: data.zaloGroupLink || null }),
+        ...(data.zaloGroupLink !== undefined && { zaloGroupLink: normalizeZaloInput(data.zaloGroupLink) }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
       },
     });

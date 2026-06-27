@@ -196,11 +196,11 @@ export default function AdminCompaniesPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-1">
-                  Link nhóm Zalo <span className="text-red-500">*</span>
+                  Link Zalo <span className="text-stone-400 font-normal">(không bắt buộc)</span>
                 </label>
-                <input type="url" value={form.zaloGroupLink} onChange={e => setForm(f => ({ ...f, zaloGroupLink: e.target.value }))}
-                  className="input-field w-full" placeholder="https://zalo.me/g/..." />
-                <p className="text-[11px] text-stone-400 mt-1">Link nhóm Zalo dùng chung cho TẤT CẢ tòa nhà trong hệ thống này</p>
+                <input type="text" value={form.zaloGroupLink} onChange={e => setForm(f => ({ ...f, zaloGroupLink: e.target.value }))}
+                  className="input-field w-full" placeholder="Link nhóm zalo.me/g/... HOẶC số điện thoại Zalo cá nhân" />
+                <p className="text-[11px] text-stone-400 mt-1">Dán link nhóm Zalo, hoặc nhập số điện thoại (vd 0914344988) — hệ thống tự tạo link Zalo cá nhân.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-1">Mô tả</label>
