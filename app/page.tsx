@@ -1,15 +1,8 @@
 import Link from 'next/link';
-import { CountUpStats } from './CountUpStats';
 import PublicSearch from './PublicSearch';
 import FeaturedRooms from './FeaturedRooms';
 import Logo from '@/components/ui/Logo';
 import CallFab from '@/components/ui/CallFab';
-
-const testimonials = [
-  { name: 'Nguyễn Minh Tuấn', role: 'Môi giới', initial: 'T', color: 'bg-brand-100 text-brand-700', content: 'Từ khi dùng MixStay, mình tiết kiệm cả tiếng mỗi ngày. Kho phòng cập nhật real-time, tạo link gửi khách chỉ 1 click. Thu nhập tăng gấp đôi!' },
-  { name: 'Lê Thị Hoa', role: 'Chủ nhà', initial: 'H', color: 'bg-emerald-100 text-emerald-700', content: 'Đăng phòng lên MixStay, 3 ngày sau đã có người thuê. Không phải chạy quảng cáo, không mất phí đăng tin. Quản lý phòng rất tiện!' },
-  { name: 'Phạm Văn Đức', role: 'Khách thuê', initial: 'Đ', color: 'bg-amber-100 text-amber-700', content: 'Tìm phòng trên MixStay nhanh hơn nhiều so với đi hỏi từng nơi. Thông tin rõ ràng, giá minh bạch, không bị hét giá.' },
-];
 
 export default function HomePage() {
   return (
@@ -55,53 +48,9 @@ export default function HomePage() {
 
           <div className="text-center mt-10">
             <Link href="/register" className="btn-primary px-8 py-3 text-base group hover:-translate-y-0.5 transition-all">
-              Xem thêm 5000+ phòng
+              Xem thêm các phòng mới nhất
               <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ===== CON SỐ ẤN TƯỢNG ===== */}
-      <CountUpStats />
-
-      {/* ===== TESTIMONIALS ===== */}
-      <section className="relative py-12 sm:py-14 px-4 sm:px-6 overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-white via-stone-50 to-white" />
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-stone-200 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-stone-200 to-transparent" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-50/40 rounded-full blur-[100px]" />
-
-        <div className="max-w-6xl mx-auto relative">
-          <div className="text-center mb-8 sm:mb-10">
-            <h2 className="font-display text-3xl sm:text-4xl font-bold mb-3">Người dùng nói gì?</h2>
-            <p className="text-stone-500 text-base">Hàng trăm người đã tin tưởng sử dụng MixStay</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-5">
-            {testimonials.map((t) => (
-              <div key={t.name} className="rounded-2xl border border-stone-200/60 bg-white/80 backdrop-blur p-5 shadow-sm transition-all hover:shadow-lg hover:-translate-y-1 hover:border-stone-300/60 duration-300">
-                {/* Stars */}
-                <div className="flex gap-0.5 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <svg key={i} className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                  ))}
-                </div>
-
-                <p className="text-base text-stone-600 leading-relaxed mb-5">&ldquo;{t.content}&rdquo;</p>
-
-                <div className="flex items-center gap-3 pt-4 border-t border-stone-100">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm ${t.color}`}>
-                    {t.initial}
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm text-stone-900">{t.name}</p>
-                    <p className="text-xs text-stone-500">{t.role}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>

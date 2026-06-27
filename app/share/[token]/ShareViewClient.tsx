@@ -183,7 +183,7 @@ export default function ShareViewClient() {
   const hasPropertyAmenities = property?.amenities?.length > 0;
 
   const contactPhone: string | null = data.broker?.phone || null;
-  const contactName: string = data.broker?.name || 'hỗ trợ';
+  const brokerName: string = data.broker?.name?.trim() || '';
   // Pass the link creator (data.broker) so broker-created links deeplink Zalo to the broker.
   const zaloLink = getZaloLink(roomType, data.broker);
 
@@ -194,7 +194,11 @@ export default function ShareViewClient() {
           <Link href="/" className="flex items-center" aria-label="MixStay - Trang chủ">
             <Logo variant="light" className="h-7 w-auto" />
           </Link>
-          <span className="text-xs text-stone-400">Hỗ trợ bởi {contactName}</span>
+          {brokerName ? (
+            <span className="text-xs text-stone-500">Môi giới: <span className="font-medium text-stone-700">{brokerName}</span></span>
+          ) : (
+            <a href="tel:0379838222" className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors">📞 Hotline: 0379 838 222</a>
+          )}
         </div>
       </nav>
 
@@ -416,7 +420,7 @@ export default function ShareViewClient() {
         {roomType.id && <RelatedSection roomTypeId={roomType.id} />}
 
         <p className="text-center text-xs text-stone-400 mt-4 mb-20">
-          Powered by MixStay • Hỗ trợ bởi {contactName}
+          Powered by MixStay{brokerName ? ` • Môi giới: ${brokerName}` : ''}
         </p>
       </div>
 
