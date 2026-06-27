@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import ImageUpload from '@/components/ui/ImageUpload';
 import Combobox from '@/components/ui/Combobox';
-import { HANOI_DISTRICTS, COMMON_STREETS } from '@/lib/hanoi-locations';
+import { HANOI_DISTRICTS, COMMON_STREETS, findDistrictForStreet } from '@/lib/hanoi-locations';
 
 interface PropertyData {
   id?: string;
@@ -254,6 +254,23 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
           </div>
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1.5">
+              Tên đường <span className="text-red-500">*</span>
+            </label>
+            <Combobox
+              options={COMMON_STREETS}
+              value={form.streetName}
+              onChange={v => {
+                updateField('streetName', v);
+                // Chọn xong tên đường → tự điền quận chứa đường đó (quận nổi tiếng hơn nếu trùng).
+                const d = findDistrictForStreet(v);
+                if (d) updateField('district', d);
+              }}
+              placeholder="VD: Lĩnh Nam (gõ để gợi ý)"
+              allowFreeText
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-1.5">
               Quận/Huyện <span className="text-red-500">*</span>
             </label>
             <Combobox
@@ -263,18 +280,7 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
               placeholder="Chọn hoặc gõ quận/huyện…"
               allowFreeText={false}
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1.5">
-              Tên đường <span className="text-red-500">*</span>
-            </label>
-            <Combobox
-              options={COMMON_STREETS}
-              value={form.streetName}
-              onChange={v => updateField('streetName', v)}
-              placeholder="VD: Lĩnh Nam (gõ để gợi ý)"
-              allowFreeText
-            />
+            <p className="text-[11px] text-stone-400 mt-1">Tự điền theo tên đường — sửa lại nếu chưa đúng.</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1.5">Thành phố</label>
