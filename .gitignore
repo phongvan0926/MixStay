@@ -43,3 +43,6 @@ prisma/*.db
 
 # Manual DB backups — contain REAL production data (PII + OAuth tokens), never commit
 backups/
+
+# Claude Code local settings (machine-specific, untracked)
+.claude/
