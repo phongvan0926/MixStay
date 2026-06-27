@@ -16,14 +16,14 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-stone-50">
       {/* ===== NAVBAR ===== */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 supports-[backdrop-filter]:bg-white/80 backdrop-blur-xl border-b border-stone-200/60 shadow-sm">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-brand-800/95 supports-[backdrop-filter]:bg-brand-800/85 backdrop-blur-xl border-b border-brand-700/50 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center" aria-label="MixStay - Trang chủ">
             <Logo variant="light" className="h-9 w-auto" />
           </Link>
           <div className="flex items-center gap-1.5 sm:gap-3">
-            <Link href="/login" className="btn-ghost text-sm px-2.5 sm:px-4 whitespace-nowrap">Đăng nhập</Link>
-            <Link href="/register" className="btn-primary text-sm px-3 sm:px-5 whitespace-nowrap">
+            <Link href="/login" className="text-sm px-2.5 sm:px-4 py-2 rounded-xl font-medium text-white/90 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap">Đăng nhập</Link>
+            <Link href="/register" className="text-sm px-3 sm:px-5 py-2 rounded-xl font-semibold bg-white text-brand-700 hover:bg-brand-50 transition-colors whitespace-nowrap">
               <span className="sm:hidden">Đăng ký</span>
               <span className="hidden sm:inline">Đăng ký miễn phí</span>
             </Link>
@@ -308,16 +308,16 @@ export default function HomePage() {
       </section>
 
       {/* ===== FOOTER ===== */}
-      <footer className="relative bg-stone-900 text-stone-400 pt-14 pb-8 px-4 sm:px-6 overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-stone-700 to-transparent" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-brand-900/20 rounded-full blur-[120px]" />
+      <footer className="relative bg-brand-900 text-stone-300 pt-14 pb-8 px-4 sm:px-6 overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-500/60 to-transparent" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-brand-600/25 rounded-full blur-[120px]" />
 
         <div className="max-w-6xl mx-auto relative">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-10 mb-12">
             {/* About */}
             <div>
               <Link href="/" className="flex items-center mb-4 w-fit" aria-label="MixStay - Trang chủ">
-                <Logo variant="dark" className="h-11 w-auto" />
+                <Logo variant="light" className="h-11 w-auto" />
               </Link>
               <p className="text-sm leading-relaxed">
                 Nền tảng kết nối Chủ nhà, Môi giới và Khách thuê chung cư mini.
@@ -358,7 +358,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="border-t border-stone-800 pt-6 text-center text-sm">
+          <div className="border-t border-white/10 pt-6 text-center text-sm">
             <p>&copy; 2026 MixStay. All Copyright Reserved.</p>
           </div>
         </div>
