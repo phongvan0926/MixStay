@@ -334,6 +334,25 @@ export default function LandlordPropertiesPage() {
     } finally { setSharingRT(null); }
   };
 
+  // Share TOÀN BỘ kho hàng (system link của chủ nhà) — 1 link xem hết phòng trống
+  const [sharingSystem, setSharingSystem] = useState(false);
+  const shareSystem = async () => {
+    setSharingSystem(true);
+    try {
+      const res = await fetch('/api/share-links', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isSystem: true }),
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        try { await navigator.clipboard.writeText(data.url); } catch {}
+        toast.success('Đã copy link kho hàng của bạn! Gửi cho khách để xem toàn bộ phòng.');
+      } else {
+        toast.error(data.error || 'Không tạo được link');
+      }
+    } finally { setSharingSystem(false); }
+  };
+
   // Inquiry reply
   const replyInquiry = async (inqId: string, reply: string) => {
     await fetch('/api/inquiries', {
@@ -389,6 +408,14 @@ export default function LandlordPropertiesPage() {
               </svg>
             </button>
           </div>
+          <button onClick={shareSystem} disabled={sharingSystem}
+            className="btn-secondary inline-flex items-center gap-2 disabled:opacity-60"
+            title="Tạo link xem TOÀN BỘ kho hàng của bạn để gửi khách">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            {sharingSystem ? 'Đang tạo...' : 'Share kho hàng'}
+          </button>
           <button onClick={openCreateProperty} className="btn-primary">+ Thêm tòa nhà</button>
         </div>
       </div>
