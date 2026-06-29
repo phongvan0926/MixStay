@@ -14,10 +14,29 @@ export default function BrokerShareLinksPage() {
 
   const handlePageChange = (newPage: number) => { setPage(newPage); };
 
-  const copyLink = async (token: string) => {
-    const url = `${window.location.origin}/share/${token}`;
-    await navigator.clipboard.writeText(url);
+  const copyLink = async (link: any) => {
+    const path = link.isSystem ? `/share/system/${link.token}` : `/share/${link.token}`;
+    await navigator.clipboard.writeText(`${window.location.origin}${path}`);
     toast.success('Đã copy link!');
+  };
+
+  const [sharingSystem, setSharingSystem] = useState(false);
+  const shareSystem = async () => {
+    setSharingSystem(true);
+    try {
+      const res = await fetch('/api/share-links', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isSystem: true }),
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        try { await navigator.clipboard.writeText(data.url); } catch {}
+        toast.success('Đã copy link kho hàng! Khách chỉ thấy liên hệ của bạn.');
+        mutate();
+      } else {
+        toast.error(data.error || 'Không tạo được link');
+      }
+    } finally { setSharingSystem(false); }
   };
 
   const deleteLink = async (id: string) => {
@@ -34,8 +53,20 @@ export default function BrokerShareLinksPage() {
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-bold mb-2">Link chia sẻ</h1>
-      <p className="text-sm text-stone-500 mb-6">Quản lý các link đã gửi cho khách</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div>
+          <h1 className="font-display text-2xl font-bold">Link chia sẻ</h1>
+          <p className="text-sm text-stone-500 mt-1">Quản lý các link đã gửi cho khách</p>
+        </div>
+        <button onClick={shareSystem} disabled={sharingSystem}
+          className="btn-primary inline-flex items-center justify-center gap-2 disabled:opacity-60 w-full sm:w-auto"
+          title="Tạo link xem TOÀN BỘ kho hàng đang trống — khách chỉ thấy liên hệ của BẠN">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+          </svg>
+          {sharingSystem ? 'Đang tạo...' : 'Share kho hàng (chỉ liên hệ tôi)'}
+        </button>
+      </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
         <div className="stat-card">
@@ -103,11 +134,11 @@ export default function BrokerShareLinksPage() {
 
                 {/* Actions */}
                 <div className="flex gap-2 flex-shrink-0">
-                  <button onClick={() => copyLink(link.token)}
+                  <button onClick={() => copyLink(link)}
                     className="flex-1 sm:flex-none px-3 py-2 bg-brand-50 text-brand-700 rounded-lg text-xs font-medium hover:bg-brand-100 transition-colors">
                     📋 Copy
                   </button>
-                  <a href={`/share/${link.token}`} target="_blank"
+                  <a href={link.isSystem ? `/share/system/${link.token}` : `/share/${link.token}`} target="_blank"
                     className="flex-1 sm:flex-none px-3 py-2 bg-stone-100 text-stone-700 rounded-lg text-xs font-medium hover:bg-stone-200 transition-colors text-center">
                     👁️ Xem
                   </a>

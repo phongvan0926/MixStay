@@ -155,10 +155,8 @@ export async function GET(req: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const where: any = {};
-    if (session.user.role === 'BROKER') {
-      where.brokerId = session.user.id;
-      where.isSystem = false;
-    } else if (session.user.role === 'LANDLORD') {
+    if (session.user.role === 'BROKER' || session.user.role === 'LANDLORD') {
+      // Liệt kê mọi link của chính mình — gồm cả link kho tổng (isSystem) để xem/copy/xoá.
       where.brokerId = session.user.id;
     }
 
