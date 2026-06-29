@@ -28,6 +28,17 @@ export default function AdminCompaniesPage() {
     setShowModal(true);
   };
 
+  // Copy link xem TOÀN BỘ kho phòng của công ty (trang catalog công khai cố định)
+  const shareCompany = async (c: any) => {
+    const url = `${window.location.origin}/share/company/${c.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Đã copy link kho hàng công ty! Gửi khách để xem toàn bộ phòng.');
+    } catch {
+      toast(`Link: ${url}`);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) { toast.error('Tên công ty là bắt buộc'); return; }
@@ -132,7 +143,15 @@ export default function AdminCompaniesPage() {
                 )}
 
                 {/* Actions */}
-                <div className="flex items-center justify-end mt-3 pt-3 border-t border-stone-100">
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-stone-100">
+                  <button onClick={() => shareCompany(c)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-brand-50 text-brand-700 hover:bg-brand-100 transition-colors"
+                    title="Copy link xem TOÀN BỘ kho phòng của công ty này">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                    Share kho
+                  </button>
                   <div className="flex items-center gap-1">
                     <button onClick={() => openEdit(c)} className="p-1.5 rounded-lg text-stone-400 hover:text-brand-600 hover:bg-brand-50 transition-colors" title="Sửa">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
