@@ -141,8 +141,15 @@ export default function SystemShareClient() {
     </div>
   );
 
-  const { landlord } = data;
-  const zaloLink = getSystemZaloLink({ landlord, properties: data.properties });
+  // Link MÔI GIỚI: liên hệ CHỈ môi giới (data đã bỏ company/chủ nhà ở backend).
+  // Link CHỦ NHÀ: hành vi cũ (Zalo chủ nhà/công ty + hotline).
+  const isBroker = !!data.isBrokerLink;
+  const contact = isBroker ? data.broker : data.landlord;
+  const contactName = contact?.name || (isBroker ? 'Môi giới' : 'Chủ nhà');
+  const contactDigits = (contact?.phone || '').replace(/\D/g, '');
+  const zaloLink = isBroker
+    ? (contactDigits ? `https://zalo.me/${contactDigits}` : 'https://zalo.me/')
+    : getSystemZaloLink({ landlord: data.landlord, properties: data.properties });
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -152,7 +159,7 @@ export default function SystemShareClient() {
           <Link href="/" className="flex items-center" aria-label="MixStay - Trang chủ">
             <Logo variant="light" className="h-7 w-auto" />
           </Link>
-          <span className="text-xs text-stone-400">Kho phòng của {landlord?.name}</span>
+          <span className="text-xs text-stone-400">Kho phòng của {contactName}</span>
         </div>
       </nav>
 
@@ -161,7 +168,7 @@ export default function SystemShareClient() {
         <div className="mb-6 text-center">
           <h1 className="font-display text-3xl font-bold text-stone-900">Phòng cho thuê</h1>
           <p className="text-stone-500 mt-2">
-            Hệ thống của {landlord?.name} • {allRoomTypes.length} tin đăng còn phòng từ {data.properties?.length || 0} tòa nhà
+            {isBroker ? `Môi giới ${contactName}` : `Hệ thống của ${contactName}`} • {allRoomTypes.length} tin đăng còn phòng từ {data.properties?.length || 0} tòa nhà
           </p>
         </div>
 
@@ -403,15 +410,27 @@ export default function SystemShareClient() {
             <p className="text-brand-100 text-sm">Liên hệ hỗ trợ để được tư vấn và hẹn xem phòng miễn phí.</p>
           </div>
           <p className="text-xs text-stone-400 mt-6 mb-16">
-            Powered by MixStay • Kho phòng của {landlord?.name}
+            Powered by MixStay • Kho phòng của {contactName}
           </p>
         </div>
       </div>
 
-      {/* Floating Zalo button — group/landlord level */}
-      <ZaloFab href={zaloLink} />
-      {/* Hotline công ty — FAB tĩnh tel:, tách bạch với Zalo nhóm/chủ nhà */}
-      <CallFab />
+      {/* Liên hệ nổi.
+          - Link MÔI GIỚI: CHỈ Zalo + gọi môi giới (ẩn hotline công ty) → khách không sang kênh khác.
+          - Link chủ nhà: Zalo chủ nhà/công ty + hotline công ty (như cũ). */}
+      {isBroker ? (
+        contactDigits ? (
+          <>
+            <ZaloFab href={zaloLink} />
+            <CallFab phone={contactDigits} display={contact?.phone || contactDigits} label="Gọi MG" />
+          </>
+        ) : null
+      ) : (
+        <>
+          <ZaloFab href={zaloLink} />
+          <CallFab />
+        </>
+      )}
 
       {/* Room detail modal */}
       {selectedRoom && (

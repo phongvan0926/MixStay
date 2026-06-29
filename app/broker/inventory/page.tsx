@@ -385,6 +385,25 @@ export default function BrokerInventoryPage() {
     }
   };
 
+  // Share TOÀN BỘ kho hàng đang trống — link kho của môi giới, khách chỉ thấy liên hệ của tôi
+  const [sharingSystem, setSharingSystem] = useState(false);
+  const shareSystem = async () => {
+    setSharingSystem(true);
+    try {
+      const res = await fetch('/api/share-links', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isSystem: true }),
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        try { await navigator.clipboard.writeText(data.url); } catch {}
+        toast.success('Đã copy link kho hàng! Khách chỉ thấy liên hệ của bạn.');
+      } else {
+        toast.error(data.error || 'Không tạo được link');
+      }
+    } finally { setSharingSystem(false); }
+  };
+
   const sendInquiry = async (roomTypeId: string) => {
     const res = await fetch('/api/inquiries', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -400,8 +419,20 @@ export default function BrokerInventoryPage() {
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-bold mb-2">Kho hàng</h1>
-      <p className="text-sm text-stone-500 mb-6">{rooms.length} tin đăng</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div>
+          <h1 className="font-display text-2xl font-bold">Kho hàng</h1>
+          <p className="text-sm text-stone-500 mt-1">{rooms.length} tin đăng</p>
+        </div>
+        <button onClick={shareSystem} disabled={sharingSystem}
+          className="btn-primary inline-flex items-center justify-center gap-2 disabled:opacity-60 w-full sm:w-auto"
+          title="Tạo link xem TOÀN BỘ kho hàng đang trống — khách chỉ thấy liên hệ của BẠN">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+          </svg>
+          {sharingSystem ? 'Đang tạo...' : 'Share kho hàng (chỉ liên hệ tôi)'}
+        </button>
+      </div>
 
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">

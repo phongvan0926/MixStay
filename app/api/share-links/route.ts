@@ -34,10 +34,21 @@ export async function GET(req: NextRequest) {
       // Increment view count
       await prisma.shareLink.update({ where: { token: systemToken }, data: { viewCount: { increment: 1 } } });
 
-      // Fetch all available room types from this landlord's properties
-      const landlordId = link.brokerId; // brokerId stores landlordId for system links
-      const properties = await prisma.property.findMany({
-        where: { landlordId, status: 'APPROVED' },
+      // Người tạo link quyết định phạm vi + liên hệ:
+      //  - BROKER  → kho CẢ HỆ THỐNG (mọi phòng đang trống), liên hệ CHỈ môi giới (ẩn company/chủ nhà/hotline)
+      //  - LANDLORD → kho của chính chủ nhà đó (hành vi cũ)
+      const creator = await prisma.user.findUnique({
+        where: { id: link.brokerId },
+        select: { name: true, phone: true, role: true },
+      });
+      const isBrokerLink = creator?.role === 'BROKER';
+
+      const propertyWhere: any = isBrokerLink
+        ? { status: 'APPROVED', isActive: true }
+        : { landlordId: link.brokerId, status: 'APPROVED' };
+
+      const propsRaw = await prisma.property.findMany({
+        where: propertyWhere,
         select: {
           id: true, name: true, district: true, streetName: true, city: true,
           amenities: true, images: true, totalFloors: true,
@@ -64,15 +75,24 @@ export async function GET(req: NextRequest) {
         },
       });
 
-      const landlord = await prisma.user.findUnique({
-        where: { id: landlordId },
-        select: { name: true, phone: true }, // phone dùng cho FAB Zalo deeplink (KHÔNG render UI)
-      });
+      if (isBrokerLink) {
+        // KHOÁ liên hệ về môi giới: bỏ HẲN company (Zalo nhóm/đơn vị vận hành) khỏi payload,
+        // không trả landlord → trang share chỉ có thể hiển thị liên hệ môi giới.
+        const properties = propsRaw
+          .filter(p => p.roomTypes.length > 0)
+          .map(p => ({ ...p, company: null }));
+        return NextResponse.json({
+          link,
+          isBrokerLink: true,
+          broker: { name: creator?.name, phone: creator?.phone },
+          properties,
+        });
+      }
 
       return NextResponse.json({
         link,
-        landlord,
-        properties,
+        landlord: { name: creator?.name, phone: creator?.phone },
+        properties: propsRaw,
       });
     }
 
@@ -182,10 +202,10 @@ export async function POST(req: NextRequest) {
     const token = nanoid(12);
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-    // System link for landlord / admin / admin-staff with permission
+    // System link: landlord (kho của mình) / broker (kho cả hệ thống, liên hệ về MG) / admin / admin-staff
     if (body.isSystem) {
-      if (session.user.role === 'LANDLORD' || session.user.role === 'ADMIN') {
-        // landlord tạo system link cho chính mình, super-admin OK
+      if (['LANDLORD', 'BROKER', 'ADMIN'].includes(session.user.role)) {
+        // landlord/broker tạo system link cho chính mình, super-admin OK
       } else if (session.user.role === 'ADMIN_STAFF') {
         const denial = requirePermission(session, 'MANAGE_SYSTEM_SHARE_LINKS');
         if (denial) return denial;
