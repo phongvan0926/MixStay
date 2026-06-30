@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { applyRateLimit } from '@/lib/rate-limit';
+import { redactName, redactHouseNumber } from '@/lib/address';
 
 const PRICE_TOLERANCE = 0.3; // ±30%
 const MAX_PER_BUCKET = 6;
@@ -118,7 +119,14 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const withToken = (r: any) => ({ ...r, shareToken: tokenByRoomType.get(r.id) || null });
+    const withToken = (r: any) => ({
+      ...r,
+      // Ẩn số nhà: redact tên tòa + tên đường trước khi trả cho khách.
+      property: r.property
+        ? { ...r.property, name: redactName(r.property.name), streetName: redactHouseNumber(r.property.streetName) }
+        : r.property,
+      shareToken: tokenByRoomType.get(r.id) || null,
+    });
 
     // Public "related listings" widget — tolerates more staleness than the
     // primary card, so cache a bit longer at the CDN.

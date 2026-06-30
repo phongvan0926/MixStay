@@ -364,9 +364,9 @@ export default function SystemShareClient() {
 
                   {/* Info */}
                   <div className="p-4">
-                    <h3 className="font-display font-semibold text-lg text-stone-900 mb-1">{rt.property?.name}</h3>
+                    <h3 className="font-display font-semibold text-lg text-stone-900 mb-1">{rt.name}</h3>
                     <p className="text-sm text-stone-500 mb-2">
-                      {rt.name} • {rt.property?.district} • {rt.areaSqm}m²
+                      📍 {rt.property?.publicAddress || rt.property?.streetName} • {rt.property?.district} • {rt.areaSqm}m²
                     </p>
                     <div className="flex items-end justify-between">
                       <div>
@@ -471,7 +471,7 @@ export default function SystemShareClient() {
                   )}
                 </div>
                 <p className="text-sm text-stone-500 mt-1">
-                  {selectedRoom.property?.name} • {selectedRoom.property?.district}
+                  📍 {selectedRoom.property?.publicAddress || selectedRoom.property?.streetName} • {selectedRoom.property?.district}
                 </p>
                 <span className="badge bg-brand-100 text-brand-700 mt-2 inline-block">
                   {roomTypeLabels[selectedRoom.typeName] || selectedRoom.typeName}
@@ -564,7 +564,7 @@ export default function SystemShareClient() {
               {/* Location */}
               <div className="p-3 bg-stone-50 rounded-xl">
                 <p className="font-medium text-stone-900 text-sm">Khu vực: {selectedRoom.property?.district}, {selectedRoom.property?.city}</p>
-                <p className="text-xs text-stone-500 mt-0.5">Tuyến phố: {selectedRoom.property?.streetName}</p>
+                <p className="text-xs text-stone-500 mt-0.5">Đường/ngõ: {selectedRoom.property?.publicAddress || selectedRoom.property?.streetName}</p>
                 <div className="mt-2 p-2 bg-amber-50 rounded-lg border border-amber-100">
                   <p className="text-[11px] text-amber-700">🔒 Địa chỉ chi tiết sẽ được cung cấp khi liên hệ</p>
                 </div>
@@ -572,7 +572,7 @@ export default function SystemShareClient() {
 
               {/* Google Maps */}
               <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${selectedRoom.property?.streetName}, ${selectedRoom.property?.district}, ${selectedRoom.property?.city || 'Hà Nội'}`)}`}
+                href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${selectedRoom.property?.publicAddress || selectedRoom.property?.streetName}, ${selectedRoom.property?.district}, ${selectedRoom.property?.city || 'Hà Nội'}`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium py-3 rounded-xl text-sm transition-all border border-blue-100"

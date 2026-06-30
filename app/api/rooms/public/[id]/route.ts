@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { applyRateLimit } from '@/lib/rate-limit';
+import { publicAddress, redactName, redactHouseNumber } from '@/lib/address';
 
 // GET /api/rooms/public/[id] — public listing detail by room id (no auth, no share token).
 // Customer-safe fields ONLY (same as the share-link view): NO fullAddress, lat/lng,
@@ -32,8 +33,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
           select: {
             id: true, name: true, district: true, streetName: true, city: true,
             amenities: true, images: true, totalFloors: true,
+            fullAddress: true, // CHỈ dùng server-side để dựng publicAddress (ẩn số nhà) — KHÔNG trả về client
             parkingCar: true, parkingBike: true, evCharging: true, petAllowed: true, foreignerOk: true,
-            // NO fullAddress, lat, lng, zaloPhone
+            // NO lat, lng, zaloPhone
             company: { select: { id: true, name: true, logo: true, zaloGroupLink: true, description: true } },
             landlord: { select: { id: true, name: true, phone: true } }, // phone dùng cho FAB Zalo deeplink (KHÔNG render trên UI)
           },
@@ -48,8 +50,21 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     // Lượt xem tự nhiên (không chặn response nếu lỗi)
     prisma.roomType.update({ where: { id: params.id }, data: { viewCount: { increment: 1 } } }).catch(() => {});
 
+    // ẨN SỐ NHÀ: thay fullAddress bằng publicAddress (ngõ/ngách + đường), lọc số nhà khỏi tên + tên đường.
+    const { fullAddress, name, streetName, ...restProp } = roomType.property as any;
+    const safeStreet = redactHouseNumber(streetName);
+    const safe = {
+      ...roomType,
+      property: {
+        ...restProp,
+        name: redactName(name),
+        streetName: safeStreet,
+        publicAddress: publicAddress(fullAddress, safeStreet),
+      },
+    };
+
     // broker = null → không gắn môi giới (truy cập tự nhiên từ trang chủ / link trực tiếp)
-    return NextResponse.json({ roomType, broker: null });
+    return NextResponse.json({ roomType: safe, broker: null });
   } catch (error: any) {
     console.error('/api/rooms/public/[id] error:', error);
     return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });

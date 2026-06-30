@@ -24,6 +24,7 @@ export const registerSchema = z.object({
 export const propertyCreateSchema = z.object({
   name: z.string().min(1, 'Tên tòa nhà không được trống').max(200),
   fullAddress: z.string().min(1, 'Địa chỉ không được trống').max(500),
+  houseNumber: z.string().max(100).optional().nullable(), // số nhà — ẩn với khách
   district: z.string().min(1, 'Quận/Huyện không được trống').max(100),
   streetName: z.string().min(1, 'Tên đường không được trống').max(200),
   city: z.string().max(100).optional(),

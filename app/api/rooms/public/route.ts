@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination';
 import { applyRateLimit } from '@/lib/rate-limit';
+import { redactName, redactHouseNumber } from '@/lib/address';
 
 export async function GET(req: NextRequest) {
   const rateLimited = applyRateLimit(req, 'api');
@@ -132,7 +133,10 @@ export async function GET(req: NextRequest) {
         status: rt.status,
         expectedAvailableDate: rt.expectedAvailableDate,
         shortTermAllowed: rt.shortTermAllowed,
-        property: rt.property,
+        // Ẩn số nhà: redact tên tòa + tên đường (vài bản ghi nhồi cả số nhà vào streetName).
+        property: rt.property
+          ? { ...rt.property, name: redactName(rt.property.name), streetName: redactHouseNumber(rt.property.streetName) }
+          : rt.property,
         shareToken: tokenByRoomType.get(rt.id) || null,
       };
     });

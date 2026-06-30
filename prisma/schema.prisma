@@ -140,6 +140,7 @@ model Property {
   name          String
   description   String?
   fullAddress   String
+  houseNumber   String?        // SỐ NHÀ — ẨN với khách (khách chỉ thấy tới ngõ/ngách). Tách riêng để không lộ.
   district      String
   streetName    String
   city          String         @default("Hà Nội")

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { applyRateLimit } from '@/lib/rate-limit';
+import { redactName, redactHouseNumber } from '@/lib/address';
 
 // Kho phòng CÔNG KHAI của 1 CÔNG TY — phục vụ link share cố định /share/company/[id].
 // Trả company (chỉ khi đang hoạt động) + tất cả phòng trống/sắp trống ĐÃ DUYỆT thuộc công ty.
@@ -61,7 +62,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       hasVideo: (rt.videos?.length || 0) + (rt.videoLinks?.length || 0) > 0,
       availableUnits: rt.availableUnits,
       status: rt.status,
-      property: rt.property,
+      // Ẩn số nhà: redact tên tòa + tên đường trước khi trả cho khách.
+      property: rt.property
+        ? { ...rt.property, name: redactName(rt.property.name), streetName: redactHouseNumber(rt.property.streetName) }
+        : rt.property,
     }));
 
     return NextResponse.json(

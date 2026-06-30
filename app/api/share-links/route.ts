@@ -7,6 +7,19 @@ import { getPaginationParams, paginatedResponse } from '@/lib/pagination';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { shareLinkCreateSchema, validateBody } from '@/lib/validations';
 import { requirePermission } from '@/lib/permissions-server';
+import { publicAddress, redactName, redactHouseNumber } from '@/lib/address';
+
+// Ẩn số nhà: redact name + streetName, thêm publicAddress (ngõ/ngách + đường), loại fullAddress khỏi payload khách.
+function sanitizeProperty<T extends { name?: string | null; fullAddress?: string | null; streetName?: string | null }>(p: T) {
+  const { fullAddress, name, streetName, ...rest } = p as any;
+  const safeStreet = redactHouseNumber(streetName);
+  return {
+    ...rest,
+    name: redactName(name),
+    streetName: safeStreet,
+    publicAddress: publicAddress(fullAddress, safeStreet),
+  };
+}
 
 export async function GET(req: NextRequest) {
   const rateLimited = applyRateLimit(req, 'api');
@@ -52,6 +65,7 @@ export async function GET(req: NextRequest) {
         select: {
           id: true, name: true, district: true, streetName: true, city: true,
           amenities: true, images: true, totalFloors: true,
+          fullAddress: true, // server-side dựng publicAddress (ẩn số nhà) — sanitizeProperty bỏ trước khi trả về
           parkingCar: true, parkingBike: true, evCharging: true, petAllowed: true, foreignerOk: true,
           company: { select: { id: true, name: true, logo: true, zaloGroupLink: true, description: true } },
           roomTypes: {
@@ -80,7 +94,7 @@ export async function GET(req: NextRequest) {
         // không trả landlord → trang share chỉ có thể hiển thị liên hệ môi giới.
         const properties = propsRaw
           .filter(p => p.roomTypes.length > 0)
-          .map(p => ({ ...p, company: null }));
+          .map(p => ({ ...sanitizeProperty(p), company: null }));
         return NextResponse.json({
           link,
           isBrokerLink: true,
@@ -92,7 +106,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         link,
         landlord: { name: creator?.name, phone: creator?.phone },
-        properties: propsRaw,
+        properties: propsRaw.map(p => sanitizeProperty(p)),
       });
     }
 
@@ -117,8 +131,9 @@ export async function GET(req: NextRequest) {
                 select: {
                   id: true, name: true, district: true, streetName: true, city: true,
                   amenities: true, images: true, totalFloors: true,
+                  fullAddress: true, // server-side dựng publicAddress (ẩn số nhà) — bỏ trước khi trả về
                   parkingCar: true, parkingBike: true, evCharging: true, petAllowed: true, foreignerOk: true,
-                  // NO fullAddress, lat, lng, landlord phone
+                  // NO lat, lng, landlord phone
                   company: { select: { id: true, name: true, logo: true, zaloGroupLink: true, description: true } },
                   landlord: { select: { id: true, name: true, phone: true } }, // phone dùng cho FAB Zalo deeplink (KHÔNG render trên UI)
                 },
@@ -142,6 +157,11 @@ export async function GET(req: NextRequest) {
       // Link chủ nhà tự đăng giữ nguyên SĐT chủ nhà (hành vi cũ).
       if (link.broker?.role === 'BROKER' && link.roomType?.property?.landlord) {
         (link.roomType.property.landlord as any).phone = null;
+      }
+
+      // Ẩn số nhà cho khách: thay property bằng bản đã redact (publicAddress thay fullAddress).
+      if (link.roomType?.property) {
+        (link.roomType as any).property = sanitizeProperty(link.roomType.property as any);
       }
 
       // Increment view count

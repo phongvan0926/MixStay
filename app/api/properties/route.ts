@@ -112,6 +112,7 @@ export async function POST(req: NextRequest) {
         name: body.name,
         description: body.description,
         fullAddress: body.fullAddress,
+        houseNumber: body.houseNumber || null, // số nhà (ẩn với khách)
         district: body.district,
         streetName: body.streetName,
         city: body.city || 'Hà Nội',
@@ -189,6 +190,7 @@ export async function PUT(req: NextRequest) {
         ...(data.name && { name: data.name }),
         ...(data.description !== undefined && { description: data.description }),
         ...(data.fullAddress && { fullAddress: data.fullAddress }),
+        ...(data.houseNumber !== undefined && { houseNumber: data.houseNumber || null }),
         ...(data.district && { district: data.district }),
         ...(data.streetName && { streetName: data.streetName }),
         ...(data.city !== undefined && { city: data.city }),

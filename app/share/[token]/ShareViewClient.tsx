@@ -37,7 +37,7 @@ function RelatedRoomCard({ rt }: { rt: any }) {
         </span>
       </div>
       <div className="p-3">
-        <p className="text-xs text-stone-500 truncate">{rt.property?.name} • {rt.property?.district}</p>
+        <p className="text-xs text-stone-500 truncate">{rt.property?.streetName || rt.property?.publicAddress} • {rt.property?.district}</p>
         <p className="text-sm font-semibold text-stone-900 truncate mt-0.5">{rt.name}</p>
         <p className="text-base font-bold text-brand-600 mt-1">
           {formatCurrency(rt.priceMonthly)}
@@ -173,8 +173,9 @@ export default function ShareViewClient() {
     </div>
   );
 
+  // Maps theo địa chỉ công khai (ngõ/ngách + đường) → sát thật hơn nhưng KHÔNG lộ số nhà.
   const mapsQuery = encodeURIComponent(
-    [property?.streetName, property?.district, property?.city || 'Hà Nội'].filter(Boolean).join(', ')
+    [property?.publicAddress || property?.streetName, property?.district, property?.city || 'Hà Nội'].filter(Boolean).join(', ')
   );
   const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${mapsQuery}`;
   const mapsEmbedUrl = `https://maps.google.com/maps?q=${mapsQuery}&output=embed`;
@@ -234,7 +235,8 @@ export default function ShareViewClient() {
           <div className="flex items-start justify-between mb-3 gap-3">
             <div className="min-w-0">
               <h1 className="font-display text-2xl font-bold">{roomType.name}</h1>
-              <p className="text-sm text-stone-400 mt-1">Thuộc tòa: <span className="text-stone-600 font-medium">{property?.name}</span></p>
+              {/* Địa chỉ công khai: chỉ tới ngõ/ngách + đường + quận (đã ẩn số nhà) */}
+              <p className="text-sm text-stone-400 mt-1">📍 <span className="text-stone-600 font-medium">{[property?.publicAddress, property?.district].filter(Boolean).join(', ') || property?.district}</span></p>
               {roomType.listingCode && (
                 <p className="text-xs font-mono font-semibold text-stone-500 mt-1.5 inline-block bg-stone-100 px-2 py-0.5 rounded">Mã tin: {roomType.listingCode}</p>
               )}

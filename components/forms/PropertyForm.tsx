@@ -5,12 +5,14 @@ import toast from 'react-hot-toast';
 import ImageUpload from '@/components/ui/ImageUpload';
 import Combobox from '@/components/ui/Combobox';
 import { HANOI_DISTRICTS, COMMON_STREETS, findDistrictForStreet } from '@/lib/hanoi-locations';
+import { extractHouseNumber, redactHouseNumber } from '@/lib/address';
 
 interface PropertyData {
   id?: string;
   name: string;
   description: string;
-  fullAddress: string;
+  houseNumber: string; // số nhà — ẨN với khách (nhập riêng để tách khỏi địa chỉ hiển thị)
+  fullAddress: string; // ô "Đường/Ngõ/Ngách" — phần HIỆN cho khách (không gồm số nhà)
   district: string;
   streetName: string;
   city: string;
@@ -56,6 +58,7 @@ const FEATURE_TOGGLES = [
 const defaultData: PropertyData = {
   name: '',
   description: '',
+  houseNumber: '',
   fullAddress: '',
   district: '',
   streetName: '',
@@ -96,7 +99,9 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
       setForm({
         name: initialData.name || '',
         description: initialData.description || '',
-        fullAddress: initialData.fullAddress || '',
+        // Tách dữ liệu cũ: số nhà vào ô riêng (ẩn), phần ngõ/ngách+đường vào ô hiển thị.
+        houseNumber: initialData.houseNumber || extractHouseNumber(initialData.fullAddress) || '',
+        fullAddress: redactHouseNumber(initialData.fullAddress) || initialData.fullAddress || '',
         district: initialData.district || '',
         streetName: initialData.streetName || '',
         city: initialData.city || 'Hà Nội',
@@ -136,13 +141,18 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
     e.preventDefault();
 
     if (!form.name.trim()) return toast.error('Vui lòng nhập tên tòa nhà');
-    if (!form.fullAddress.trim()) return toast.error('Vui lòng nhập địa chỉ chi tiết');
+    if (!form.fullAddress.trim()) return toast.error('Vui lòng nhập đường/ngõ/ngách');
     if (!form.district.trim()) return toast.error('Vui lòng nhập quận/huyện');
     if (!form.streetName.trim()) return toast.error('Vui lòng nhập tên đường');
     if (isAdmin && !isEdit && !landlordId) return toast.error('Vui lòng chọn chủ nhà cho tòa nhà này');
 
+    // fullAddress lưu trữ (nội bộ/staff) = số nhà + đường/ngõ/ngách. Khách chỉ thấy phần đường/ngõ/ngách.
+    const combinedFullAddress = [form.houseNumber.trim(), form.fullAddress.trim()].filter(Boolean).join(' ');
+
     onSubmit({
       ...form,
+      fullAddress: combinedFullAddress,
+      houseNumber: form.houseNumber.trim() || null,
       companyId: companyId || null,
       // Gửi landlordId khi: tạo mới (admin), hoặc edit + có quyền transfer
       ...(isAdmin && landlordId && (!isEdit || canTransferOwnership) ? { landlordId } : {}),
@@ -240,17 +250,31 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
       <div className="card">
         <h3 className="text-lg font-semibold text-stone-900 mb-4">Địa chỉ</h3>
         <div className="grid md:grid-cols-2 gap-4">
-          <div className="md:col-span-2">
+          <div>
             <label className="block text-sm font-medium text-stone-700 mb-1.5">
-              Địa chỉ chi tiết <span className="text-red-500">*</span>
+              Số nhà <span className="text-[11px] font-normal text-amber-600">🔒 ẩn với khách</span>
             </label>
             <input
               type="text"
               className="input-field"
-              placeholder="Số nhà, ngõ, ngách..."
+              placeholder="VD: Số 25, 12B, 30/4..."
+              value={form.houseNumber}
+              onChange={e => updateField('houseNumber', e.target.value)}
+            />
+            <p className="text-[11px] text-stone-400 mt-1">Khách KHÔNG nhìn thấy số nhà — chỉ dùng nội bộ.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-1.5">
+              Đường / Ngõ / Ngách <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              className="input-field"
+              placeholder="VD: Ngõ 59 Hoàng Hoa Thám"
               value={form.fullAddress}
               onChange={e => updateField('fullAddress', e.target.value)}
             />
+            <p className="text-[11px] text-stone-400 mt-1">Phần này HIỆN cho khách (tối đa tới ngõ/ngách).</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1.5">
