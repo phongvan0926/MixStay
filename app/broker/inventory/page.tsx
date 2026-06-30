@@ -131,6 +131,24 @@ function RoomDetailModal({
         )}
 
         <div className="p-5 space-y-4">
+          {/* Module nhanh: Diện tích / Tổng phòng / Còn trống — ngay dưới ảnh chính (đồng nhất trang chi tiết) */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="p-3 bg-stone-50 rounded-xl text-center">
+              <p className="text-lg font-bold text-stone-800">{room.areaSqm} m²</p>
+              <p className="text-[11px] text-stone-500 mt-0.5">Diện tích</p>
+            </div>
+            <div className="p-3 bg-stone-50 rounded-xl text-center">
+              <p className="text-lg font-bold text-stone-800">{room.totalUnits}</p>
+              <p className="text-[11px] text-stone-500 mt-0.5">Tổng phòng</p>
+            </div>
+            <div className="p-3 bg-stone-50 rounded-xl text-center">
+              <p className={'text-lg font-bold ' + (room.availableUnits > 0 ? 'text-emerald-600' : 'text-red-600')}>
+                {room.availableUnits}
+              </p>
+              <p className="text-[11px] text-stone-500 mt-0.5">Còn trống</p>
+            </div>
+          </div>
+
           {/* Title + type */}
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -171,24 +189,6 @@ function RoomDetailModal({
             </div>
           )}
 
-          {/* Units stats */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="p-3 bg-stone-50 rounded-xl text-center">
-              <p className="text-lg font-bold text-stone-800">{room.areaSqm} m²</p>
-              <p className="text-[11px] text-stone-500 mt-0.5">Diện tích</p>
-            </div>
-            <div className="p-3 bg-stone-50 rounded-xl text-center">
-              <p className="text-lg font-bold text-stone-800">{room.totalUnits}</p>
-              <p className="text-[11px] text-stone-500 mt-0.5">Tổng phòng</p>
-            </div>
-            <div className="p-3 bg-stone-50 rounded-xl text-center">
-              <p className={'text-lg font-bold ' + (room.availableUnits > 0 ? 'text-emerald-600' : 'text-red-600')}>
-                {room.availableUnits}
-              </p>
-              <p className="text-[11px] text-stone-500 mt-0.5">Còn trống</p>
-            </div>
-          </div>
-
           {room.availableRoomNames && (
             <p className="text-sm text-stone-500">
               Phòng trống: <span className="font-medium text-stone-700">{room.availableRoomNames}</span>
@@ -223,7 +223,7 @@ function RoomDetailModal({
           {/* Room amenities */}
           {room.amenities?.length > 0 && (
             <div>
-              <p className="text-sm font-semibold text-stone-700 mb-2">🛋️ Tiện ích phòng</p>
+              <p className="text-sm font-bold text-stone-700 mb-2">🛋️ Nội thất</p>
               <div className="flex flex-wrap gap-2">
                 {room.amenities.map((a: string) => (
                   <span key={a} className="px-3 py-1.5 bg-brand-50 text-brand-700 text-sm rounded-lg border border-brand-100 font-medium">{a}</span>
@@ -235,10 +235,10 @@ function RoomDetailModal({
           {/* Property amenities */}
           {room.property?.amenities?.length > 0 && (
             <div>
-              <p className="text-sm font-semibold text-stone-700 mb-2">🏢 Tiện ích tòa nhà</p>
+              <p className="text-sm font-bold text-stone-700 mb-2">🏢 Tiện ích tòa nhà</p>
               <div className="flex flex-wrap gap-2">
                 {room.property.amenities.map((a: string) => (
-                  <span key={a} className="px-3 py-1.5 bg-stone-100 text-stone-700 text-sm rounded-lg">{a}</span>
+                  <span key={a} className="px-3 py-1.5 bg-emerald-50 text-emerald-700 text-sm rounded-lg border border-emerald-200 font-medium">{a}</span>
                 ))}
               </div>
             </div>

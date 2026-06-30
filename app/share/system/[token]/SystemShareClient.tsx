@@ -456,6 +456,22 @@ export default function SystemShareClient() {
                 return <VideoGallery images={imgs} videos={vids} videoLinks={vidLinks} />;
               })()}
 
+              {/* Module nhanh: Diện tích / Tổng phòng / Còn trống — ngay dưới ảnh chính (đồng nhất trang chi tiết) */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-3 bg-stone-50 rounded-xl text-center">
+                  <p className="text-lg font-bold text-stone-800">{selectedRoom.areaSqm} m²</p>
+                  <p className="text-[11px] text-stone-500 mt-0.5">Diện tích</p>
+                </div>
+                <div className="p-3 bg-stone-50 rounded-xl text-center">
+                  <p className="text-lg font-bold text-stone-800">{selectedRoom.totalUnits}</p>
+                  <p className="text-[11px] text-stone-500 mt-0.5">Tổng phòng</p>
+                </div>
+                <div className="p-3 bg-stone-50 rounded-xl text-center">
+                  <p className="text-lg font-bold text-emerald-600">{selectedRoom.availableUnits}</p>
+                  <p className="text-[11px] text-stone-500 mt-0.5">Còn trống</p>
+                </div>
+              </div>
+
               {/* Header */}
               <div>
                 <div className="flex items-start justify-between">
@@ -499,22 +515,6 @@ export default function SystemShareClient() {
                 </div>
               )}
 
-              {/* Specs */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="p-3 bg-stone-50 rounded-xl text-center">
-                  <p className="text-lg font-bold text-stone-800">{selectedRoom.areaSqm} m²</p>
-                  <p className="text-[11px] text-stone-500 mt-0.5">Diện tích</p>
-                </div>
-                <div className="p-3 bg-stone-50 rounded-xl text-center">
-                  <p className="text-lg font-bold text-stone-800">{selectedRoom.totalUnits}</p>
-                  <p className="text-[11px] text-stone-500 mt-0.5">Tổng phòng</p>
-                </div>
-                <div className="p-3 bg-stone-50 rounded-xl text-center">
-                  <p className="text-lg font-bold text-emerald-600">{selectedRoom.availableUnits}</p>
-                  <p className="text-[11px] text-stone-500 mt-0.5">Còn trống</p>
-                </div>
-              </div>
-
               {selectedRoom.description && (
                 <div className="p-3 bg-stone-50 rounded-xl">
                   <p className="text-sm text-stone-600 leading-relaxed">{selectedRoom.description}</p>
@@ -524,7 +524,7 @@ export default function SystemShareClient() {
               {/* Amenities */}
               {selectedRoom.amenities?.length > 0 && (
                 <div>
-                  <p className="text-sm font-semibold text-stone-700 mb-2">Tiện ích phòng</p>
+                  <p className="text-sm font-bold text-stone-700 mb-2 flex items-center gap-1.5">🛋️ Nội thất</p>
                   <div className="flex flex-wrap gap-2">
                     {selectedRoom.amenities.map((a: string) => (
                       <span key={a} className="px-3 py-1.5 bg-brand-50 text-brand-700 text-sm rounded-lg border border-brand-100 font-medium">{a}</span>
@@ -536,10 +536,10 @@ export default function SystemShareClient() {
               {/* Building amenities */}
               {selectedRoom.property?.amenities?.length > 0 && (
                 <div>
-                  <p className="text-sm font-semibold text-stone-700 mb-2">Tiện ích tòa nhà</p>
+                  <p className="text-sm font-bold text-stone-700 mb-2 flex items-center gap-1.5">🏢 Tiện ích tòa nhà</p>
                   <div className="flex flex-wrap gap-2">
                     {selectedRoom.property.amenities.map((a: string) => (
-                      <span key={a} className="px-3 py-1.5 bg-stone-100 text-stone-700 text-sm rounded-lg">{a}</span>
+                      <span key={a} className="px-3 py-1.5 bg-emerald-50 text-emerald-700 text-sm rounded-lg border border-emerald-200 font-medium">{a}</span>
                     ))}
                   </div>
                 </div>
