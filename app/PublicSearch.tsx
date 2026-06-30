@@ -57,7 +57,7 @@ type PublicRoom = {
 };
 
 export default function PublicSearch() {
-  const [district, setDistrict] = useState('');
+  const [district, setDistrict] = useState<string[]>([]);
   const [typeName, setTypeName] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
@@ -73,7 +73,7 @@ export default function PublicSearch() {
     setFeatures(prev => ({ ...prev, [key]: !prev[key] }));
 
   const resetFilters = () => {
-    setDistrict('');
+    setDistrict([]);
     setTypeName('');
     setMinPrice('');
     setMaxPrice('');
@@ -92,7 +92,7 @@ export default function PublicSearch() {
     setError('');
     try {
       const params = new URLSearchParams();
-      if (district) params.set('district', district);
+      if (district.length) params.set('district', district.join(','));
       if (typeName) params.set('typeName', typeName);
       if (minPrice) params.set('minPrice', minPrice);
       if (maxPrice) params.set('maxPrice', maxPrice);

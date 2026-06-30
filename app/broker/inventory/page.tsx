@@ -331,7 +331,7 @@ export default function BrokerInventoryPage() {
   const [inquirySent, setInquirySent] = useState<Set<string>>(new Set());
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [filter, setFilter] = useState({
-    search: '', companyId: '', roomType: '', district: '', minPrice: '', maxPrice: '',
+    search: '', companyId: '', roomType: '', district: [] as string[], minPrice: '', maxPrice: '',
     parkingCar: false, foreignerOk: false, evCharging: false, petAllowed: false,
     shortTerm: false, status: 'available' as 'available' | 'all',
   });
@@ -343,7 +343,7 @@ export default function BrokerInventoryPage() {
   const swrParams: Record<string, string> = { page: String(page), limit: '20' };
   if (filter.status === 'available') swrParams.available = 'true';
   if (filter.companyId) swrParams.companyId = filter.companyId;
-  if (filter.district) swrParams.district = filter.district;
+  if (filter.district.length) swrParams.district = filter.district.join(',');
   if (filter.minPrice) swrParams.minPrice = filter.minPrice;
   if (filter.maxPrice) swrParams.maxPrice = filter.maxPrice;
   if (filter.search) swrParams.search = filter.search;

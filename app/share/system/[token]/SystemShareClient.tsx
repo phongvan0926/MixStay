@@ -156,9 +156,10 @@ export default function SystemShareClient() {
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-stone-200/60">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center" aria-label="MixStay - Trang chủ">
+          {/* Trang link chia sẻ: KHÔNG dẫn về trang chủ — giữ khách trong trang để chỉ liên hệ chính chủ link. */}
+          <span className="flex items-center" aria-label="MixStay">
             <Logo variant="light" className="h-7 w-auto" />
-          </Link>
+          </span>
           <span className="text-xs text-stone-400">Kho phòng của {contactName}</span>
         </div>
       </nav>

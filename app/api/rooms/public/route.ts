@@ -23,7 +23,13 @@ export async function GET(req: NextRequest) {
     };
 
     const propertyWhere: any = { status: 'APPROVED', isActive: true };
-    if (district) propertyWhere.district = { contains: district, mode: 'insensitive' };
+    // Cho phép lọc nhiều quận cùng lúc: district=Quận A,Quận B
+    const districts = district ? district.split(',').map(d => d.trim()).filter(Boolean) : [];
+    if (districts.length === 1) {
+      propertyWhere.district = { contains: districts[0], mode: 'insensitive' };
+    } else if (districts.length > 1) {
+      propertyWhere.OR = districts.map(d => ({ district: { contains: d, mode: 'insensitive' } }));
+    }
     if (featureFlags.parkingCar) propertyWhere.parkingCar = true;
     if (featureFlags.parkingBike) propertyWhere.parkingBike = true;
     if (featureFlags.evCharging) propertyWhere.evCharging = true;

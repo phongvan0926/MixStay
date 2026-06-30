@@ -53,7 +53,13 @@ export async function GET(req: NextRequest) {
 
     // Property-level filters
     const propertyWhere: any = {};
-    if (district) propertyWhere.district = { contains: district, mode: 'insensitive' };
+    // Cho phép lọc nhiều quận cùng lúc: district=Quận A,Quận B
+    const districts = district ? district.split(',').map(d => d.trim()).filter(Boolean) : [];
+    if (districts.length === 1) {
+      propertyWhere.district = { contains: districts[0], mode: 'insensitive' };
+    } else if (districts.length > 1) {
+      propertyWhere.OR = districts.map(d => ({ district: { contains: d, mode: 'insensitive' } }));
+    }
     if (parkingCar === 'true') propertyWhere.parkingCar = true;
     if (foreignerOk === 'true') propertyWhere.foreignerOk = true;
     if (evCharging === 'true') propertyWhere.evCharging = true;
