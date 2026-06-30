@@ -35,7 +35,7 @@ export default function HomePage() {
           <FeaturedRooms />
 
           <div className="text-center mt-10">
-            <Link href="/register" className="btn-primary px-8 py-3 text-base group hover:-translate-y-0.5 transition-all">
+            <Link href="/phong" className="btn-primary px-8 py-3 text-base group hover:-translate-y-0.5 transition-all">
               Xem thêm các phòng mới nhất
               <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
             </Link>

@@ -164,10 +164,28 @@ export async function GET(req: NextRequest) {
         (link.roomType as any).property = sanitizeProperty(link.roomType.property as any);
       }
 
+      // Link do BROKER tạo: kèm token KHO TỔNG của môi giới (find-or-create) để trang share lẻ
+      // dẫn khách sang xem TOÀN BỘ phòng của môi giới — giữ khách trong kênh môi giới, không cho
+      // nhảy sang trang chủ (thay cho "Tin đăng liên quan" vốn dẫn ra trang /tin công khai).
+      let brokerSystemToken: string | null = null;
+      if (link.broker?.role === 'BROKER' && link.brokerId) {
+        const sys = await prisma.shareLink.findFirst({
+          where: { brokerId: link.brokerId, isSystem: true, isActive: true },
+          orderBy: { createdAt: 'desc' },
+          select: { token: true },
+        });
+        brokerSystemToken = sys
+          ? sys.token
+          : (await prisma.shareLink.create({
+              data: { brokerId: link.brokerId, token: nanoid(12), isSystem: true },
+              select: { token: true },
+            })).token;
+      }
+
       // Increment view count
       await prisma.shareLink.update({ where: { token }, data: { viewCount: { increment: 1 } } });
 
-      return NextResponse.json(link);
+      return NextResponse.json({ ...link, brokerSystemToken });
     }
 
     // Authenticated: list user's links

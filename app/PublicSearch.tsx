@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ListingImageMosaic from '@/components/ui/ListingImageMosaic';
 import { formatCurrency } from '@/lib/utils';
@@ -56,7 +56,7 @@ type PublicRoom = {
   shareToken: string | null;
 };
 
-export default function PublicSearch() {
+export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean }) {
   const [district, setDistrict] = useState<string[]>([]);
   const [typeName, setTypeName] = useState('');
   const [minPrice, setMinPrice] = useState('');
@@ -82,30 +82,39 @@ export default function PublicSearch() {
 
   const [results, setResults] = useState<PublicRoom[] | null>(null);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState('');
+
+  const PAGE_SIZE = 12;
+
+  const buildParams = (pageToLoad: number) => {
+    const params = new URLSearchParams();
+    if (district.length) params.set('district', district.join(','));
+    if (typeName) params.set('typeName', typeName);
+    if (minPrice) params.set('minPrice', minPrice);
+    if (maxPrice) params.set('maxPrice', maxPrice);
+    (Object.keys(features) as FeatureKey[]).forEach(k => {
+      if (features[k]) params.set(k, 'true');
+    });
+    params.set('limit', String(PAGE_SIZE));
+    params.set('page', String(pageToLoad));
+    return params;
+  };
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setLoading(true);
     setError('');
     try {
-      const params = new URLSearchParams();
-      if (district.length) params.set('district', district.join(','));
-      if (typeName) params.set('typeName', typeName);
-      if (minPrice) params.set('minPrice', minPrice);
-      if (maxPrice) params.set('maxPrice', maxPrice);
-      (Object.keys(features) as FeatureKey[]).forEach(k => {
-        if (features[k]) params.set(k, 'true');
-      });
-      params.set('limit', '12');
-
-      const res = await fetch(`/api/rooms/public?${params.toString()}`);
+      const res = await fetch(`/api/rooms/public?${buildParams(1).toString()}`);
       if (!res.ok) throw new Error('Không tải được dữ liệu');
       const json = await res.json();
       setResults(json.data || []);
       setTotal(json.pagination?.total || 0);
+      setPage(1);
       setSearched(true);
     } catch (err: any) {
       setError(err.message || 'Có lỗi xảy ra');
@@ -114,6 +123,30 @@ export default function PublicSearch() {
       setLoading(false);
     }
   };
+
+  // "Xem thêm" — nạp trang kế tiếp và nối vào danh sách (xem toàn bộ phòng mới nhất)
+  const loadMore = async () => {
+    setLoadingMore(true);
+    try {
+      const next = page + 1;
+      const res = await fetch(`/api/rooms/public?${buildParams(next).toString()}`);
+      if (!res.ok) throw new Error('Không tải được dữ liệu');
+      const json = await res.json();
+      setResults(prev => [...(prev || []), ...(json.data || [])]);
+      setTotal(json.pagination?.total || 0);
+      setPage(next);
+    } catch {
+      /* giữ kết quả hiện có nếu lỗi */
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // Trang /phong (autoLoad): tự nạp phòng mới nhất ngay khi mở, không cần bấm "Tìm phòng"
+  useEffect(() => {
+    if (autoLoad) handleSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoLoad]);
 
   return (
     <section id="tim-phong" className="relative pt-24 sm:pt-28 pb-12 sm:pb-16 px-4 sm:px-6 overflow-hidden bg-white scroll-mt-20">
@@ -225,7 +258,7 @@ export default function PublicSearch() {
           <>
             <p className="text-sm text-stone-500 mb-4">
               Tìm thấy <span className="font-semibold text-stone-800">{total}</span> tin đăng phù hợp
-              {total > results.length && <> • hiển thị {results.length} kết quả đầu</>}
+              {total > results.length && <> • đang hiển thị {results.length}</>}
             </p>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -303,6 +336,20 @@ export default function PublicSearch() {
                 );
               })}
             </div>
+
+            {/* Xem thêm — nạp tiếp phòng mới nhất (phân trang nối, không cần đăng nhập) */}
+            {results.length < total && (
+              <div className="text-center mt-8">
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium text-sm bg-white border border-stone-300 text-stone-700 hover:border-brand-400 hover:text-brand-700 hover:shadow-sm transition-all disabled:opacity-60"
+                >
+                  {loadingMore ? 'Đang tải...' : `Xem thêm phòng (${results.length}/${total})`}
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>

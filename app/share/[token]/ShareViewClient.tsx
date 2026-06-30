@@ -402,8 +402,22 @@ export default function ShareViewClient() {
           </div>
         </div>
 
-        {/* Section 8: Tin đăng liên quan */}
-        {roomType.id && <RelatedSection roomTypeId={roomType.id} />}
+        {/* Section 8: Link MÔI GIỚI → nút sang KHO TỔNG của môi giới (giữ khách, không thoát ra
+            trang chủ). Trang công khai /tin + link chủ nhà → giữ "Tin đăng liên quan" như cũ. */}
+        {data.brokerSystemToken ? (
+          <Link href={`/share/system/${data.brokerSystemToken}`}
+            className="card group flex items-center justify-between gap-4 border-brand-100 bg-gradient-to-br from-brand-50/60 to-white hover:shadow-md hover:border-brand-300 transition-all">
+            <div className="min-w-0">
+              <p className="font-display font-semibold text-base text-stone-900">🏠 Xem tất cả phòng của {brokerName || 'môi giới'}</p>
+              <p className="text-sm text-stone-500 mt-0.5">Còn nhiều phòng trống khác đang chờ — liên hệ trực tiếp {brokerName || 'môi giới'} để được tư vấn.</p>
+            </div>
+            <svg className="w-6 h-6 text-brand-600 shrink-0 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </Link>
+        ) : (
+          roomType.id && <RelatedSection roomTypeId={roomType.id} />
+        )}
 
         <p className="text-center text-xs text-stone-400 mt-4 mb-20">
           Powered by MixStay{brokerName ? ` • Môi giới: ${brokerName}` : ''}
