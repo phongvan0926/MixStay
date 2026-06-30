@@ -407,9 +407,9 @@ export default function ShareViewClient() {
       <ZaloFab href={zaloLink} />
       {/* Nút gọi nổi: link môi giới/chủ nhà → gọi đúng người đó; trang công khai /tin → hotline công ty */}
       {contactPhone ? (
-        <CallFab phone={contactPhone.replace(/\D/g, '')} display={contactPhone} label="Gọi" />
+        <CallFab phone={contactPhone.replace(/\D/g, '')} display={contactPhone} label="Gọi ngay" showNumber={false} />
       ) : (
-        <CallFab />
+        <CallFab label="Gọi ngay" showNumber={false} />
       )}
     </div>
   );

@@ -423,13 +423,13 @@ export default function SystemShareClient() {
         contactDigits ? (
           <>
             <ZaloFab href={zaloLink} />
-            <CallFab phone={contactDigits} display={contact?.phone || contactDigits} label="Gọi MG" />
+            <CallFab phone={contactDigits} display={contact?.phone || contactDigits} label="Gọi ngay" showNumber={false} />
           </>
         ) : null
       ) : (
         <>
           <ZaloFab href={zaloLink} />
-          <CallFab />
+          <CallFab label="Gọi ngay" showNumber={false} />
         </>
       )}
 

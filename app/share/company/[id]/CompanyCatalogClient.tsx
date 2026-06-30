@@ -146,9 +146,9 @@ export default function CompanyCatalogClient({ id }: { id: string }) {
       {/* Nút liên hệ nổi — gọi/Zalo trực tiếp công ty, khách xem phòng nào ổn gọi luôn */}
       {zalo && <ZaloFab href={zalo} />}
       {companyDigits ? (
-        <CallFab phone={companyDigits} display={company.phone || companyDigits} label="Gọi" stacked={!!zalo} />
+        <CallFab phone={companyDigits} display={company.phone || companyDigits} label="Gọi ngay" showNumber={false} stacked={!!zalo} />
       ) : (
-        <CallFab stacked={!!zalo} />
+        <CallFab label="Gọi ngay" showNumber={false} stacked={!!zalo} />
       )}
     </div>
   );
