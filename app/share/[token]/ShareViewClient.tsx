@@ -64,7 +64,17 @@ function RelatedSection({ roomTypeId }: { roomTypeId: string }) {
       .finally(() => setLoading(false));
   }, [roomTypeId]);
 
-  const bucket: any[] = data?.[tab] || [];
+  // Xáo trộn lại mỗi khi đổi dữ liệu/tab → mỗi lượt xem thấy bộ sản phẩm đa dạng, khác nhau.
+  // Hiển thị tối đa 6 (API trả dư để có cái xáo trộn).
+  const bucket: any[] = useMemo(() => {
+    const items: any[] = data?.[tab] || [];
+    const a = [...items];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a.slice(0, 6);
+  }, [data, tab]);
   const hasAny = (data?.all?.length || 0) + (data?.sameBuilding?.length || 0) + (data?.samePrice?.length || 0) + (data?.sameDistrict?.length || 0) > 0;
 
   if (loading) {
@@ -79,10 +89,10 @@ function RelatedSection({ roomTypeId }: { roomTypeId: string }) {
   if (!hasAny) return null;
 
   const tabs: { key: typeof tab; label: string; count: number }[] = [
-    { key: 'all', label: 'Tất cả', count: data?.all?.length || 0 },
-    { key: 'sameBuilding', label: 'Cùng tòa nhà', count: data?.sameBuilding?.length || 0 },
-    { key: 'samePrice', label: 'Cùng mức giá', count: data?.samePrice?.length || 0 },
-    { key: 'sameDistrict', label: 'Cùng khu vực', count: data?.sameDistrict?.length || 0 },
+    { key: 'all', label: 'Tất cả', count: Math.min(data?.all?.length || 0, 6) },
+    { key: 'sameBuilding', label: 'Cùng tòa nhà', count: Math.min(data?.sameBuilding?.length || 0, 6) },
+    { key: 'samePrice', label: 'Cùng mức giá', count: Math.min(data?.samePrice?.length || 0, 6) },
+    { key: 'sameDistrict', label: 'Cùng khu vực', count: Math.min(data?.sameDistrict?.length || 0, 6) },
   ];
 
   return (

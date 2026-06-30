@@ -3,8 +3,19 @@ import prisma from '@/lib/prisma';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { redactName, redactHouseNumber } from '@/lib/address';
 
-const PRICE_TOLERANCE = 0.3; // ±30%
-const MAX_PER_BUCKET = 6;
+const PRICE_TOLERANCE = 0.3; // ±30% → "cùng phân khúc giá"
+const MAX_PER_BUCKET = 9;    // trả dư để client xáo trộn → mỗi lần xem thấy bộ khác
+const POOL = 200;            // chọn ngẫu nhiên trong tối đa 200 tin gần nhất mỗi tiêu chí
+
+// Fisher–Yates shuffle (random thật, không lệ thuộc thứ tự DB) → giới thiệu sản phẩm đa dạng.
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 export async function GET(req: NextRequest) {
   const rateLimited = applyRateLimit(req, 'api');
@@ -24,7 +35,7 @@ export async function GET(req: NextRequest) {
         id: true,
         propertyId: true,
         priceMonthly: true,
-        property: { select: { district: true, landlordId: true } },
+        property: { select: { district: true, streetName: true, landlordId: true } },
       },
     });
 
@@ -35,28 +46,6 @@ export async function GET(req: NextRequest) {
     const minPrice = base.priceMonthly * (1 - PRICE_TOLERANCE);
     const maxPrice = base.priceMonthly * (1 + PRICE_TOLERANCE);
 
-    const commonSelect = {
-      id: true,
-      name: true,
-      listingCode: true,
-      typeName: true,
-      areaSqm: true,
-      priceMonthly: true,
-      deposit: true,
-      amenities: true,
-      images: true,
-      availableUnits: true,
-      status: true,
-      expectedAvailableDate: true,
-      shortTermAllowed: true,
-      property: {
-        select: {
-          id: true, name: true, district: true, streetName: true, city: true, images: true,
-          parkingCar: true, parkingBike: true, evCharging: true, petAllowed: true, foreignerOk: true,
-        },
-      },
-    } as const;
-
     const baseWhere = {
       id: { not: roomTypeId },
       isApproved: true,
@@ -64,54 +53,57 @@ export async function GET(req: NextRequest) {
       property: { status: 'APPROVED' as const, isActive: true },
     };
 
-    const [sameBuilding, samePrice, sameDistrict, all] = await Promise.all([
-      prisma.roomType.findMany({
-        where: { ...baseWhere, propertyId: base.propertyId },
-        select: commonSelect,
-        orderBy: { createdAt: 'desc' },
-        take: MAX_PER_BUCKET,
-      }),
-      prisma.roomType.findMany({
-        where: {
-          ...baseWhere,
-          priceMonthly: { gte: minPrice, lte: maxPrice },
-        },
-        select: commonSelect,
-        orderBy: { createdAt: 'desc' },
-        take: MAX_PER_BUCKET,
-      }),
-      prisma.roomType.findMany({
-        where: {
-          ...baseWhere,
-          property: { ...baseWhere.property, district: base.property.district },
-        },
-        select: commonSelect,
-        orderBy: { createdAt: 'desc' },
-        take: MAX_PER_BUCKET,
-      }),
-      prisma.roomType.findMany({
-        where: baseWhere,
-        select: commonSelect,
-        orderBy: { createdAt: 'desc' },
-        take: MAX_PER_BUCKET,
-      }),
+    // Bước 1: lấy NHẸ id ứng viên theo từng tiêu chí (pool 200 tin gần nhất), rồi xáo trộn.
+    const idsOnly = { select: { id: true }, take: POOL, orderBy: { createdAt: 'desc' as const } };
+    const [buildingPool, pricePool, streetPool, districtPool, allPool] = await Promise.all([
+      prisma.roomType.findMany({ where: { ...baseWhere, propertyId: base.propertyId }, ...idsOnly }),
+      prisma.roomType.findMany({ where: { ...baseWhere, priceMonthly: { gte: minPrice, lte: maxPrice } }, ...idsOnly }),
+      base.property.streetName?.trim()
+        ? prisma.roomType.findMany({ where: { ...baseWhere, property: { ...baseWhere.property, streetName: { contains: base.property.streetName.trim(), mode: 'insensitive' } } }, ...idsOnly })
+        : Promise.resolve([] as { id: string }[]),
+      base.property.district?.trim()
+        ? prisma.roomType.findMany({ where: { ...baseWhere, property: { ...baseWhere.property, district: { contains: base.property.district.trim(), mode: 'insensitive' } } }, ...idsOnly })
+        : Promise.resolve([] as { id: string }[]),
+      prisma.roomType.findMany({ where: baseWhere, ...idsOnly }),
     ]);
 
-    const ids = Array.from(new Set([
-      ...sameBuilding.map(r => r.id),
-      ...samePrice.map(r => r.id),
-      ...sameDistrict.map(r => r.id),
-      ...all.map(r => r.id),
-    ]));
+    const sameBuildingIds = shuffle(buildingPool.map(r => r.id)).slice(0, MAX_PER_BUCKET);
+    const samePriceIds = shuffle(pricePool.map(r => r.id)).slice(0, MAX_PER_BUCKET);
+    // "Cùng khu vực" = ưu tiên cùng TUYẾN ĐƯỜNG (gần nhất), rồi tới cùng QUẬN — mỗi nhóm ngẫu nhiên.
+    const locationIds = Array.from(new Set([
+      ...shuffle(streetPool.map(r => r.id)),
+      ...shuffle(districtPool.map(r => r.id)),
+    ])).slice(0, MAX_PER_BUCKET);
+    const allIds = shuffle(allPool.map(r => r.id)).slice(0, MAX_PER_BUCKET);
 
-    const shareLinks = ids.length > 0
+    // Bước 2: fetch ĐẦY ĐỦ cho các id đã chọn trong 1 query.
+    const neededIds = Array.from(new Set([...sameBuildingIds, ...samePriceIds, ...locationIds, ...allIds]));
+    const rows = neededIds.length
+      ? await prisma.roomType.findMany({
+          where: { id: { in: neededIds } },
+          select: {
+            id: true, name: true, listingCode: true, typeName: true, areaSqm: true,
+            priceMonthly: true, deposit: true, amenities: true, images: true,
+            availableUnits: true, status: true, expectedAvailableDate: true, shortTermAllowed: true,
+            property: {
+              select: {
+                id: true, name: true, district: true, streetName: true, city: true, images: true,
+                parkingCar: true, parkingBike: true, evCharging: true, petAllowed: true, foreignerOk: true,
+              },
+            },
+          },
+        })
+      : [];
+    const byId = new Map(rows.map(r => [r.id, r]));
+
+    // Share token cho các tin có link lẻ đang active (để mở đúng trang share nếu có).
+    const shareLinks = neededIds.length > 0
       ? await prisma.shareLink.findMany({
-          where: { roomTypeId: { in: ids }, isActive: true, isSystem: false },
+          where: { roomTypeId: { in: neededIds }, isActive: true, isSystem: false },
           select: { roomTypeId: true, token: true, createdAt: true },
           orderBy: { createdAt: 'desc' },
         })
       : [];
-
     const tokenByRoomType = new Map<string, string>();
     for (const link of shareLinks) {
       if (link.roomTypeId && !tokenByRoomType.has(link.roomTypeId)) {
@@ -119,25 +111,28 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const withToken = (r: any) => ({
-      ...r,
-      // Ẩn số nhà: redact tên tòa + tên đường trước khi trả cho khách.
-      property: r.property
-        ? { ...r.property, name: redactName(r.property.name), streetName: redactHouseNumber(r.property.streetName) }
-        : r.property,
-      shareToken: tokenByRoomType.get(r.id) || null,
-    });
+    const hydrate = (ids: string[]) =>
+      ids
+        .map(id => byId.get(id))
+        .filter(Boolean)
+        .map((r: any) => ({
+          ...r,
+          // Ẩn số nhà: redact tên tòa + tên đường trước khi trả cho khách.
+          property: r.property
+            ? { ...r.property, name: redactName(r.property.name), streetName: redactHouseNumber(r.property.streetName) }
+            : r.property,
+          shareToken: tokenByRoomType.get(r.id) || null,
+        }));
 
-    // Public "related listings" widget — tolerates more staleness than the
-    // primary card, so cache a bit longer at the CDN.
+    // Cache ngắn để vẫn re-random thường xuyên (đa dạng) mà không tải nặng server.
     return NextResponse.json({
-      sameBuilding: sameBuilding.map(withToken),
-      samePrice: samePrice.map(withToken),
-      sameDistrict: sameDistrict.map(withToken),
-      all: all.map(withToken),
+      sameBuilding: hydrate(sameBuildingIds),
+      samePrice: hydrate(samePriceIds),
+      sameDistrict: hydrate(locationIds),
+      all: hydrate(allIds),
     }, {
       headers: {
-        'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=600',
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120',
       },
     });
   } catch (error: any) {
