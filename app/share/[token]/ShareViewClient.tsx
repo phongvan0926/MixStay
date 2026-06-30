@@ -232,28 +232,35 @@ export default function ShareViewClient() {
 
         {/* Section 2: Thông tin cơ bản */}
         <div className="card">
-          <div className="flex items-start justify-between mb-3 gap-3">
-            <div className="min-w-0">
-              <h1 className="font-display text-2xl font-bold">{roomType.name}</h1>
+          {/* Mobile: badge trạng thái 1 hàng riêng trên đầu → tiêu đề full-width, không bị ép.
+              Desktop: tiêu đề trái, badge phải (giữ nguyên). */}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3 mb-3">
+            <div className="min-w-0 order-2 sm:order-1">
+              <h1 className="font-display text-2xl font-bold leading-snug">{roomType.name}</h1>
               {/* Địa chỉ công khai: chỉ tới ngõ/ngách + đường + quận (đã ẩn số nhà) */}
-              <p className="text-sm text-stone-400 mt-1">📍 <span className="text-stone-600 font-medium">{[property?.publicAddress, property?.district].filter(Boolean).join(', ') || property?.district}</span></p>
+              <p className="text-sm text-stone-400 mt-1.5 flex items-start gap-1">
+                <span className="shrink-0">📍</span>
+                <span className="text-stone-600 font-medium">{[property?.publicAddress, property?.district].filter(Boolean).join(', ') || property?.district}</span>
+              </p>
               {roomType.listingCode && (
                 <p className="text-xs font-mono font-semibold text-stone-500 mt-1.5 inline-block bg-stone-100 px-2 py-0.5 rounded">Mã tin: {roomType.listingCode}</p>
               )}
             </div>
-            {roomType.status === 'UPCOMING' ? (
-              <span className="badge bg-amber-100 text-amber-700 text-sm py-1 flex-shrink-0">
-                🟡 Sắp trống{roomType.expectedAvailableDate ? ` từ ${new Date(roomType.expectedAvailableDate).toLocaleDateString('vi-VN')}` : ''}
-              </span>
-            ) : roomType.status === 'UNAVAILABLE' ? (
-              <span className="badge bg-red-100 text-red-700 text-sm py-1 flex-shrink-0">
-                🔴 Hết phòng
-              </span>
-            ) : roomType.availableUnits > 0 ? (
-              <span className="badge bg-emerald-100 text-emerald-700 text-sm py-1 flex-shrink-0">
-                🟢 Còn {roomType.availableUnits} phòng trống
-              </span>
-            ) : null}
+            <div className="order-1 sm:order-2 shrink-0">
+              {roomType.status === 'UPCOMING' ? (
+                <span className="badge bg-amber-100 text-amber-700 text-sm py-1">
+                  🟡 Sắp trống{roomType.expectedAvailableDate ? ` từ ${new Date(roomType.expectedAvailableDate).toLocaleDateString('vi-VN')}` : ''}
+                </span>
+              ) : roomType.status === 'UNAVAILABLE' ? (
+                <span className="badge bg-red-100 text-red-700 text-sm py-1">
+                  🔴 Hết phòng
+                </span>
+              ) : roomType.availableUnits > 0 ? (
+                <span className="badge bg-emerald-100 text-emerald-700 text-sm py-1">
+                  🟢 Còn {roomType.availableUnits} phòng trống
+                </span>
+              ) : null}
+            </div>
           </div>
 
           {roomType.typeName && (
