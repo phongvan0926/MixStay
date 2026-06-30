@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
 
     // Bước 1: lấy NHẸ id ứng viên theo từng tiêu chí (pool 200 tin gần nhất), rồi xáo trộn.
     const idsOnly = { select: { id: true }, take: POOL, orderBy: { createdAt: 'desc' as const } };
-    const [buildingPool, pricePool, streetPool, districtPool, allPool] = await Promise.all([
+    const [buildingPool, pricePool, streetPool, districtPool] = await Promise.all([
       prisma.roomType.findMany({ where: { ...baseWhere, propertyId: base.propertyId }, ...idsOnly }),
       prisma.roomType.findMany({ where: { ...baseWhere, priceMonthly: { gte: minPrice, lte: maxPrice } }, ...idsOnly }),
       base.property.streetName?.trim()
@@ -64,7 +64,6 @@ export async function GET(req: NextRequest) {
       base.property.district?.trim()
         ? prisma.roomType.findMany({ where: { ...baseWhere, property: { ...baseWhere.property, district: { contains: base.property.district.trim(), mode: 'insensitive' } } }, ...idsOnly })
         : Promise.resolve([] as { id: string }[]),
-      prisma.roomType.findMany({ where: baseWhere, ...idsOnly }),
     ]);
 
     const sameBuildingIds = shuffle(buildingPool.map(r => r.id)).slice(0, MAX_PER_BUCKET);
@@ -74,10 +73,9 @@ export async function GET(req: NextRequest) {
       ...shuffle(streetPool.map(r => r.id)),
       ...shuffle(districtPool.map(r => r.id)),
     ])).slice(0, MAX_PER_BUCKET);
-    const allIds = shuffle(allPool.map(r => r.id)).slice(0, MAX_PER_BUCKET);
 
     // Bước 2: fetch ĐẦY ĐỦ cho các id đã chọn trong 1 query.
-    const neededIds = Array.from(new Set([...sameBuildingIds, ...samePriceIds, ...locationIds, ...allIds]));
+    const neededIds = Array.from(new Set([...sameBuildingIds, ...samePriceIds, ...locationIds]));
     const rows = neededIds.length
       ? await prisma.roomType.findMany({
           where: { id: { in: neededIds } },
@@ -129,7 +127,6 @@ export async function GET(req: NextRequest) {
       sameBuilding: hydrate(sameBuildingIds),
       samePrice: hydrate(samePriceIds),
       sameDistrict: hydrate(locationIds),
-      all: hydrate(allIds),
     }, {
       headers: {
         'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120',

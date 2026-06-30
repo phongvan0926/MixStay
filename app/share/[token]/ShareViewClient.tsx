@@ -53,7 +53,7 @@ function RelatedRoomCard({ rt }: { rt: any }) {
 function RelatedSection({ roomTypeId }: { roomTypeId: string }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'all' | 'sameBuilding' | 'samePrice' | 'sameDistrict'>('all');
+  const [tab, setTab] = useState<'sameBuilding' | 'samePrice' | 'sameDistrict'>('samePrice');
 
   useEffect(() => {
     setLoading(true);
@@ -63,6 +63,16 @@ function RelatedSection({ roomTypeId }: { roomTypeId: string }) {
       .catch(() => setData(null))
       .finally(() => setLoading(false));
   }, [roomTypeId]);
+
+  // Khi có dữ liệu: nếu tab đang chọn rỗng thì nhảy sang tab đầu tiên có tin (đỡ hiện tab trống).
+  useEffect(() => {
+    if (!data) return;
+    if ((data[tab]?.length || 0) === 0) {
+      const firstNonEmpty = (['sameBuilding', 'samePrice', 'sameDistrict'] as const).find(k => (data[k]?.length || 0) > 0);
+      if (firstNonEmpty) setTab(firstNonEmpty);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   // Xáo trộn lại mỗi khi đổi dữ liệu/tab → mỗi lượt xem thấy bộ sản phẩm đa dạng, khác nhau.
   // Hiển thị tối đa 6 (API trả dư để có cái xáo trộn).
@@ -75,7 +85,7 @@ function RelatedSection({ roomTypeId }: { roomTypeId: string }) {
     }
     return a.slice(0, 6);
   }, [data, tab]);
-  const hasAny = (data?.all?.length || 0) + (data?.sameBuilding?.length || 0) + (data?.samePrice?.length || 0) + (data?.sameDistrict?.length || 0) > 0;
+  const hasAny = (data?.sameBuilding?.length || 0) + (data?.samePrice?.length || 0) + (data?.sameDistrict?.length || 0) > 0;
 
   if (loading) {
     return (
@@ -89,7 +99,6 @@ function RelatedSection({ roomTypeId }: { roomTypeId: string }) {
   if (!hasAny) return null;
 
   const tabs: { key: typeof tab; label: string; count: number }[] = [
-    { key: 'all', label: 'Tất cả', count: Math.min(data?.all?.length || 0, 6) },
     { key: 'sameBuilding', label: 'Cùng tòa nhà', count: Math.min(data?.sameBuilding?.length || 0, 6) },
     { key: 'samePrice', label: 'Cùng mức giá', count: Math.min(data?.samePrice?.length || 0, 6) },
     { key: 'sameDistrict', label: 'Cùng khu vực', count: Math.min(data?.sameDistrict?.length || 0, 6) },
