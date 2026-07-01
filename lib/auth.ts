@@ -136,6 +136,9 @@ export const authOptions: NextAuthOptions = {
         token.role = dbUser.role;
         token.phone = dbUser.phone ?? undefined;
         token.permissions = (dbUser as any).permissions ?? [];
+        // Quyền CTV (BROKER) — admin cấp; đổi quyền cần đăng nhập lại để cập nhật token.
+        token.canViewContact = (dbUser as any).canViewContact ?? false;
+        token.canViewCommission = (dbUser as any).canViewCommission ?? false;
 
         // OAuth user who hasn't completed role setup yet
         if (account?.type === 'oauth' && !dbUser.password && !dbUser.setupComplete) {
@@ -154,6 +157,8 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).phone = token.phone;
         (session.user as any).needsRoleSetup = token.needsRoleSetup ?? false;
         (session.user as any).permissions = token.permissions ?? [];
+        (session.user as any).canViewContact = token.canViewContact ?? false;
+        (session.user as any).canViewCommission = token.canViewCommission ?? false;
       }
       return session;
     },

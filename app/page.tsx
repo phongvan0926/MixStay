@@ -56,7 +56,7 @@ export default function HomePage() {
                 <Logo variant="light" className="h-11 w-auto" />
               </Link>
               <p className="text-sm leading-relaxed">
-                Nền tảng kết nối Chủ nhà, Môi giới và Khách thuê chung cư mini.
+                Nền tảng kết nối Chủ nhà, Cộng tác viên và Khách thuê chung cư mini.
                 Minh bạch — Nhanh chóng — Miễn phí cho khách.
               </p>
             </div>
@@ -66,7 +66,7 @@ export default function HomePage() {
               <h4 className="font-display font-semibold text-white mb-4">Dành cho</h4>
               <ul className="space-y-2.5 text-sm">
                 <li><Link href="/register" className="hover:text-white transition-colors">Khách thuê phòng</Link></li>
-                <li><Link href="/register" className="hover:text-white transition-colors">Môi giới bất động sản</Link></li>
+                <li><Link href="/register" className="hover:text-white transition-colors">Cộng tác viên bất động sản</Link></li>
                 <li><Link href="/register" className="hover:text-white transition-colors">Chủ nhà cho thuê</Link></li>
                 <li><Link href="/register" className="hover:text-white transition-colors">Công ty quản lý</Link></li>
               </ul>

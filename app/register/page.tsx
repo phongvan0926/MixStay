@@ -120,7 +120,7 @@ export default function RegisterPage() {
               <label className="block text-sm font-medium text-stone-700 mb-1.5">Bạn là</label>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { value: 'BROKER', label: '🤝 Môi giới' },
+                  { value: 'BROKER', label: '🤝 Cộng tác viên' },
                   { value: 'LANDLORD', label: '🏠 Chủ nhà' },
                   { value: 'CUSTOMER', label: '👤 Khách thuê' },
                 ].map(r => (

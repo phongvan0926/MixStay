@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
       await prisma.shareLink.update({ where: { token: systemToken }, data: { viewCount: { increment: 1 } } });
 
       // Người tạo link quyết định phạm vi + liên hệ:
-      //  - BROKER  → kho CẢ HỆ THỐNG (mọi phòng đang trống), liên hệ CHỈ môi giới (ẩn company/chủ nhà/hotline)
+      //  - BROKER  → kho CẢ HỆ THỐNG (mọi phòng đang trống), liên hệ CHỈ cộng tác viên (ẩn company/chủ nhà/hotline)
       //  - LANDLORD → kho của chính chủ nhà đó (hành vi cũ)
       const creator = await prisma.user.findUnique({
         where: { id: link.brokerId },
@@ -90,8 +90,8 @@ export async function GET(req: NextRequest) {
       });
 
       if (isBrokerLink) {
-        // KHOÁ liên hệ về môi giới: bỏ HẲN company (Zalo nhóm/đơn vị vận hành) khỏi payload,
-        // không trả landlord → trang share chỉ có thể hiển thị liên hệ môi giới.
+        // KHOÁ liên hệ về cộng tác viên: bỏ HẲN company (Zalo nhóm/đơn vị vận hành) khỏi payload,
+        // không trả landlord → trang share chỉ có thể hiển thị liên hệ cộng tác viên.
         const properties = propsRaw
           .filter(p => p.roomTypes.length > 0)
           .map(p => ({ ...sanitizeProperty(p), company: null }));
@@ -164,8 +164,8 @@ export async function GET(req: NextRequest) {
         (link.roomType as any).property = sanitizeProperty(link.roomType.property as any);
       }
 
-      // Link do BROKER tạo: kèm token KHO TỔNG của môi giới (find-or-create) để trang share lẻ
-      // dẫn khách sang xem TOÀN BỘ phòng của môi giới — giữ khách trong kênh môi giới, không cho
+      // Link do BROKER tạo: kèm token KHO TỔNG của cộng tác viên (find-or-create) để trang share lẻ
+      // dẫn khách sang xem TOÀN BỘ phòng của cộng tác viên — giữ khách trong kênh cộng tác viên, không cho
       // nhảy sang trang chủ (thay cho "Tin đăng liên quan" vốn dẫn ra trang /tin công khai).
       let brokerSystemToken: string | null = null;
       if (link.broker?.role === 'BROKER' && link.brokerId) {

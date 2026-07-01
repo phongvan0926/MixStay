@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
@@ -30,6 +31,30 @@ function formatCommissionLine(commission: Record<string, number>, price: number)
   return Object.entries(commission)
     .map(([m, p]) => `${m}th=${p}% (${formatCurrency(price * Number(p) / 100)})`)
     .join(' | ');
+}
+
+// Zalo/hotline admin cố định để CTV (chưa được cấp quyền xem liên hệ) gửi thông tin phòng cần hỗ trợ.
+const SUPPORT_ZALO = process.env.NEXT_PUBLIC_SUPPORT_ZALO || 'https://zalo.me/0379838222';
+function sendSupportRequest(room: any) {
+  const code = room.listingCode ? `[${room.listingCode}] ` : '';
+  const msg = `Cần hỗ trợ tin: ${code}${room.name || ''}${room.property?.district ? ' - ' + room.property.district : ''}`;
+  try { navigator.clipboard.writeText(msg); } catch {}
+  window.open(SUPPORT_ZALO, '_blank', 'noopener');
+  toast.success('Đã sao chép thông tin tin đăng — dán vào Zalo admin để nhờ hỗ trợ');
+}
+
+// Khối "gửi hỗ trợ qua Zalo admin" hiện khi CTV chưa được cấp quyền xem liên hệ.
+function SupportContactBlock({ room }: { room: any }) {
+  return (
+    <div className="p-3 bg-violet-50 rounded-xl border border-violet-100">
+      <p className="text-xs font-bold text-violet-700 uppercase tracking-wide mb-1">🔒 Liên hệ do công ty quản lý</p>
+      <p className="text-xs text-stone-600 mb-2">Bạn chưa được cấp quyền xem liên hệ chủ nhà/công ty. Gửi thông tin phòng cần hỗ trợ về Zalo admin để được kết nối.</p>
+      <button type="button" onClick={(e) => { e.stopPropagation(); sendSupportRequest(room); }}
+        className="inline-flex items-center gap-1.5 bg-violet-600 text-white text-sm px-3 py-2 rounded-lg hover:bg-violet-700 transition-colors font-medium">
+        💬 Gửi hỗ trợ qua Zalo admin
+      </button>
+    </div>
+  );
 }
 
 function RoomImageCarousel({ room }: { room: any }) {
@@ -89,7 +114,7 @@ function RoomImageCarousel({ room }: { room: any }) {
 
 // ==================== Room Detail Modal (broker view) ====================
 function RoomDetailModal({
-  room, onClose, onCreateLink, onSendInquiry, copied, asked,
+  room, onClose, onCreateLink, onSendInquiry, copied, asked, canViewContact, canViewCommission,
 }: {
   room: any;
   onClose: () => void;
@@ -97,6 +122,8 @@ function RoomDetailModal({
   onSendInquiry: (id: string) => void;
   copied: boolean;
   asked: boolean;
+  canViewContact: boolean;
+  canViewCommission: boolean;
 }) {
   const roomImages: string[] = room.images || [];
   const propImages: string[] = room.property?.images || [];
@@ -202,8 +229,8 @@ function RoomDetailModal({
             </div>
           )}
 
-          {/* Commission (broker-only) */}
-          {hasCommission && (
+          {/* Commission — chỉ CTV được cấp quyền xem hoa hồng */}
+          {canViewCommission && hasCommission && (
             <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
               <p className="text-xs font-bold text-emerald-800 uppercase tracking-wide mb-1">💰 Hoa hồng</p>
               <p className="text-sm text-emerald-800 font-medium break-words">
@@ -256,53 +283,60 @@ function RoomDetailModal({
             </div>
           )}
 
-          {/* Full address (broker-only) */}
-          {room.property?.fullAddress && (
-            <div className="p-3 bg-stone-50 rounded-xl">
-              <p className="text-xs font-bold text-stone-500 uppercase tracking-wide mb-1">📍 Địa chỉ đầy đủ</p>
-              <p className="text-sm text-stone-800 font-medium">{room.property.fullAddress}</p>
-              {(room.property?.district || room.property?.streetName) && (
-                <p className="text-xs text-stone-500 mt-1">
-                  {[room.property?.streetName, room.property?.district].filter(Boolean).join(' • ')}
-                </p>
+          {/* Liên hệ chủ nhà/công ty — chỉ CTV được cấp quyền; ngược lại hiện nút gửi hỗ trợ Zalo admin */}
+          {canViewContact ? (
+            <>
+              {/* Full address */}
+              {room.property?.fullAddress && (
+                <div className="p-3 bg-stone-50 rounded-xl">
+                  <p className="text-xs font-bold text-stone-500 uppercase tracking-wide mb-1">📍 Địa chỉ đầy đủ</p>
+                  <p className="text-sm text-stone-800 font-medium">{room.property.fullAddress}</p>
+                  {(room.property?.district || room.property?.streetName) && (
+                    <p className="text-xs text-stone-500 mt-1">
+                      {[room.property?.streetName, room.property?.district].filter(Boolean).join(' • ')}
+                    </p>
+                  )}
+                </div>
               )}
-            </div>
-          )}
 
-          {/* Landlord contact (broker-only) */}
-          {landlord && (
-            <div className="p-3 bg-brand-50 rounded-xl border border-brand-100">
-              <p className="text-xs font-bold text-brand-700 uppercase tracking-wide mb-1.5">👤 Chủ nhà</p>
-              <p className="text-sm font-medium text-stone-800">{landlord.name}</p>
-              <div className="flex flex-wrap items-center gap-2 mt-2">
-                {landlord.phone && (
-                  <a href={'tel:' + landlord.phone}
-                    className="inline-flex items-center gap-1 bg-white border border-stone-200 text-stone-700 text-sm px-3 py-1.5 rounded-lg hover:border-brand-300 transition-colors">
-                    📞 {landlord.phone}
-                  </a>
-                )}
-                {room.property?.zaloPhone && room.property.zaloPhone !== landlord.phone && (
-                  <a href={'tel:' + room.property.zaloPhone}
-                    className="inline-flex items-center gap-1 bg-white border border-stone-200 text-stone-700 text-sm px-3 py-1.5 rounded-lg hover:border-brand-300 transition-colors">
-                    📞 Zalo: {room.property.zaloPhone}
-                  </a>
-                )}
-                {zaloLink && (
-                  <a href={zaloLink} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 bg-blue-600 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors">
-                    💬 Chat Zalo
-                  </a>
-                )}
-              </div>
-            </div>
-          )}
+              {/* Landlord contact */}
+              {landlord && (
+                <div className="p-3 bg-brand-50 rounded-xl border border-brand-100">
+                  <p className="text-xs font-bold text-brand-700 uppercase tracking-wide mb-1.5">👤 Chủ nhà</p>
+                  <p className="text-sm font-medium text-stone-800">{landlord.name}</p>
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    {landlord.phone && (
+                      <a href={'tel:' + landlord.phone}
+                        className="inline-flex items-center gap-1 bg-white border border-stone-200 text-stone-700 text-sm px-3 py-1.5 rounded-lg hover:border-brand-300 transition-colors">
+                        📞 {landlord.phone}
+                      </a>
+                    )}
+                    {room.property?.zaloPhone && room.property.zaloPhone !== landlord.phone && (
+                      <a href={'tel:' + room.property.zaloPhone}
+                        className="inline-flex items-center gap-1 bg-white border border-stone-200 text-stone-700 text-sm px-3 py-1.5 rounded-lg hover:border-brand-300 transition-colors">
+                        📞 Zalo: {room.property.zaloPhone}
+                      </a>
+                    )}
+                    {zaloLink && (
+                      <a href={zaloLink} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 bg-blue-600 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors">
+                        💬 Chat Zalo
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
 
-          {/* Zalo group */}
-          {company?.zaloGroupLink && (
-            <a href={company.zaloGroupLink} target="_blank" rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 py-2.5 rounded-xl text-sm font-medium transition-colors">
-              💬 Zalo nhóm {company.name}
-            </a>
+              {/* Zalo group */}
+              {company?.zaloGroupLink && (
+                <a href={company.zaloGroupLink} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 py-2.5 rounded-xl text-sm font-medium transition-colors">
+                  💬 Zalo nhóm {company.name}
+                </a>
+              )}
+            </>
+          ) : (
+            <SupportContactBlock room={room} />
           )}
 
           {/* Actions */}
@@ -326,6 +360,10 @@ function RoomDetailModal({
 }
 
 export default function BrokerInventoryPage() {
+  const { data: session } = useSession();
+  // Quyền CTV: mặc định ẩn liên hệ + hoa hồng cho tới khi admin cấp.
+  const canViewContact = !!(session?.user as any)?.canViewContact;
+  const canViewCommission = !!(session?.user as any)?.canViewCommission;
   const [page, setPage] = useState(1);
   const [copiedLink, setCopiedLink] = useState('');
   const [inquirySent, setInquirySent] = useState<Set<string>>(new Set());
@@ -385,7 +423,7 @@ export default function BrokerInventoryPage() {
     }
   };
 
-  // Share TOÀN BỘ kho hàng đang trống — link kho của môi giới, khách chỉ thấy liên hệ của tôi
+  // Share TOÀN BỘ kho hàng đang trống — link kho của cộng tác viên, khách chỉ thấy liên hệ của tôi
   const [sharingSystem, setSharingSystem] = useState(false);
   const shareSystem = async () => {
     setSharingSystem(true);
@@ -439,7 +477,8 @@ export default function BrokerInventoryPage() {
           {[
             { label: 'Tổng deal', value: stats.totalDeals, icon: '📊', color: '' },
             { label: 'Đã chốt', value: stats.confirmedDeals, icon: '✅', color: 'text-emerald-600' },
-            { label: 'Hoa hồng', value: formatCurrency(stats.totalCommission), icon: '💰', color: 'text-brand-600' },
+            // Ô "Hoa hồng" chỉ hiện khi CTV được cấp quyền xem hoa hồng.
+            ...(canViewCommission ? [{ label: 'Hoa hồng', value: formatCurrency(stats.totalCommission), icon: '💰', color: 'text-brand-600' }] : []),
             { label: 'Lượt xem', value: stats.totalViews, icon: '👁️', color: 'text-purple-600' },
           ].map(s => (
             <div key={s.label} className="stat-card">
@@ -612,8 +651,8 @@ export default function BrokerInventoryPage() {
                 )}
               </div>
 
-              {/* Commission - prominent display */}
-              {hasCommission && (
+              {/* Commission — chỉ CTV được cấp quyền xem hoa hồng */}
+              {canViewCommission && hasCommission && (
                 <div className="p-2.5 bg-emerald-50 rounded-lg mb-2 border border-emerald-100">
                   <p className="text-xs font-bold text-emerald-700">
                     💰 HH: {formatCommissionLine(commission, room.priceMonthly)}
@@ -621,8 +660,8 @@ export default function BrokerInventoryPage() {
                 </div>
               )}
 
-              {/* Zalo group link */}
-              {company?.zaloGroupLink && (
+              {/* Zalo nhóm công ty — chỉ khi được quyền xem liên hệ */}
+              {canViewContact && company?.zaloGroupLink && (
                 <a href={company.zaloGroupLink} target="_blank" rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
                   className="flex items-center gap-1.5 mb-2 px-2.5 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors">
@@ -647,28 +686,35 @@ export default function BrokerInventoryPage() {
                 </div>
               )}
 
-              {/* Address (broker only) */}
-              {room.property?.fullAddress && (
-                <p className="text-xs text-stone-500 mb-2">📍 {room.property.fullAddress}</p>
-              )}
-
-              {/* Landlord + Zalo contact */}
-              {room.property?.landlord && (
-                <div className="flex items-center gap-2 mb-2 flex-wrap">
-                  <span className="text-xs text-stone-600">👤 {room.property.landlord.name}</span>
-                  {room.property.landlord.phone && (
-                    <a href={'tel:' + room.property.landlord.phone}
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-xs text-brand-600 hover:underline">
-                      📞 {room.property.landlord.phone}
-                    </a>
+              {/* Liên hệ chủ nhà — chỉ CTV được cấp quyền; ngược lại nút gửi hỗ trợ Zalo admin */}
+              {canViewContact ? (
+                <>
+                  {room.property?.fullAddress && (
+                    <p className="text-xs text-stone-500 mb-2">📍 {room.property.fullAddress}</p>
                   )}
-                  {zaloLink && (
-                    <a href={zaloLink} target="_blank" rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded hover:bg-blue-700 font-medium">Zalo</a>
+                  {room.property?.landlord && (
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <span className="text-xs text-stone-600">👤 {room.property.landlord.name}</span>
+                      {room.property.landlord.phone && (
+                        <a href={'tel:' + room.property.landlord.phone}
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-xs text-brand-600 hover:underline">
+                          📞 {room.property.landlord.phone}
+                        </a>
+                      )}
+                      {zaloLink && (
+                        <a href={zaloLink} target="_blank" rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded hover:bg-blue-700 font-medium">Zalo</a>
+                      )}
+                    </div>
                   )}
-                </div>
+                </>
+              ) : (
+                <button type="button" onClick={(e) => { e.stopPropagation(); sendSupportRequest(room); }}
+                  className="flex items-center gap-1.5 mb-2 px-2.5 py-1.5 bg-violet-50 border border-violet-200 rounded-lg text-xs font-medium text-violet-700 hover:bg-violet-100 transition-colors">
+                  💬 Gửi hỗ trợ qua Zalo admin
+                </button>
               )}
 
               {/* Actions */}
@@ -708,6 +754,8 @@ export default function BrokerInventoryPage() {
           onSendInquiry={sendInquiry}
           copied={copiedLink === selectedRoom.id}
           asked={inquirySent.has(selectedRoom.id)}
+          canViewContact={canViewContact}
+          canViewCommission={canViewCommission}
         />
       )}
     </div>

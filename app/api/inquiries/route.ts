@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== 'BROKER') {
-      return NextResponse.json({ error: 'Chỉ Môi giới mới gửi được' }, { status: 403 });
+      return NextResponse.json({ error: 'Chỉ Cộng tác viên mới gửi được' }, { status: 403 });
     }
 
     const { roomTypeId, message } = await req.json();

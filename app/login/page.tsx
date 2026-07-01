@@ -207,7 +207,7 @@ export default function LoginPage() {
               { icon: '👑', role: 'Super Admin',      email: 'admin@mixstay.vn',     color: 'border-red-200 bg-red-50/30 text-red-700' },
               { icon: '🛡️', role: 'Staff (manager)',  email: 'manager@mixstay.vn',   color: 'border-violet-200 bg-violet-50/30 text-violet-700' },
               { icon: '🛡️', role: 'Staff',            email: 'staff@mixstay.vn',     color: 'border-blue-200 bg-blue-50/30 text-blue-700' },
-              { icon: '🤝', role: 'Môi giới',          email: 'broker@mixstay.vn',    color: 'border-amber-200 bg-amber-50/30 text-amber-700' },
+              { icon: '🤝', role: 'Cộng tác viên',          email: 'broker@mixstay.vn',    color: 'border-amber-200 bg-amber-50/30 text-amber-700' },
               { icon: '🏠', role: 'Chủ nhà',           email: 'landlord@mixstay.vn',  color: 'border-emerald-200 bg-emerald-50/30 text-emerald-700' },
               { icon: '🏢', role: 'Chủ nhà công ty',   email: 'company@mixstay.vn',   color: 'border-teal-200 bg-teal-50/30 text-teal-700' },
               { icon: '👤', role: 'Khách',             email: 'customer@mixstay.vn',  color: 'border-stone-200 bg-stone-50/30 text-stone-700' },

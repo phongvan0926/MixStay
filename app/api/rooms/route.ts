@@ -96,10 +96,16 @@ export async function GET(req: NextRequest) {
       where.property = { ...where.property, landlordId: session.user.id };
     }
 
-    const isBrokerOrAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'BROKER';
-    const isLandlord = session?.user?.role === 'LANDLORD';
+    const role = session?.user?.role;
+    const isAdmin = role === 'ADMIN';
+    const isBroker = role === 'BROKER';
+    const isBrokerOrAdmin = isAdmin || isBroker;
+    const isLandlord = role === 'LANDLORD';
     const isInternal = isBrokerOrAdmin || isLandlord; // landlord/admin/broker được thấy availableRoomNames
-    const isCustomerOrPublic = !session || session?.user?.role === 'CUSTOMER';
+    const isCustomerOrPublic = !session || role === 'CUSTOMER';
+    // CTV (BROKER): chỉ xem liên hệ/hoa hồng khi admin đã cấp quyền tương ứng. ADMIN luôn thấy.
+    const canContact = isAdmin || (isBroker && !!(session?.user as any)?.canViewContact);
+    const canCommission = isAdmin || (isBroker && !!(session?.user as any)?.canViewCommission);
 
     const { page, limit, skip } = getPaginationParams(url);
 
@@ -126,7 +132,7 @@ export async function GET(req: NextRequest) {
           status: true,
           expectedAvailableDate: true,
           isApproved: true,
-          commissionJson: isBrokerOrAdmin ? true : false,
+          commissionJson: canCommission ? true : false,
           shortTermAllowed: true,
           shortTermMonths: true,
           shortTermPrice: true,
@@ -150,24 +156,25 @@ export async function GET(req: NextRequest) {
               petAllowed: true,
               foreignerOk: true,
               status: true,
-              // Only broker/admin see fullAddress, coords, zaloPhone
-              ...(isBrokerOrAdmin ? {
+              // Lưu ý + companyId: CTV vẫn xem được (không phải liên hệ).
+              ...(isBrokerOrAdmin ? { landlordNotes: true, companyId: true } : {}),
+              // Liên hệ/địa chỉ: chỉ khi được quyền xem liên hệ (fullAddress/toạ độ/zaloPhone).
+              ...(canContact ? {
                 fullAddress: true,
                 latitude: true,
                 longitude: true,
                 zaloPhone: true,
-                landlordNotes: true,
-                companyId: true,
               } : {}),
               company: {
-                select: { id: true, name: true, zaloGroupLink: true },
+                // zaloGroupLink của công ty cũng là liên hệ → chỉ trả khi có quyền.
+                select: { id: true, name: true, zaloGroupLink: canContact },
               },
               landlord: {
                 select: {
                   id: true,
                   name: true,
-                  // Only broker/admin see landlord phone/email
-                  ...(isBrokerOrAdmin ? { phone: true, email: true } : {}),
+                  // SĐT/email chủ nhà chỉ khi có quyền xem liên hệ.
+                  ...(canContact ? { phone: true, email: true } : {}),
                 },
               },
             },

@@ -137,7 +137,7 @@ export default function AdminPropertiesPage() {
             { label: 'Chờ duyệt', value: stats.pendingProperties, color: 'text-amber-600', icon: '⏳' },
             { label: 'Doanh thu HH', value: stats.totalRevenue == null ? '—' : formatCurrency(stats.totalRevenue), color: 'text-purple-600', icon: '💰' },
             { label: 'Giao dịch', value: `${stats.confirmedDeals}/${stats.totalDeals}`, color: 'text-blue-600', icon: '📋' },
-            { label: 'Môi giới', value: stats.totalBrokers, color: 'text-orange-600', icon: '🤝' },
+            { label: 'Cộng tác viên', value: stats.totalBrokers, color: 'text-orange-600', icon: '🤝' },
             { label: 'Chủ nhà', value: stats.totalLandlords, color: 'text-amber-600', icon: '🏠' },
             { label: 'Tổng HH', value: stats.totalCommission == null ? '—' : formatCurrency(stats.totalCommission), color: 'text-emerald-600', icon: '💵' },
           ].map(s => (

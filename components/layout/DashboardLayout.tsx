@@ -100,7 +100,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="text-sm font-medium text-stone-500">
               {role === 'ADMIN' && 'Quản trị'}
               {role === 'ADMIN_STAFF' && 'Quản trị · Staff'}
-              {role === 'BROKER' && 'Môi giới'}
+              {role === 'BROKER' && 'Cộng tác viên'}
               {role === 'LANDLORD' && (company ? 'Chủ nhà · Công ty' : 'Chủ nhà')}
             </span>
             {company && (

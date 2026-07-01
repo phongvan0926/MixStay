@@ -1,5 +1,5 @@
 // Ẩn SỐ NHÀ khỏi địa chỉ hiển thị cho khách: khách chỉ được biết tới ngõ/ngách + tên đường,
-// KHÔNG biết số nhà chính xác (để không tự tìm tới cửa, giữ vai trò môi giới/chủ nhà).
+// KHÔNG biết số nhà chính xác (để không tự tìm tới cửa, giữ vai trò cộng tác viên/chủ nhà).
 //
 // Data thật rất lộn xộn: số nhà có thể ở ĐẦU ("Số 25 ngách 8 ngõ Quỳnh", "69A Nguyễn Trãi",
 // "136/43 Cầu Diễn") hoặc ở GIỮA sau ngõ/ngách ("Ngõ 204 nhà 44 Trần Duy Hưng",

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 
 const stats = [
   { value: 5000, suffix: '+', label: 'Phòng', icon: '🚪' },
-  { value: 200, suffix: '+', label: 'Môi giới', icon: '🤝' },
+  { value: 200, suffix: '+', label: 'Cộng tác viên', icon: '🤝' },
   { value: 200, suffix: '+', label: 'Tòa nhà', icon: '🏢' },
   { value: 10000, suffix: '+', label: 'Khách thuê', icon: '👤' },
 ];

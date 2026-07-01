@@ -164,7 +164,7 @@ const PERMISSIONS = [
 
 export const userCreateSchema = z.object({
   name: z.string().min(2, 'Tên tối thiểu 2 ký tự').max(100),
-  // Email không bắt buộc khi admin tạo user (vd bản ghi chủ nhà/môi giới do admin quản lý).
+  // Email không bắt buộc khi admin tạo user (vd bản ghi chủ nhà/cộng tác viên do admin quản lý).
   // Lưu ý: email là field đăng nhập — user không email chưa login bằng email/mật khẩu được.
   email: z.string().email('Email không hợp lệ').optional().or(z.literal('')),
   phone: z.string().max(20).optional().nullable(),
@@ -172,6 +172,8 @@ export const userCreateSchema = z.object({
   role: z.enum(ROLES, { message: 'Vai trò không hợp lệ' }),
   isActive: z.boolean().optional(),
   permissions: z.array(z.enum(PERMISSIONS)).optional(),
+  canViewContact: z.boolean().optional(),      // quyền CTV xem liên hệ
+  canViewCommission: z.boolean().optional(),   // quyền CTV xem hoa hồng
 });
 
 export const userUpdateSchema = z.object({
@@ -183,6 +185,8 @@ export const userUpdateSchema = z.object({
   role: z.enum(ROLES).optional(),
   isActive: z.boolean().optional(),
   permissions: z.array(z.enum(PERMISSIONS)).optional(),
+  canViewContact: z.boolean().optional(),
+  canViewCommission: z.boolean().optional(),
 });
 
 // ===== Notification =====

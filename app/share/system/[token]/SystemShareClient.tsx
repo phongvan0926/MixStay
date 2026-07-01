@@ -141,11 +141,11 @@ export default function SystemShareClient() {
     </div>
   );
 
-  // Link MÔI GIỚI: liên hệ CHỈ môi giới (data đã bỏ company/chủ nhà ở backend).
+  // Link MÔI GIỚI: liên hệ CHỈ cộng tác viên (data đã bỏ company/chủ nhà ở backend).
   // Link CHỦ NHÀ: hành vi cũ (Zalo chủ nhà/công ty + hotline).
   const isBroker = !!data.isBrokerLink;
   const contact = isBroker ? data.broker : data.landlord;
-  const contactName = contact?.name || (isBroker ? 'Môi giới' : 'Chủ nhà');
+  const contactName = contact?.name || (isBroker ? 'Cộng tác viên' : 'Chủ nhà');
   const contactDigits = (contact?.phone || '').replace(/\D/g, '');
   const zaloLink = isBroker
     ? (contactDigits ? `https://zalo.me/${contactDigits}` : 'https://zalo.me/')
@@ -169,7 +169,7 @@ export default function SystemShareClient() {
         <div className="mb-6 text-center">
           <h1 className="font-display text-3xl font-bold text-stone-900">Phòng cho thuê</h1>
           <p className="text-stone-500 mt-2">
-            {isBroker ? `Môi giới ${contactName}` : `Hệ thống của ${contactName}`} • {allRoomTypes.length} tin đăng còn phòng từ {data.properties?.length || 0} tòa nhà
+            {isBroker ? `Cộng tác viên ${contactName}` : `Hệ thống của ${contactName}`} • {allRoomTypes.length} tin đăng còn phòng từ {data.properties?.length || 0} tòa nhà
           </p>
         </div>
 
@@ -417,7 +417,7 @@ export default function SystemShareClient() {
       </div>
 
       {/* Liên hệ nổi.
-          - Link MÔI GIỚI: CHỈ Zalo + gọi môi giới (ẩn hotline công ty) → khách không sang kênh khác.
+          - Link MÔI GIỚI: CHỈ Zalo + gọi cộng tác viên (ẩn hotline công ty) → khách không sang kênh khác.
           - Link chủ nhà: Zalo chủ nhà/công ty + hotline công ty (như cũ). */}
       {isBroker ? (
         contactDigits ? (

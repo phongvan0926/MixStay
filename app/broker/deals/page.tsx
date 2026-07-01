@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
@@ -8,6 +9,8 @@ import { useDeals, useRoomTypes } from '@/hooks/useData';
 import { SkeletonStats, SkeletonList } from '@/components/ui/Skeleton';
 
 export default function BrokerDealsPage() {
+  const { data: session } = useSession();
+  const canViewCommission = !!(session?.user as any)?.canViewCommission;
   const [page, setPage] = useState(1);
 
   const { deals, pagination, isLoading: loading, mutate } = useDeals({ page: String(page), limit: '20' });
@@ -39,7 +42,7 @@ export default function BrokerDealsPage() {
 
   const myCommission = deals
     .filter(d => d.status === 'CONFIRMED' || d.status === 'PAID')
-    .reduce((s, d) => s + d.commissionBroker, 0);
+    .reduce((s, d) => s + (d.commissionBroker || 0), 0);
 
   const pendingDeals = deals.filter(d => d.status === 'PENDING').length;
   const confirmedDeals = deals.filter(d => d.status === 'CONFIRMED' || d.status === 'PAID').length;
@@ -50,7 +53,7 @@ export default function BrokerDealsPage() {
         <div>
           <h1 className="font-display text-2xl font-bold">Giao dịch của tôi</h1>
           <p className="text-sm text-stone-500 mt-1">
-            {deals.length} deal • Hoa hồng: <span className="font-bold text-brand-600">{formatCurrency(myCommission)}</span>
+            {deals.length} deal{canViewCommission && <> • Hoa hồng: <span className="font-bold text-brand-600">{formatCurrency(myCommission)}</span></>}
           </p>
         </div>
         <button onClick={() => setShowForm(!showForm)} className="btn-primary w-full sm:w-auto">
@@ -74,13 +77,15 @@ export default function BrokerDealsPage() {
           </div>
           <p className="text-xl font-bold mt-1 text-amber-600">{pendingDeals}</p>
         </div>
-        <div className="stat-card">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">💰</span>
-            <p className="text-xs font-medium text-stone-500 uppercase">Hoa hồng</p>
+        {canViewCommission && (
+          <div className="stat-card">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">💰</span>
+              <p className="text-xs font-medium text-stone-500 uppercase">Hoa hồng</p>
+            </div>
+            <p className="text-xl font-bold mt-1 text-brand-600">{formatCurrency(myCommission)}</p>
           </div>
-          <p className="text-xl font-bold mt-1 text-brand-600">{formatCurrency(myCommission)}</p>
-        </div>
+        )}
       </div>
 
       {showForm && (
@@ -101,11 +106,13 @@ export default function BrokerDealsPage() {
               <input type="number" className="input-field" required value={form.dealPrice}
                 onChange={e => setForm({ ...form, dealPrice: e.target.value })} placeholder="3500000" />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">Hoa hồng tổng (VNĐ)</label>
-              <input type="number" className="input-field" value={form.commissionTotal}
-                onChange={e => setForm({ ...form, commissionTotal: e.target.value })} placeholder="Để trống = 50% giá deal" />
-            </div>
+            {canViewCommission && (
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Hoa hồng tổng (VNĐ)</label>
+                <input type="number" className="input-field" value={form.commissionTotal}
+                  onChange={e => setForm({ ...form, commissionTotal: e.target.value })} placeholder="Để trống = 50% giá deal" />
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1">Tên khách</label>
               <input className="input-field" value={form.customerName}
@@ -169,10 +176,12 @@ export default function BrokerDealsPage() {
                       <p className="text-[10px] text-stone-400 uppercase font-medium">Giá deal</p>
                       <p className="text-sm font-semibold text-stone-700">{formatCurrency(d.dealPrice)}</p>
                     </div>
-                    <div>
-                      <p className="text-[10px] text-stone-400 uppercase font-medium">HH của tôi</p>
-                      <p className="text-sm font-bold text-brand-600">{formatCurrency(d.commissionBroker)}</p>
-                    </div>
+                    {canViewCommission && (
+                      <div>
+                        <p className="text-[10px] text-stone-400 uppercase font-medium">HH của tôi</p>
+                        <p className="text-sm font-bold text-brand-600">{formatCurrency(d.commissionBroker)}</p>
+                      </div>
+                    )}
                     {d.customerName && (
                       <div>
                         <p className="text-[10px] text-stone-400 uppercase font-medium">Khách</p>

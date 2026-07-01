@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import ListingImageMosaic from '@/components/ui/ListingImageMosaic';
+import ListingImageGallery from '@/components/ui/ListingImageGallery';
 import VideoPlayer from '@/components/ui/VideoPlayer';
 import { getVideoThumbnail, getVideoType, type VideoType } from '@/lib/video-utils';
 
@@ -202,8 +202,8 @@ export default function VideoGallery({ videos = [], videoLinks = [], images = []
     );
   }
 
-  // Chỉ có 1 loại → không hiện tab bar
-  if (hasImages && !hasVideos) return <ListingImageMosaic images={images} enableLightbox className="h-64 sm:h-80 md:h-96 rounded-2xl" />;
+  // Chỉ có 1 loại → không hiện tab bar. Trang chi tiết: hiện HẾT ảnh (ListingImageGallery).
+  if (hasImages && !hasVideos) return <ListingImageGallery images={images} />;
   if (hasVideos && !hasImages) return <VideosTab items={videoItems} />;
 
   return (
@@ -233,7 +233,7 @@ export default function VideoGallery({ videos = [], videoLinks = [], images = []
         </button>
       </div>
 
-      {tab === 'images' ? <ListingImageMosaic images={images} enableLightbox className="h-64 sm:h-80 md:h-96 rounded-2xl" /> : <VideosTab items={videoItems} />}
+      {tab === 'images' ? <ListingImageGallery images={images} /> : <VideosTab items={videoItems} />}
     </div>
   );
 }

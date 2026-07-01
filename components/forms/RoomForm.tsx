@@ -352,7 +352,7 @@ export default function RoomForm({ initialData, properties, onSubmit, isAdmin = 
 
       {/* Section 6: Hoa hồng */}
       <div className="card">
-        <h3 className="text-lg font-semibold text-stone-900 mb-4">Hoa hồng cho Môi giới</h3>
+        <h3 className="text-lg font-semibold text-stone-900 mb-4">Hoa hồng cho Cộng tác viên</h3>
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1.5">
@@ -395,7 +395,7 @@ export default function RoomForm({ initialData, properties, onSubmit, isAdmin = 
 
       {/* Section 7: Lưu ý cho MG */}
       <div className="card">
-        <h3 className="text-lg font-semibold text-stone-900 mb-4">Lưu ý cho Môi giới</h3>
+        <h3 className="text-lg font-semibold text-stone-900 mb-4">Lưu ý cho Cộng tác viên</h3>
         <textarea
           className="input-field min-h-[80px] resize-y"
           placeholder="VD: Khách phải đặt cọc 2 tháng, ưu tiên nữ, không nấu nướng..."

@@ -59,6 +59,9 @@ model User {
   avatar        String?
   isActive      Boolean   @default(true)
   permissions   Permission[] @default([])  // CHỈ có hiệu lực khi role = ADMIN_STAFF
+  // Quyền cho CỘNG TÁC VIÊN (role=BROKER) — admin cấp riêng. Mặc định false = bị ẩn.
+  canViewContact    Boolean @default(false) // CTV được xem liên hệ chủ nhà/công ty (SĐT/Zalo/địa chỉ)
+  canViewCommission Boolean @default(false) // CTV được xem các mức hoa hồng
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

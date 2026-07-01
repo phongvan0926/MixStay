@@ -332,7 +332,7 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
 
       {/* Section 3: Liên hệ & Ghi chú */}
       <div className="card">
-        <h3 className="text-lg font-semibold text-stone-900 mb-4">Liên hệ & Ghi chú cho môi giới</h3>
+        <h3 className="text-lg font-semibold text-stone-900 mb-4">Liên hệ & Ghi chú cho cộng tác viên</h3>
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1.5">SĐT Zalo chủ nhà</label>
@@ -345,7 +345,7 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
             />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-stone-700 mb-1.5">Lưu ý cho môi giới</label>
+            <label className="block text-sm font-medium text-stone-700 mb-1.5">Lưu ý cho cộng tác viên</label>
             <textarea
               className="input-field min-h-[80px] resize-y"
               placeholder="Thông tin riêng dành cho MG: giờ xem phòng, cách liên hệ..."

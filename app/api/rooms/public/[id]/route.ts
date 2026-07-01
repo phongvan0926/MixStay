@@ -63,7 +63,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       },
     };
 
-    // broker = null → không gắn môi giới (truy cập tự nhiên từ trang chủ / link trực tiếp)
+    // broker = null → không gắn cộng tác viên (truy cập tự nhiên từ trang chủ / link trực tiếp)
     return NextResponse.json({ roomType: safe, broker: null });
   } catch (error: any) {
     console.error('/api/rooms/public/[id] error:', error);

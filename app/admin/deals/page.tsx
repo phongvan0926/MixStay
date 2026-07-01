@@ -105,11 +105,11 @@ export default function AdminDealsPage() {
               <tr>
                 <th className="table-header">Phòng</th>
                 <th className="table-header">Công ty</th>
-                <th className="table-header">Môi giới</th>
+                <th className="table-header">Cộng tác viên</th>
                 <th className="table-header">Khách</th>
                 <th className="table-header">Giá deal</th>
                 <th className="table-header">HH Tổng</th>
-                <th className="table-header">HH MG / CT</th>
+                <th className="table-header">HH CTV / CT</th>
                 <th className="table-header">Trạng thái</th>
                 <th className="table-header">Ngày</th>
                 <th className="table-header">Thao tác</th>
@@ -148,7 +148,7 @@ export default function AdminDealsPage() {
                     <td className="table-cell font-semibold text-brand-600">{formatCurrency(d.commissionTotal)}</td>
                     <td className="table-cell">
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-xs font-medium text-orange-600">MG: {formatCurrency(d.commissionBroker)}</span>
+                        <span className="text-xs font-medium text-orange-600">CTV: {formatCurrency(d.commissionBroker)}</span>
                         <span className="text-xs font-medium text-purple-600">CT: {formatCurrency(d.commissionCompany)}</span>
                       </div>
                     </td>

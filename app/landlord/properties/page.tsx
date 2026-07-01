@@ -440,7 +440,7 @@ export default function LandlordPropertiesPage() {
       {/* Pending inquiries banner */}
       {pendingInquiries.length > 0 && (
         <div className="card mb-6 border-amber-200 bg-amber-50/50">
-          <h2 className="font-display font-semibold text-base mb-3">🔔 Môi giới đang hỏi ({pendingInquiries.length})</h2>
+          <h2 className="font-display font-semibold text-base mb-3">🔔 Cộng tác viên đang hỏi ({pendingInquiries.length})</h2>
           <div className="space-y-2">
             {pendingInquiries.map((inq: any) => (
               <div key={inq.id} className="bg-white rounded-xl p-3 border border-amber-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">

@@ -80,9 +80,11 @@ export async function GET(req: NextRequest) {
         _sum: { viewCount: true },
       });
 
+      // CTV chỉ thấy tổng hoa hồng khi được cấp quyền xem hoa hồng.
+      const canCommission = !!(session.user as any)?.canViewCommission;
       return NextResponse.json({
         totalDeals, confirmedDeals, totalLinks,
-        totalCommission: commission._sum.commissionBroker || 0,
+        totalCommission: canCommission ? (commission._sum.commissionBroker || 0) : null,
         totalViews: totalViews._sum.viewCount || 0,
       });
     }

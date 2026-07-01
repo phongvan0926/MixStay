@@ -20,6 +20,8 @@ declare module 'next-auth' {
       role: AppRole;
       phone?: string;
       permissions?: AppPermission[];
+      canViewContact?: boolean;
+      canViewCommission?: boolean;
       needsRoleSetup?: boolean;
     } & DefaultSession['user'];
   }
@@ -31,6 +33,8 @@ declare module 'next-auth/jwt' {
     id: string;
     phone?: string;
     permissions?: AppPermission[];
+    canViewContact?: boolean;
+    canViewCommission?: boolean;
     needsRoleSetup?: boolean;
   }
 }

@@ -21,12 +21,16 @@ const ROLES = ['ADMIN', 'ADMIN_STAFF', 'BROKER', 'LANDLORD', 'CUSTOMER'];
 const EMPTY_FORM = {
   name: '', email: '', phone: '', password: '', role: 'BROKER' as string, isActive: true,
   permissions: [] as AdminPermission[],
+  canViewContact: false,
+  canViewCommission: false,
 };
 
 type User = {
   id: string; name: string; email: string | null; phone: string | null;
   role: string; isActive: boolean; createdAt: string;
   permissions?: AdminPermission[];
+  canViewContact?: boolean;
+  canViewCommission?: boolean;
 };
 
 export default function AdminUsersPage() {
@@ -111,6 +115,8 @@ export default function AdminUsersPage() {
       name: u.name, email: u.email || '', phone: u.phone || '', password: '',
       role: u.role, isActive: u.isActive,
       permissions: u.permissions ?? [],  // pre-check theo permissions hiện có
+      canViewContact: u.canViewContact ?? false,
+      canViewCommission: u.canViewCommission ?? false,
     });
     setShowPassword(false);
     setShowModal(true);
@@ -473,6 +479,43 @@ export default function AdminUsersPage() {
                   <p className="text-[11px] text-stone-400 mt-2">
                     Đã chọn {form.permissions.length}/{ALL_ADMIN_PERMISSIONS.length} quyền
                   </p>
+                </div>
+              )}
+
+              {/* Quyền Cộng tác viên — chỉ hiện khi role = BROKER */}
+              {form.role === 'BROKER' && (
+                <div className="rounded-xl border border-violet-100 bg-violet-50/40 p-3">
+                  <p className="text-sm font-medium text-stone-700 mb-1">Quyền Cộng tác viên</p>
+                  <p className="text-xs text-stone-500 mb-3">
+                    Mặc định CTV KHÔNG xem được liên hệ chủ nhà/công ty và hoa hồng. Tick để cấp quyền.
+                    <span className="block mt-0.5 text-[11px] text-amber-600">Lưu ý: đổi quyền xong, CTV cần đăng xuất & đăng nhập lại để cập nhật.</span>
+                  </p>
+                  <div className="space-y-2">
+                    <label className="flex items-start gap-2.5 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={form.canViewContact}
+                        onChange={() => setForm(f => ({ ...f, canViewContact: !f.canViewContact }))}
+                        className="mt-0.5 w-4 h-4 rounded border-stone-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium text-stone-800 group-hover:text-brand-700">📞 Xem liên hệ chủ nhà / công ty</span>
+                        <span className="block text-[11px] text-stone-500 leading-snug">Cho phép xem SĐT, Zalo, địa chỉ đầy đủ. Không cấp = chỉ gửi hỗ trợ qua Zalo admin.</span>
+                      </span>
+                    </label>
+                    <label className="flex items-start gap-2.5 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={form.canViewCommission}
+                        onChange={() => setForm(f => ({ ...f, canViewCommission: !f.canViewCommission }))}
+                        className="mt-0.5 w-4 h-4 rounded border-stone-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium text-stone-800 group-hover:text-brand-700">💰 Xem hoa hồng</span>
+                        <span className="block text-[11px] text-stone-500 leading-snug">Cho phép xem các mức hoa hồng của tin đăng và giao dịch.</span>
+                      </span>
+                    </label>
+                  </div>
                 </div>
               )}
 

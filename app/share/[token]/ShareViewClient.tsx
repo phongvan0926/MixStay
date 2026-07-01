@@ -141,7 +141,7 @@ export default function ShareViewClient() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // /share/[token] + /p/[token] → theo share token (gắn môi giới). /tin/[id] → công khai theo id.
+  // /share/[token] + /p/[token] → theo share token (gắn cộng tác viên). /tin/[id] → công khai theo id.
   const fetchUrl = token ? `/api/share-links?token=${token}` : `/api/rooms/public/${id}`;
 
   useEffect(() => {
@@ -222,7 +222,7 @@ export default function ShareViewClient() {
             </Link>
           )}
           {brokerName ? (
-            <span className="text-xs text-stone-500">Môi giới: <span className="font-medium text-stone-700">{brokerName}</span></span>
+            <span className="text-xs text-stone-500">Cộng tác viên: <span className="font-medium text-stone-700">{brokerName}</span></span>
           ) : (
             <a href="tel:0379838222" className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors">📞 Hotline: 0379 838 222</a>
           )}
@@ -412,7 +412,7 @@ export default function ShareViewClient() {
                 📞 Gọi hỗ trợ trực tiếp
               </a>
             ) : (
-              // Trang công khai /tin/[id] không gắn môi giới → fallback HOTLINE công ty (số tĩnh,
+              // Trang công khai /tin/[id] không gắn cộng tác viên → fallback HOTLINE công ty (số tĩnh,
               // KHÔNG qua lib/zalo). Nút Zalo bên cạnh vẫn giữ định tuyến riêng → không bị đè.
               <a href="tel:0379838222" className="bg-white text-brand-700 font-medium py-3 rounded-xl text-center text-sm hover:bg-brand-50 transition-all">
                 📞 Gọi hotline 0379 838 222
@@ -421,14 +421,14 @@ export default function ShareViewClient() {
           </div>
         </div>
 
-        {/* Section 8: Link MÔI GIỚI → nút sang KHO TỔNG của môi giới (giữ khách, không thoát ra
+        {/* Section 8: Link MÔI GIỚI → nút sang KHO TỔNG của cộng tác viên (giữ khách, không thoát ra
             trang chủ). Trang công khai /tin + link chủ nhà → giữ "Tin đăng liên quan" như cũ. */}
         {data.brokerSystemToken ? (
           <Link href={`/share/system/${data.brokerSystemToken}`}
             className="card group flex items-center justify-between gap-4 border-brand-100 bg-gradient-to-br from-brand-50/60 to-white hover:shadow-md hover:border-brand-300 transition-all">
             <div className="min-w-0">
-              <p className="font-display font-semibold text-base text-stone-900">🏠 Xem tất cả phòng của {brokerName || 'môi giới'}</p>
-              <p className="text-sm text-stone-500 mt-0.5">Còn nhiều phòng trống khác đang chờ — liên hệ trực tiếp {brokerName || 'môi giới'} để được tư vấn.</p>
+              <p className="font-display font-semibold text-base text-stone-900">🏠 Xem tất cả phòng của {brokerName || 'cộng tác viên'}</p>
+              <p className="text-sm text-stone-500 mt-0.5">Còn nhiều phòng trống khác đang chờ — liên hệ trực tiếp {brokerName || 'cộng tác viên'} để được tư vấn.</p>
             </div>
             <svg className="w-6 h-6 text-brand-600 shrink-0 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -439,13 +439,13 @@ export default function ShareViewClient() {
         )}
 
         <p className="text-center text-xs text-stone-400 mt-4 mb-20">
-          Powered by MixStay{brokerName ? ` • Môi giới: ${brokerName}` : ''}
+          Powered by MixStay{brokerName ? ` • Cộng tác viên: ${brokerName}` : ''}
         </p>
       </div>
 
       {/* Floating Zalo button (shortcut khi user scroll xa Section 7) — định tuyến broker/chủ nhà */}
       <ZaloFab href={zaloLink} />
-      {/* Nút gọi nổi: link môi giới/chủ nhà → gọi đúng người đó; trang công khai /tin → hotline công ty */}
+      {/* Nút gọi nổi: link cộng tác viên/chủ nhà → gọi đúng người đó; trang công khai /tin → hotline công ty */}
       {contactPhone ? (
         <CallFab phone={contactPhone.replace(/\D/g, '')} display={contactPhone} label="Gọi ngay" showNumber={false} />
       ) : (

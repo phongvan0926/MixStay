@@ -82,7 +82,7 @@ export default function LandlordShareLinksPage() {
           <div>
             <p className="font-medium text-brand-800">Link tổng hệ thống</p>
             <p className="text-sm text-brand-600 mt-1">
-              Gửi 1 link duy nhất cho MG/khách — họ sẽ thấy <strong>tất cả tin đăng còn phòng</strong> của tất cả tòa nhà bạn quản lý.
+              Gửi 1 link duy nhất cho CTV/khách — họ sẽ thấy <strong>tất cả tin đăng còn phòng</strong> của tất cả tòa nhà bạn quản lý.
               Khách không thấy địa chỉ chi tiết, SĐT hay hoa hồng.
             </p>
           </div>

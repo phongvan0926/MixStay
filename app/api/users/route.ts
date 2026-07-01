@@ -17,6 +17,8 @@ const safeUserSelect = {
   role: true,
   isActive: true,
   permissions: true,
+  canViewContact: true,
+  canViewCommission: true,
   createdAt: true,
 } as const;
 
@@ -111,7 +113,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: validated.error }, { status: 400 });
     }
 
-    const { name, email, phone, password, role, isActive, permissions } = validated.data;
+    const { name, email, phone, password, role, isActive, permissions, canViewContact, canViewCommission } = validated.data as any;
 
     const esc = guardRoleEscalation(session, role);
     if (esc) return esc;
@@ -137,6 +139,9 @@ export async function POST(req: NextRequest) {
         name, email: email || null, phone: phone || null, password: hashed, role,
         isActive: isActive ?? true,
         permissions: role === 'ADMIN_STAFF' ? (permissions ?? []) : [],
+        // Quyền CTV chỉ có ý nghĩa với role=BROKER; role khác luôn false.
+        canViewContact: role === 'BROKER' ? !!canViewContact : false,
+        canViewCommission: role === 'BROKER' ? !!canViewCommission : false,
       },
       select: safeUserSelect,
     });
@@ -162,7 +167,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: validated.error }, { status: 400 });
     }
 
-    const { id, name, email, phone, password, role, isActive, permissions } = validated.data;
+    const { id, name, email, phone, password, role, isActive, permissions, canViewContact, canViewCommission } = validated.data as any;
 
     const currentUserId = (session!.user as any).id;
 
@@ -195,13 +200,21 @@ export async function PUT(req: NextRequest) {
     if (role) updateData.role = role;
     if (isActive !== undefined) updateData.isActive = isActive;
 
-    // Permissions chỉ có ý nghĩa với ADMIN_STAFF. Nếu role đổi sang khác → reset.
-    if (permissions !== undefined || role) {
+    // Permissions chỉ có ý nghĩa với ADMIN_STAFF. Quyền CTV chỉ có ý nghĩa với BROKER.
+    // Nếu role đổi sang loại khác → reset tương ứng.
+    if (permissions !== undefined || role || canViewContact !== undefined || canViewCommission !== undefined) {
       const effectiveRole = role ?? (await prisma.user.findUnique({ where: { id }, select: { role: true } }))?.role;
       if (effectiveRole === 'ADMIN_STAFF') {
         if (permissions !== undefined) updateData.permissions = permissions;
       } else {
         updateData.permissions = [];
+      }
+      if (effectiveRole === 'BROKER') {
+        if (canViewContact !== undefined) updateData.canViewContact = !!canViewContact;
+        if (canViewCommission !== undefined) updateData.canViewCommission = !!canViewCommission;
+      } else {
+        updateData.canViewContact = false;
+        updateData.canViewCommission = false;
       }
     }
 

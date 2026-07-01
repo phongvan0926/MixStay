@@ -89,6 +89,8 @@ export async function GET(req: NextRequest) {
     // Field-strip cho ADMIN_STAFF thiếu VIEW_FINANCIAL_REPORTS:
     // strip TOÀN BỘ số tài chính (kể cả commissionBroker — hoa hồng của broker khác, không phải của staff).
     // BROKER caller KHÔNG bị strip — họ chỉ thấy deal của chính mình (where.brokerId), cần biết hoa hồng của mình.
+    // CTV (BROKER) chưa được cấp quyền xem hoa hồng → ẩn mọi số hoa hồng (vẫn thấy deal & giá).
+    const brokerHideCommission = isBroker && !(session.user as any)?.canViewCommission;
     const stripped = (isAdminFamily && !canSeeFinancials)
       ? deals.map(d => ({
           ...d,
@@ -96,6 +98,14 @@ export async function GET(req: NextRequest) {
           commissionTotal: null,
           commissionBroker: null,
           commissionCompany: null,
+        }))
+      : brokerHideCommission
+      ? deals.map(d => ({
+          ...d,
+          commissionTotal: null,
+          commissionBroker: null,
+          commissionCompany: null,
+          commissionRate: null,
         }))
       : deals;
 

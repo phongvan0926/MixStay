@@ -73,7 +73,7 @@ export function getRoleLabel(role: string): string {
   const labels: Record<string, string> = {
     ADMIN: 'Super Admin',
     ADMIN_STAFF: 'Staff',
-    BROKER: 'Môi giới',
+    BROKER: 'Cộng tác viên',
     LANDLORD: 'Chủ nhà',
     CUSTOMER: 'Khách hàng',
   };

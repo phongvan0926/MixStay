@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import Logo from '@/components/ui/Logo';
 
 const ROLES = [
-  { value: 'BROKER', label: 'Môi giới', desc: 'Tìm & chia sẻ phòng trống cho khách thuê', icon: '🤝' },
+  { value: 'BROKER', label: 'Cộng tác viên', desc: 'Tìm & chia sẻ phòng trống cho khách thuê', icon: '🤝' },
   { value: 'LANDLORD', label: 'Chủ nhà', desc: 'Đăng phòng và quản lý tòa nhà của bạn', icon: '🏠' },
   { value: 'CUSTOMER', label: 'Khách thuê', desc: 'Tìm phòng phù hợp với nhu cầu', icon: '👤' },
 ];

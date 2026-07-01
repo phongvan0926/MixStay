@@ -548,7 +548,7 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
               rows={2}
             />
             <p className="text-xs text-stone-400 mt-1">
-              🔒 Chỉ hiển thị nội bộ cho bạn, admin và môi giới. Khách xem tin đăng chỉ thấy số lượng phòng trống.
+              🔒 Chỉ hiển thị nội bộ cho bạn, admin và cộng tác viên. Khách xem tin đăng chỉ thấy số lượng phòng trống.
             </p>
           </div>
 
@@ -668,7 +668,7 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
 
       {/* Section 7: Hoa hồng cho MG */}
       <div className="card">
-        <h3 className="text-lg font-semibold text-stone-900 mb-4">Hoa hồng cho Môi giới</h3>
+        <h3 className="text-lg font-semibold text-stone-900 mb-4">Hoa hồng cho Cộng tác viên</h3>
         {!canEditCommission && (
           <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
             <p className="text-xs text-amber-700">🔒 Bạn không có quyền sửa hoa hồng (cần permission EDIT_COMMISSION). Phần này chỉ xem.</p>
@@ -739,7 +739,7 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
 
       {/* Section 8: Lưu ý cho MG */}
       <div className="card">
-        <h3 className="text-lg font-semibold text-stone-900 mb-4">Lưu ý cho Môi giới</h3>
+        <h3 className="text-lg font-semibold text-stone-900 mb-4">Lưu ý cho Cộng tác viên</h3>
         <textarea
           className="input-field min-h-[80px] resize-y"
           placeholder="VD: Khách phải đặt cọc 2 tháng, ưu tiên nữ, không nấu nướng..."
