@@ -6,6 +6,7 @@ import ImageUpload from '@/components/ui/ImageUpload';
 import VideoUpload from '@/components/ui/VideoUpload';
 import VideoLinkInput from '@/components/ui/VideoLinkInput';
 import AiListingAssistant from '@/components/forms/AiListingAssistant';
+import SearchableSelect from '@/components/ui/SearchableSelect';
 import { formatCurrency } from '@/lib/utils';
 
 type RoomStatusValue = 'AVAILABLE' | 'UNAVAILABLE' | 'UPCOMING';
@@ -329,18 +330,14 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
             <label className="block text-sm font-medium text-stone-700 mb-1.5">
               Tòa nhà <span className="text-red-500">*</span>
             </label>
-            <select
-              className="input-field"
+            {/* Gõ tên để lọc nhanh khi có nhiều tòa nhà; CHỈ nhận khi chọn 1 mục hợp lệ trong danh sách. */}
+            <SearchableSelect
               value={form.propertyId}
-              onChange={e => updateField('propertyId', e.target.value)}
-            >
-              <option value="">-- Chọn tòa nhà --</option>
-              {approvedProperties.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.name}{p.district ? ` — ${p.district}` : ''}
-                </option>
-              ))}
-            </select>
+              onChange={v => updateField('propertyId', v)}
+              options={approvedProperties.map(p => ({ value: p.id, label: `${p.name}${p.district ? ` — ${p.district}` : ''}` }))}
+              placeholder="Gõ tên tòa nhà để tìm, rồi chọn từ danh sách..."
+              emptyText="Không tìm thấy tòa nhà — hãy chọn từ danh sách hoặc kiểm tra lại"
+            />
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-stone-700 mb-1.5">
