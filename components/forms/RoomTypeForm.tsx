@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import ImageUpload from '@/components/ui/ImageUpload';
 import VideoUpload from '@/components/ui/VideoUpload';
 import VideoLinkInput from '@/components/ui/VideoLinkInput';
+import AiListingAssistant from '@/components/forms/AiListingAssistant';
 import { formatCurrency } from '@/lib/utils';
 
 type RoomStatusValue = 'AVAILABLE' | 'UNAVAILABLE' | 'UPCOMING';
@@ -389,6 +390,17 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
               value={form.description}
               onChange={e => updateField('description', e.target.value)}
               rows={4}
+            />
+            <AiListingAssistant
+              name={form.name}
+              typeName={form.typeName}
+              areaSqm={form.areaSqm}
+              priceMonthly={form.priceMonthly}
+              deposit={form.deposit}
+              amenities={form.amenities}
+              description={form.description}
+              propertyId={form.propertyId}
+              onApply={text => updateField('description', text)}
             />
           </div>
         </div>
