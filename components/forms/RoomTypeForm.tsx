@@ -62,7 +62,7 @@ const ROOM_TYPES = [
   { value: 'don', label: 'Phòng đơn' },
   { value: 'gac_xep', label: 'Gác xép' },
   { value: '1k1n', label: '1 khách 1 ngủ' },
-  { value: '2k1n', label: '2 khách 1 ngủ' },
+  { value: '2k1n', label: '2 ngủ 1 khách' },
   { value: 'studio', label: 'Studio' },
   { value: 'duplex', label: 'Duplex' },
 ];

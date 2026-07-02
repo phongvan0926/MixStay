@@ -13,7 +13,7 @@ import { normalizeListingCode } from '@/lib/listing-code';
 
 const ROOM_TYPE_LABELS: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1K1N',
-  '2k1n': '2K1N', studio: 'Studio', duplex: 'Duplex',
+  '2k1n': '2N1K', studio: 'Studio', duplex: 'Duplex',
 };
 
 type ViewMode = 'card' | 'list';

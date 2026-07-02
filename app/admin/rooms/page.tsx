@@ -12,7 +12,7 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 
 const ROOM_TYPE_LABELS: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1K1N',
-  '2k1n': '2K1N', studio: 'Studio', duplex: 'Duplex',
+  '2k1n': '2N1K', studio: 'Studio', duplex: 'Duplex',
 };
 
 // Excel column mapping
@@ -83,7 +83,7 @@ async function downloadTemplate() {
     ['   - don: Phòng đơn'],
     ['   - gac_xep: Gác xép'],
     ['   - 1k1n: 1 khách 1 ngủ'],
-    ['   - 2k1n: 2 khách 1 ngủ'],
+    ['   - 2k1n: 2 ngủ 1 khách'],
     ['   - studio: Studio'],
     ['   - duplex: Duplex'],
     [],

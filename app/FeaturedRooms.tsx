@@ -8,7 +8,7 @@ const TYPE_LABEL: Record<string, string> = {
   don: 'Phòng đơn',
   gac_xep: 'Gác xép',
   '1k1n': '1 khách 1 ngủ',
-  '2k1n': '2 khách 1 ngủ',
+  '2k1n': '2 ngủ 1 khách',
   studio: 'Studio',
   duplex: 'Duplex',
 };

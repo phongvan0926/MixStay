@@ -15,12 +15,12 @@ import PriceRangeSlider from '@/components/ui/PriceRangeSlider';
 
 const roomTypeLabels: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1K1N',
-  '2k1n': '2K1N', studio: 'Studio', duplex: 'Duplex',
+  '2k1n': '2N1K', studio: 'Studio', duplex: 'Duplex',
 };
 const roomTypeOptions = [
   { value: '', label: 'Tất cả loại' },
   { value: 'don', label: 'Phòng đơn' }, { value: 'gac_xep', label: 'Gác xép' },
-  { value: '1k1n', label: '1K1N' }, { value: '2k1n', label: '2K1N' },
+  { value: '1k1n', label: '1K1N' }, { value: '2k1n', label: '2N1K' },
   { value: 'studio', label: 'Studio' }, { value: 'duplex', label: 'Duplex' },
 ];
 
