@@ -74,6 +74,7 @@ model User {
   shareLinks    ShareLink[]
   sentInquiries   RoomInquiry[] @relation("BrokerInquiries")
   notifications   Notification[]
+  savedListings   SavedListing[]
 
   @@index([role])
   @@index([isActive])
@@ -218,6 +219,7 @@ model RoomType {
   deals               Deal[]
   shareLinks          ShareLink[]
   inquiries           RoomInquiry[]
+  savedBy             SavedListing[]
 
   @@index([propertyId])
   @@index([status])
@@ -320,4 +322,19 @@ model Notification {
   @@index([userId, isRead])
   @@index([createdAt])
   @@map("notifications")
+}
+
+// Tin đã lưu (bookmark) — Cộng tác viên lưu tin để xem lại sau.
+model SavedListing {
+  id         String   @id @default(cuid())
+  userId     String
+  roomTypeId String
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roomTypeId])
+  @@index([userId])
+  @@map("saved_listings")
 }

@@ -6,6 +6,8 @@ import { formatCurrency } from '@/lib/utils';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import VideoGallery from '@/components/ui/VideoGallery';
 import ZaloFab from '@/components/ui/ZaloFab';
+import ListingActionBar from '@/components/ui/ListingActionBar';
+import { buildListingText } from '@/lib/listing-text';
 import CallFab from '@/components/ui/CallFab';
 import Logo from '@/components/ui/Logo';
 import { getZaloLink } from '@/lib/zalo';
@@ -207,6 +209,17 @@ export default function ShareViewClient() {
   // Pass the link creator (data.broker) so broker-created links deeplink Zalo to the broker.
   const zaloLink = getZaloLink(roomType, data.broker);
 
+  // Công cụ bài đăng: chia sẻ / copy nội dung / tải ảnh.
+  const shareUrl = token ? `/share/${token}` : `/tin/${id}`;
+  const absShareUrl = (typeof window !== 'undefined' ? window.location.origin : '') + shareUrl;
+  const listingLocation = [property?.publicAddress || property?.streetName, property?.district].filter(Boolean).join(', ');
+  const copyText = buildListingText({
+    name: roomType.name, typeName: roomType.typeName, areaSqm: roomType.areaSqm,
+    priceMonthly: roomType.priceMonthly, deposit: roomType.deposit, listingCode: roomType.listingCode,
+    location: listingLocation, amenities: roomType.amenities, buildingAmenities: property?.amenities,
+    description: roomType.description, url: absShareUrl,
+  });
+
   return (
     <div className="min-h-screen bg-stone-50">
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-stone-200/60">
@@ -248,6 +261,15 @@ export default function ShareViewClient() {
             <p className="text-[11px] text-stone-500 mt-0.5">Còn trống</p>
           </div>
         </div>
+
+        {/* Thanh công cụ: tải ảnh / copy nội dung / chia sẻ ra ngoài */}
+        <ListingActionBar
+          images={allImages}
+          shareUrl={shareUrl}
+          copyText={copyText}
+          title={roomType.name}
+          fileBase={`anh-${roomType.listingCode || roomType.id}`}
+        />
 
         {/* Section 2: Thông tin cơ bản */}
         <div className="card">

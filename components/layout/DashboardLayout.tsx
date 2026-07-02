@@ -23,6 +23,7 @@ const menuItems: Record<string, MenuItem[]> = {
   ],
   BROKER: [
     { label: 'Kho hàng', href: '/broker/inventory', icon: '📦' },
+    { label: 'Tin đã lưu', href: '/broker/saved', icon: '🔖' },
     { label: 'Giao dịch', href: '/broker/deals', icon: '💰' },
     { label: 'Link chia sẻ', href: '/broker/share-links', icon: '🔗' },
   ],

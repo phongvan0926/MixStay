@@ -1,11 +1,13 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import VideoGallery from '@/components/ui/VideoGallery';
+import ListingActionBar from '@/components/ui/ListingActionBar';
+import { buildListingText } from '@/lib/listing-text';
 import { useRoomTypes, useCompanies, useDashboardStats } from '@/hooks/useData';
 import { SkeletonStats, SkeletonCardGrid } from '@/components/ui/Skeleton';
 import DistrictPills from '@/components/ui/DistrictPills';
@@ -114,7 +116,7 @@ function RoomImageCarousel({ room }: { room: any }) {
 
 // ==================== Room Detail Modal (broker view) ====================
 function RoomDetailModal({
-  room, onClose, onCreateLink, onSendInquiry, copied, asked, canViewContact, canViewCommission,
+  room, onClose, onCreateLink, onSendInquiry, copied, asked, canViewContact, canViewCommission, saved, onToggleSave,
 }: {
   room: any;
   onClose: () => void;
@@ -124,7 +126,19 @@ function RoomDetailModal({
   asked: boolean;
   canViewContact: boolean;
   canViewCommission: boolean;
+  saved: boolean;
+  onToggleSave: () => void;
 }) {
+  // Nội dung + link để copy/chia sẻ (dùng địa chỉ CÔNG KHAI, không lộ số nhà khi đăng lại).
+  const modalShareUrl = `/tin/${room.id}`;
+  const modalCopyText = buildListingText({
+    name: room.name, typeName: room.typeName, areaSqm: room.areaSqm,
+    priceMonthly: room.priceMonthly, deposit: room.deposit, listingCode: room.listingCode,
+    location: [room.property?.streetName, room.property?.district].filter(Boolean).join(', '),
+    amenities: room.amenities, buildingAmenities: room.property?.amenities,
+    description: room.description,
+    url: (typeof window !== 'undefined' ? window.location.origin : '') + modalShareUrl,
+  });
   const roomImages: string[] = room.images || [];
   const propImages: string[] = room.property?.images || [];
   const allImages = [...roomImages, ...propImages];
@@ -339,12 +353,29 @@ function RoomDetailModal({
             <SupportContactBlock room={room} />
           )}
 
+          {/* Công cụ bài đăng: tải ảnh / copy nội dung / chia sẻ ra ngoài */}
+          <div className="pt-3 border-t border-stone-100">
+            <ListingActionBar
+              images={[...(room.images || []), ...(room.property?.images || [])]}
+              shareUrl={modalShareUrl}
+              copyText={modalCopyText}
+              title={room.name}
+              fileBase={`anh-${room.listingCode || room.id}`}
+            />
+          </div>
+
           {/* Actions */}
           <div className="flex gap-2 pt-3 border-t border-stone-100">
+            <button onClick={onToggleSave}
+              title={saved ? 'Bỏ lưu tin' : 'Lưu tin để xem lại sau'}
+              className={'py-3 px-4 rounded-xl font-medium text-sm transition-all border ' +
+                (saved ? 'bg-amber-400 border-amber-400 text-white' : 'bg-white border-stone-200 text-stone-600 hover:border-amber-300')}>
+              {saved ? '🔖 Đã lưu' : '🔖 Lưu tin'}
+            </button>
             <button onClick={() => onCreateLink(room.id)}
               className={'flex-1 py-3 rounded-xl font-medium text-sm transition-all ' +
                 (copied ? 'bg-emerald-100 text-emerald-700' : 'bg-brand-600 text-white hover:bg-brand-700')}>
-              {copied ? '✓ Đã copy link' : '🔗 Chia sẻ link'}
+              {copied ? '✓ Đã copy link' : '🔗 Tạo link khách'}
             </button>
             <button onClick={() => onSendInquiry(room.id)}
               disabled={asked}
@@ -364,6 +395,26 @@ export default function BrokerInventoryPage() {
   // Quyền CTV: mặc định ẩn liên hệ + hoa hồng cho tới khi admin cấp.
   const canViewContact = !!(session?.user as any)?.canViewContact;
   const canViewCommission = !!(session?.user as any)?.canViewCommission;
+
+  // Tin đã lưu (bookmark) của CTV.
+  const [savedSet, setSavedSet] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    fetch('/api/saved-listings').then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.savedIds) setSavedSet(new Set(d.savedIds)); }).catch(() => {});
+  }, []);
+  const toggleSave = async (roomTypeId: string) => {
+    const isSaved = savedSet.has(roomTypeId);
+    setSavedSet(prev => { const n = new Set(prev); isSaved ? n.delete(roomTypeId) : n.add(roomTypeId); return n; });
+    try {
+      if (isSaved) await fetch(`/api/saved-listings?roomTypeId=${roomTypeId}`, { method: 'DELETE' });
+      else await fetch('/api/saved-listings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ roomTypeId }) });
+      toast.success(isSaved ? 'Đã bỏ lưu tin' : '🔖 Đã lưu tin');
+    } catch {
+      setSavedSet(prev => { const n = new Set(prev); isSaved ? n.add(roomTypeId) : n.delete(roomTypeId); return n; });
+      toast.error('Lỗi, thử lại');
+    }
+  };
+
   const [page, setPage] = useState(1);
   const [copiedLink, setCopiedLink] = useState('');
   const [inquirySent, setInquirySent] = useState<Set<string>>(new Set());
@@ -719,6 +770,12 @@ export default function BrokerInventoryPage() {
 
               {/* Actions */}
               <div className="flex gap-2 pt-3 border-t border-stone-100">
+                <button onClick={(e) => { e.stopPropagation(); toggleSave(room.id); }}
+                  title={savedSet.has(room.id) ? 'Bỏ lưu tin' : 'Lưu tin để xem lại sau'}
+                  className={'text-xs py-2 px-2.5 rounded-lg font-medium transition-all border ' +
+                    (savedSet.has(room.id) ? 'bg-amber-400 border-amber-400 text-white' : 'bg-white border-stone-200 text-stone-500 hover:border-amber-300')}>
+                  🔖
+                </button>
                 <button onClick={(e) => { e.stopPropagation(); createShareLink(room.id); }}
                   className={'flex-1 text-xs py-2 rounded-lg font-medium transition-all ' +
                     (copiedLink === room.id ? 'bg-emerald-100 text-emerald-700' : 'bg-brand-50 text-brand-700 hover:bg-brand-100')}>
@@ -756,6 +813,8 @@ export default function BrokerInventoryPage() {
           asked={inquirySent.has(selectedRoom.id)}
           canViewContact={canViewContact}
           canViewCommission={canViewCommission}
+          saved={savedSet.has(selectedRoom.id)}
+          onToggleSave={() => toggleSave(selectedRoom.id)}
         />
       )}
     </div>
