@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import OptimizedImage from '@/components/ui/OptimizedImage';
+import { pickVideoCover } from '@/lib/video-utils';
 
 /**
  * Bố cục ảnh cho CARD tin đăng: 1 ảnh to + 2 ảnh nhỏ bên cạnh (xếp dọc),
@@ -16,6 +17,8 @@ export default function ListingImageMosaic({
   alt = 'Ảnh tin đăng',
   className = 'h-48',
   enableLightbox = false,
+  videos,
+  videoLinks,
 }: {
   images?: string[] | null;
   alt?: string;
@@ -23,6 +26,9 @@ export default function ListingImageMosaic({
   /** true: bấm ảnh mở lightbox (trang chi tiết). false (mặc định): click xuyên qua để
    *  parent xử lý — vd card trong <Link> sẽ vào thẳng trang chi tiết. */
   enableLightbox?: boolean;
+  /** Khi KHÔNG có ảnh: dùng video để làm ảnh đại diện (khung hình/thumbnail). */
+  videos?: string[] | null;
+  videoLinks?: string[] | null;
 }) {
   const [lightbox, setLightbox] = useState(false);
   const [idx, setIdx] = useState(0);
@@ -39,6 +45,28 @@ export default function ListingImageMosaic({
   const list = images ?? [];
 
   if (list.length === 0) {
+    // Không có ảnh → thử lấy ảnh đại diện từ video cho đỡ trống.
+    const cover = pickVideoCover(videos, videoLinks);
+    if (cover) {
+      return (
+        <div className={`relative w-full ${className} overflow-hidden bg-stone-900`}>
+          {cover.kind === 'image' ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={cover.src} alt={alt} className="w-full h-full object-cover" loading="lazy" />
+          ) : cover.kind === 'video' ? (
+            // preload="metadata" + #t=0.5 → hiện khung hình ~0.5s làm ảnh đại diện, không tải cả video.
+            <video src={`${cover.src}#t=0.5`} preload="metadata" muted playsInline className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-brand-700 to-brand-900" />
+          )}
+          {/* Nút play (chỉ trang trí, click xuyên qua để vào trang chi tiết) */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <span className="w-12 h-12 rounded-full bg-black/45 backdrop-blur-sm flex items-center justify-center text-white text-lg shadow-lg">▶</span>
+          </div>
+          <span className="absolute bottom-2 right-2 bg-black/55 text-white text-[11px] font-medium px-2 py-0.5 rounded-full backdrop-blur-sm pointer-events-none">🎬 Video</span>
+        </div>
+      );
+    }
     return (
       <div className={`relative w-full ${className} bg-gradient-to-br from-brand-100 to-brand-50 flex items-center justify-center`}>
         <span className="text-4xl opacity-50">🏠</span>

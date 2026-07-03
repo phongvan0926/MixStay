@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
         roomType: {
           select: {
             id: true, name: true, listingCode: true, typeName: true, areaSqm: true,
-            priceMonthly: true, deposit: true, images: true, status: true,
+            priceMonthly: true, deposit: true, images: true, videos: true, videoLinks: true, status: true,
             availableUnits: true, expectedAvailableDate: true, shortTermAllowed: true,
             property: { select: { name: true, district: true, streetName: true, images: true } },
           },

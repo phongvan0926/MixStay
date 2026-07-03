@@ -17,7 +17,7 @@ function formatPrice(price: number) {
 
 type Room = {
   id: string; name: string; typeName: string; areaSqm: number; priceMonthly: number;
-  amenities?: string[]; images?: string[]; status?: string;
+  amenities?: string[]; images?: string[]; status?: string; videos?: string[]; videoLinks?: string[];
   property?: { name?: string; district?: string; streetName?: string; city?: string };
 };
 type Company = { id: string; name: string; logo?: string | null; zaloGroupLink?: string | null; phone?: string | null };
@@ -115,7 +115,7 @@ export default function CompanyCatalogClient({ id }: { id: string }) {
               <Link key={room.id} href={`/tin/${room.id}`}
                 className="group rounded-2xl border border-stone-200/60 bg-white overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-stone-300/60">
                 <div className="relative">
-                  <ListingImageMosaic images={room.images} alt={room.name} className="h-44" />
+                  <ListingImageMosaic images={room.images} videos={room.videos} videoLinks={room.videoLinks} alt={room.name} className="h-44" />
                   <span className="absolute top-3 left-3 z-10 inline-flex items-center rounded-full bg-white/90 backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-stone-700 border border-white">
                     {TYPE_LABEL[room.typeName] || room.typeName}
                   </span>

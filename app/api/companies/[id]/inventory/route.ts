@@ -60,6 +60,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       amenities: rt.amenities,
       images: [...(rt.images || []), ...(rt.property?.images || [])].slice(0, 3),
       hasVideo: (rt.videos?.length || 0) + (rt.videoLinks?.length || 0) > 0,
+      // Cho thẻ dùng video làm ảnh đại diện khi tin không có ảnh.
+      videos: rt.videos || [],
+      videoLinks: rt.videoLinks || [],
       availableUnits: rt.availableUnits,
       status: rt.status,
       // Ẩn số nhà: redact tên tòa + tên đường trước khi trả cho khách.

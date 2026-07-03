@@ -21,6 +21,8 @@ type PublicRoom = {
   priceMonthly: number;
   amenities?: string[];
   images?: string[];
+  videoLinks?: string[];
+  videos?: string[];
   status?: string;
   availableUnits?: number;
   property?: { district?: string; streetName?: string; city?: string };
@@ -80,7 +82,7 @@ export default function FeaturedRooms() {
           className="group rounded-2xl border border-stone-200/60 bg-white overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-stone-300/60">
           {/* Ảnh: 1 to + 2 nhỏ, bấm ảnh mở lightbox */}
           <div className="relative">
-            <ListingImageMosaic images={room.images} alt={room.name} className="h-48" />
+            <ListingImageMosaic images={room.images} videos={room.videos} videoLinks={room.videoLinks} alt={room.name} className="h-48" />
             <span className="absolute top-3 left-3 z-10 inline-flex items-center rounded-full bg-white/90 backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-stone-700 border border-white">
               {TYPE_LABEL[room.typeName] || room.typeName}
             </span>

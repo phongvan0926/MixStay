@@ -338,7 +338,7 @@ export default function SystemShareClient() {
                   onClick={() => setSelectedRoom(rt)}>
                   {/* Card carousel — 3 ảnh */}
                   <div className="relative h-44 overflow-hidden">
-                    <ListingImageMosaic images={cardImages} className="h-full" />
+                    <ListingImageMosaic images={cardImages} videos={rt.videos} videoLinks={rt.videoLinks} className="h-full" />
                     <div className="absolute top-3 left-3 flex items-center gap-1.5">
                       <span className="badge bg-white/90 text-stone-700 backdrop-blur-sm text-xs">
                         {roomTypeLabels[rt.typeName] || rt.typeName}

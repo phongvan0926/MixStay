@@ -322,7 +322,8 @@ mixstay/
 - **Thumbnail tự động:**
   - YouTube: lấy từ `img.youtube.com/vi/{id}/hqdefault.jpg` (không cần API key)
   - TikTok/Facebook: icon placeholder (không có free API)
-- **Helper `lib/video-utils.ts`:** `getYouTubeId`, `getTikTokId`, `getFacebookVideoId`, `getVideoPlatform`, `getVideoThumbnail`, `getEmbedUrl`
+- **Ảnh đại diện thẻ từ video (khi tin KHÔNG có ảnh):** thay vì placeholder 🏠 trống, thẻ lấy ảnh đại diện từ video — ưu tiên (1) video tự upload → khung hình đầu (`<video preload="metadata"` + `#t=0.5`), (2) link YouTube → thumbnail thật, (3) link TikTok/Facebook → nền gradient thương hiệu; kèm nút ▶ + badge "🎬 Video". Helper dùng chung `pickVideoCover()` trong `lib/video-utils.ts`, áp dụng ở tất cả thẻ dùng `ListingImageMosaic` (trang chủ, phòng nổi bật, kho công ty, kho hệ thống, tin đã lưu) và carousel kho hàng CTV (`app/broker/inventory`). API `rooms/public`, `companies/[id]/inventory`, `saved-listings` trả thêm `videos[]` + `videoLinks[]` để thẻ dùng
+- **Helper `lib/video-utils.ts`:** `getYouTubeId`, `getTikTokId`, `getFacebookVideoId`, `getVideoPlatform`, `getVideoThumbnail`, `pickVideoCover`, `getEmbedUrl`
 - **Schema changes:** RoomType thêm `videos String[]` và `videoLinks String[]` (field cũ `videoUrl` được thay thế/mở rộng)
 - **API updates:**
   - `/api/rooms/public`: trả `videoLinks[]` + `hasVideo` boolean (KHÔNG trả `videos[]` để giảm payload trang chủ)

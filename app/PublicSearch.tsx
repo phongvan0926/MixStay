@@ -38,6 +38,8 @@ type PublicRoom = {
   amenities: string[];
   images: string[];
   hasVideo: boolean;
+  videoLinks?: string[];
+  videos?: string[];
   availableUnits: number;
   status?: 'AVAILABLE' | 'UPCOMING' | 'UNAVAILABLE';
   expectedAvailableDate?: string | null;
@@ -272,7 +274,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
                     className="group bg-white rounded-2xl border border-stone-200 overflow-hidden hover:shadow-lg hover:-translate-y-0.5 hover:border-stone-300 transition-all"
                   >
                     <div className="relative">
-                      <ListingImageMosaic images={rt.images} alt={rt.name} className="h-48" />
+                      <ListingImageMosaic images={rt.images} videos={rt.videos} videoLinks={rt.videoLinks} alt={rt.name} className="h-48" />
                       <div className="absolute top-3 left-3 flex items-center gap-1.5">
                         <span className="inline-flex items-center rounded-full bg-white/90 backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-stone-700 border border-white">
                           {TYPE_LABEL[rt.typeName] || rt.typeName}

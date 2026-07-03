@@ -129,6 +129,8 @@ export async function GET(req: NextRequest) {
         images,
         hasVideo,
         videoLinks: rt.videoLinks || [],
+        // Trả video upload (URL) để thẻ dùng khung hình làm ảnh đại diện khi tin không có ảnh.
+        videos: rt.videos || [],
         availableUnits: rt.availableUnits,
         status: rt.status,
         expectedAvailableDate: rt.expectedAvailableDate,

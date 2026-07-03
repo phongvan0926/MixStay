@@ -94,6 +94,21 @@ export function getVideoThumbnail(url: string): string {
   return '/video-placeholder.svg';
 }
 
+// 3b. Chọn ẢNH ĐẠI DIỆN từ VIDEO cho thẻ tin KHÔNG có ảnh:
+//   1) video tự upload → lấy khung hình đầu (poster qua thẻ <video>)
+//   2) link YouTube → thumbnail thật của YouTube (img.youtube.com)
+//   3) link khác (TikTok/Facebook) → nền video có nút play (placeholder)
+export type VideoCover = { kind: 'video' | 'image' | 'placeholder'; src?: string };
+export function pickVideoCover(videos?: string[] | null, videoLinks?: string[] | null): VideoCover | null {
+  const vids = (videos || []).filter(Boolean);
+  const links = (videoLinks || []).filter(Boolean);
+  if (vids.length) return { kind: 'video', src: vids[0] };
+  const yt = links.find(l => getVideoType(l) === 'youtube' && getYouTubeId(l));
+  if (yt) return { kind: 'image', src: getVideoThumbnail(yt) };
+  if (links.length) return { kind: 'placeholder' };
+  return null;
+}
+
 // 4. Embed URL (để nhúng iframe)
 export function getEmbedUrl(url: string): string | null {
   const type = getVideoType(url);

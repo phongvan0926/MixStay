@@ -49,7 +49,7 @@ export default function BrokerSavedPage() {
             return (
               <div key={room.id} className="group bg-white rounded-2xl border border-stone-200 overflow-hidden hover:shadow-lg transition-all">
                 <Link href={`/tin/${room.id}`} className="block relative">
-                  <ListingImageMosaic images={images} alt={room.name} className="h-44" />
+                  <ListingImageMosaic images={images} videos={room.videos} videoLinks={room.videoLinks} alt={room.name} className="h-44" />
                   <span className="absolute top-3 left-3 z-10 badge bg-white/90 text-brand-700 text-xs shadow-sm font-semibold backdrop-blur-sm">
                     {TYPE_LABEL[room.typeName] || room.typeName}
                   </span>

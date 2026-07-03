@@ -8,6 +8,7 @@ import OptimizedImage from '@/components/ui/OptimizedImage';
 import VideoGallery from '@/components/ui/VideoGallery';
 import ListingActionBar from '@/components/ui/ListingActionBar';
 import { buildListingText } from '@/lib/listing-text';
+import { pickVideoCover } from '@/lib/video-utils';
 import { useRoomTypes, useCompanies, useDashboardStats } from '@/hooks/useData';
 import { SkeletonStats, SkeletonCardGrid } from '@/components/ui/Skeleton';
 import DistrictPills from '@/components/ui/DistrictPills';
@@ -67,6 +68,26 @@ function RoomImageCarousel({ room }: { room: any }) {
   const [imgIdx, setImgIdx] = useState(0);
 
   if (show.length === 0) {
+    // Không có ảnh → dùng video làm ảnh đại diện cho đỡ trống.
+    const cover = pickVideoCover(room.videos, room.videoLinks);
+    if (cover) {
+      return (
+        <div className="h-48 rounded-xl overflow-hidden relative bg-stone-900">
+          {cover.kind === 'image' ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={cover.src} alt="Ảnh phòng" className="w-full h-full object-cover" loading="lazy" />
+          ) : cover.kind === 'video' ? (
+            <video src={`${cover.src}#t=0.5`} preload="metadata" muted playsInline className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-brand-700 to-brand-900" />
+          )}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <span className="w-12 h-12 rounded-full bg-black/45 backdrop-blur-sm flex items-center justify-center text-white text-lg shadow-lg">▶</span>
+          </div>
+          <span className="absolute bottom-2 right-2 bg-black/55 text-white text-[11px] font-medium px-2 py-0.5 rounded-full backdrop-blur-sm">🎬 Video</span>
+        </div>
+      );
+    }
     return (
       <div className="h-48 bg-gradient-to-br from-brand-100 to-brand-50 rounded-xl flex items-center justify-center">
         <span className="text-4xl">🏢</span>
