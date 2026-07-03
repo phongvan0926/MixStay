@@ -7,7 +7,7 @@ import ListingImageMosaic from '@/components/ui/ListingImageMosaic';
 import { SkeletonCardGrid } from '@/components/ui/Skeleton';
 
 const TYPE_LABEL: Record<string, string> = {
-  don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1K1N', '2k1n': '2N1K', studio: 'Studio', duplex: 'Duplex',
+  don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1N1K', '2k1n': '2N1K', studio: 'Studio', duplex: 'Duplex',
 };
 
 export default function BrokerSavedPage() {

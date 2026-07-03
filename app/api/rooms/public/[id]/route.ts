@@ -22,7 +22,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       },
       select: {
         id: true, name: true, typeName: true, areaSqm: true,
-        priceMonthly: true, deposit: true, description: true,
+        priceMonthly: true, deposit: true, depositType: true, description: true,
         amenities: true, images: true, videos: true, videoLinks: true,
         listingCode: true,
         totalUnits: true, availableUnits: true,
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         property: {
           select: {
             id: true, name: true, district: true, streetName: true, city: true,
-            amenities: true, images: true, totalFloors: true,
+            amenities: true, images: true, totalFloors: true, services: true,
             fullAddress: true, // CHỈ dùng server-side để dựng publicAddress (ẩn số nhà) — KHÔNG trả về client
             parkingCar: true, parkingBike: true, evCharging: true, petAllowed: true, foreignerOk: true,
             // NO lat, lng, zaloPhone

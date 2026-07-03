@@ -100,10 +100,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: validated.error }, { status: 400 });
     }
 
-    const landlordId = session.user.role === 'LANDLORD' ? session.user.id : body.landlordId;
-    if (!landlordId) {
-      return NextResponse.json({ error: 'Vui lòng chọn chủ nhà cho tòa nhà này' }, { status: 400 });
-    }
+    // Đã bỏ ô chọn chủ nhà: LANDLORD tự tạo → chính họ; admin/staff → gắn chính người tạo
+    // (tòa nhà thuộc CÔNG TY đã chọn). Vẫn cho phép truyền landlordId nếu có (tương thích cũ).
+    const landlordId = session.user.role === 'LANDLORD' ? session.user.id : (body.landlordId || session.user.id);
 
     const property = await prisma.property.create({
       data: {
@@ -121,6 +120,7 @@ export async function POST(req: NextRequest) {
         totalFloors: parseInt(body.totalFloors) || 1,
         zaloPhone: body.zaloPhone || null,
         landlordNotes: body.landlordNotes || null,
+        services: body.services ?? undefined,
         amenities: body.amenities || [],
         images: body.images || [],
         parkingCar: body.parkingCar ?? false,
@@ -197,6 +197,7 @@ export async function PUT(req: NextRequest) {
         ...(data.totalFloors && { totalFloors: parseInt(data.totalFloors) }),
         ...(data.zaloPhone !== undefined && { zaloPhone: data.zaloPhone }),
         ...(data.landlordNotes !== undefined && { landlordNotes: data.landlordNotes }),
+        ...(data.services !== undefined && { services: data.services }),
         ...(data.amenities && { amenities: data.amenities }),
         ...(data.images !== undefined && { images: data.images }),
         ...(data.landlordId && session.user.role !== 'LANDLORD' && { landlordId: data.landlordId }),

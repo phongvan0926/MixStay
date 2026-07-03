@@ -1,6 +1,6 @@
 // Dựng nội dung TEXT của 1 bài đăng để copy sang nền tảng khác (Facebook/Zalo...).
 const TYPE_LABEL: Record<string, string> = {
-  don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1 khách 1 ngủ',
+  don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1 ngủ 1 khách',
   '2k1n': '2 ngủ 1 khách', studio: 'Studio', duplex: 'Duplex',
 };
 
@@ -35,6 +35,6 @@ export function buildListingText(o: ListingTextInput): string {
   if (o.buildingAmenities?.length) lines.push(`🏢 Tiện ích toà nhà: ${o.buildingAmenities.join(', ')}`);
   if (o.description?.trim()) { lines.push(''); lines.push(o.description.trim()); }
   if (o.listingCode) lines.push(`\nMã tin: ${o.listingCode}`);
-  if (o.url) lines.push(`👉 Xem chi tiết: ${o.url}`);
+  // Không đính kèm link khi copy nội dung (theo yêu cầu).
   return lines.join('\n');
 }

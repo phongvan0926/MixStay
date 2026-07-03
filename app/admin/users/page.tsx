@@ -230,11 +230,13 @@ export default function AdminUsersPage() {
 
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        {/* Bấm 1 vai trò → lọc danh sách chỉ hiện tài khoản loại đó (bấm lại để bỏ lọc). */}
         {ROLES.map(r => (
-          <div key={r} className="card p-3 text-center">
+          <button key={r} type="button" onClick={() => setRoleFilter(roleFilter === r ? '' : r)}
+            className={`card p-3 text-center transition-all ${roleFilter === r ? 'ring-2 ring-brand-500 bg-brand-50' : 'hover:border-brand-300'}`}>
             <div className="text-xl font-bold text-stone-900">{stats.byRole[r] || 0}</div>
             <div className={`badge text-[10px] mt-1 ${getRoleColor(r)}`}>{getRoleLabel(r)}</div>
-          </div>
+          </button>
         ))}
         <div className="card p-3 text-center">
           <div className="text-xl font-bold text-emerald-600">{stats.active}</div>

@@ -53,16 +53,25 @@ export async function GET(req: NextRequest) {
       property: { status: 'APPROVED' as const, isActive: true },
     };
 
+    // Điều kiện: cùng phân khúc GIÁ (±30%) và cùng QUẬN — 2 tab đều yêu cầu CẢ HAI theo yêu cầu.
+    const priceCond = { priceMonthly: { gte: minPrice, lte: maxPrice } };
+    const districtCond = base.property.district?.trim()
+      ? { district: { contains: base.property.district.trim(), mode: 'insensitive' as const } }
+      : {};
+
     // Bước 1: lấy NHẸ id ứng viên theo từng tiêu chí (pool 200 tin gần nhất), rồi xáo trộn.
     const idsOnly = { select: { id: true }, take: POOL, orderBy: { createdAt: 'desc' as const } };
     const [buildingPool, pricePool, streetPool, districtPool] = await Promise.all([
       prisma.roomType.findMany({ where: { ...baseWhere, propertyId: base.propertyId }, ...idsOnly }),
-      prisma.roomType.findMany({ where: { ...baseWhere, priceMonthly: { gte: minPrice, lte: maxPrice } }, ...idsOnly }),
+      // "Cùng mức giá": cùng giá NHƯNG cũng phải cùng quận.
+      prisma.roomType.findMany({ where: { ...baseWhere, ...priceCond, property: { ...baseWhere.property, ...districtCond } }, ...idsOnly }),
+      // Cùng tuyến đường (và cùng giá) — ưu tiên gần nhất trong "Cùng khu vực".
       base.property.streetName?.trim()
-        ? prisma.roomType.findMany({ where: { ...baseWhere, property: { ...baseWhere.property, streetName: { contains: base.property.streetName.trim(), mode: 'insensitive' } } }, ...idsOnly })
+        ? prisma.roomType.findMany({ where: { ...baseWhere, ...priceCond, property: { ...baseWhere.property, streetName: { contains: base.property.streetName.trim(), mode: 'insensitive' } } }, ...idsOnly })
         : Promise.resolve([] as { id: string }[]),
+      // "Cùng khu vực": cùng quận NHƯNG cũng phải cùng giá.
       base.property.district?.trim()
-        ? prisma.roomType.findMany({ where: { ...baseWhere, property: { ...baseWhere.property, district: { contains: base.property.district.trim(), mode: 'insensitive' } } }, ...idsOnly })
+        ? prisma.roomType.findMany({ where: { ...baseWhere, ...priceCond, property: { ...baseWhere.property, ...districtCond } }, ...idsOnly })
         : Promise.resolve([] as { id: string }[]),
     ]);
 

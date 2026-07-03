@@ -11,8 +11,8 @@ import { useRoomTypes, useProperties, useCompanies } from '@/hooks/useData';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 
 const ROOM_TYPE_LABELS: Record<string, string> = {
-  don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1K1N',
-  '2k1n': '2N1K', studio: 'Studio', duplex: 'Duplex',
+  studio: 'Studio', gac_xep: 'Gác xép', don: 'Phòng đơn',
+  '1k1n': '1N1K', '2k1n': '2N1K', duplex: 'Duplex',
 };
 
 // Excel column mapping
@@ -82,7 +82,7 @@ async function downloadTemplate() {
     ['2. KIỂU PHÒNG (cột "Kiểu phòng"):'],
     ['   - don: Phòng đơn'],
     ['   - gac_xep: Gác xép'],
-    ['   - 1k1n: 1 khách 1 ngủ'],
+    ['   - 1k1n: 1 ngủ 1 khách'],
     ['   - 2k1n: 2 ngủ 1 khách'],
     ['   - studio: Studio'],
     ['   - duplex: Duplex'],
@@ -440,8 +440,8 @@ export default function AdminRoomsPage() {
         <select className="input-field w-full sm:!w-auto sm:min-w-[140px]" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="">Tất cả trạng thái</option>
           <option value="AVAILABLE">🟢 Còn phòng</option>
-          <option value="UPCOMING">🟡 Sắp trống</option>
           <option value="UNAVAILABLE">🔴 Hết phòng</option>
+          <option value="UPCOMING">🟡 Sắp trống</option>
         </select>
         {hasFilters && (
           <button onClick={() => { setFilterCompany(''); setFilterProperty(''); setFilterRoomType(''); setFilterStatus(''); }}
@@ -602,7 +602,7 @@ export default function AdminRoomsPage() {
             <div className="p-6">
               <RoomTypeForm
                 initialData={editingRoom || undefined}
-                properties={properties.map((p: any) => ({ id: p.id, name: p.name, district: p.district }))}
+                properties={properties.map((p: any) => ({ id: p.id, name: p.name, district: p.district, companyId: p.company?.id ?? p.companyId, companyName: p.company?.name }))}
                 onSubmit={handleFormSubmit}
                 isAdmin={true}
                 canEditCommission={canEditCommission}

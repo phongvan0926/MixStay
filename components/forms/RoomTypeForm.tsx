@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import ImageUpload from '@/components/ui/ImageUpload';
 import VideoUpload from '@/components/ui/VideoUpload';
-import VideoLinkInput from '@/components/ui/VideoLinkInput';
 import AiListingAssistant from '@/components/forms/AiListingAssistant';
 import SearchableSelect from '@/components/ui/SearchableSelect';
 import { formatCurrency } from '@/lib/utils';
@@ -18,6 +17,7 @@ interface RoomTypeData {
   areaSqm: number;
   priceMonthly: number;
   deposit: number;
+  depositType: string;
   description: string;
   shortTermAllowed: boolean;
   shortTermMonths: string;
@@ -38,14 +38,16 @@ interface RoomTypeData {
 
 const STATUS_OPTIONS: { value: RoomStatusValue; label: string; cls: string }[] = [
   { value: 'AVAILABLE',   label: '🟢 Còn phòng',   cls: 'bg-emerald-50 border-emerald-300 text-emerald-700' },
-  { value: 'UPCOMING',    label: '🟡 Sắp trống',   cls: 'bg-amber-50 border-amber-300 text-amber-700' },
   { value: 'UNAVAILABLE', label: '🔴 Hết phòng',   cls: 'bg-red-50 border-red-300 text-red-700' },
+  { value: 'UPCOMING',    label: '🟡 Sắp trống',   cls: 'bg-amber-50 border-amber-300 text-amber-700' },
 ];
 
 interface Property {
   id: string;
   name: string;
   district?: string;
+  companyId?: string;
+  companyName?: string;
 }
 
 interface RoomTypeFormProps {
@@ -59,11 +61,11 @@ interface RoomTypeFormProps {
 }
 
 const ROOM_TYPES = [
-  { value: 'don', label: 'Phòng đơn' },
-  { value: 'gac_xep', label: 'Gác xép' },
-  { value: '1k1n', label: '1 khách 1 ngủ' },
-  { value: '2k1n', label: '2 ngủ 1 khách' },
   { value: 'studio', label: 'Studio' },
+  { value: 'gac_xep', label: 'Gác xép' },
+  { value: 'don', label: 'Phòng đơn' },
+  { value: '1k1n', label: '1 ngủ 1 khách' },
+  { value: '2k1n', label: '2 ngủ 1 khách' },
   { value: 'duplex', label: 'Duplex' },
 ];
 
@@ -71,6 +73,16 @@ const AMENITY_OPTIONS = [
   'Điều hoà', 'Nóng lạnh', 'WC riêng', 'Bếp riêng', 'Ban công',
   'Giường', 'Tủ quần áo', 'Máy giặt riêng', 'Tủ lạnh', 'Bàn làm việc',
   'Kệ bếp', 'Bình nóng lạnh', 'Rèm cửa', 'Quạt trần', 'Smart TV',
+];
+// Tin ĐĂNG MỚI: tích sẵn tất cả nội thất TRỪ "Quạt trần" và "Smart TV".
+const DEFAULT_AMENITIES = AMENITY_OPTIONS.filter(a => a !== 'Quạt trần' && a !== 'Smart TV');
+
+// Hình thức đặt cọc: đóng X tháng, cọc Y tháng → deposit = Y × giá thuê.
+const DEPOSIT_OPTIONS: { value: string; label: string; deposit: number }[] = [
+  { value: '1c1', label: 'Đóng 1 cọc 1', deposit: 1 },
+  { value: '1c1.5', label: 'Đóng 1 cọc 1,5', deposit: 1.5 },
+  { value: '1c2', label: 'Đóng 1 cọc 2', deposit: 2 },
+  { value: '3c1', label: 'Đóng 3 cọc 1', deposit: 1 },
 ];
 
 const defaultData: RoomTypeData = {
@@ -80,6 +92,7 @@ const defaultData: RoomTypeData = {
   areaSqm: 0,
   priceMonthly: 0,
   deposit: 0,
+  depositType: '',
   description: '',
   shortTermAllowed: false,
   shortTermMonths: '',
@@ -89,7 +102,7 @@ const defaultData: RoomTypeData = {
   availableRoomNames: '',
   status: 'AVAILABLE',
   expectedAvailableDate: '',
-  amenities: [],
+  amenities: DEFAULT_AMENITIES,
   images: [],
   videos: [],
   videoLinks: [],
@@ -97,7 +110,7 @@ const defaultData: RoomTypeData = {
     { months: '6', percent: 40 },
     { months: '12', percent: 50 },
   ],
-  landlordNotes: '',
+  landlordNotes: 'Gọi 30 phút trước khi qua',
   isApproved: false,
 };
 
@@ -144,6 +157,7 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
         areaSqm: initialData.areaSqm || 0,
         priceMonthly: initialData.priceMonthly || 0,
         deposit: initialData.deposit || 0,
+        depositType: initialData.depositType || '',
         description: initialData.description || '',
         shortTermAllowed: initialData.shortTermAllowed ?? false,
         shortTermMonths: initialData.shortTermMonths || '',
@@ -216,6 +230,18 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
     }
   };
 
+  // Chọn hình thức cọc → tự tính tiền cọc = hệ số × giá thuê.
+  const handleDepositType = (value: string) => {
+    updateField('depositType', value);
+    const opt = DEPOSIT_OPTIONS.find(o => o.value === value);
+    if (opt && form.priceMonthly > 0) {
+      const dep = Math.round(form.priceMonthly * opt.deposit);
+      updateField('deposit', dep);
+      setDepositDisplay(formatVndInput(dep));
+      setDepositTouched(true);
+    }
+  };
+
   const handleShortTermPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const num = parseVndInput(e.target.value);
     setShortTermPriceDisplay(num ? formatVndInput(num) : '');
@@ -264,7 +290,6 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
     if (!form.typeName) return toast.error('Vui lòng chọn kiểu phòng');
     if (!form.areaSqm || form.areaSqm <= 0) return toast.error('Vui lòng nhập diện tích');
     if (!form.priceMonthly || form.priceMonthly <= 0) return toast.error('Vui lòng nhập giá thuê');
-    if (form.availableUnits > form.totalUnits) return toast.error('Số phòng trống không được lớn hơn tổng số phòng');
     if (form.status === 'UPCOMING' && !form.expectedAvailableDate) {
       return toast.error('Vui lòng chọn ngày phòng sẽ trống');
     }
@@ -290,11 +315,12 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
       areaSqm: form.areaSqm,
       priceMonthly: form.priceMonthly,
       deposit: form.deposit,
+      depositType: form.depositType || null,
       description: form.description,
       shortTermAllowed: form.shortTermAllowed,
       shortTermMonths: form.shortTermAllowed ? form.shortTermMonths : null,
       shortTermPrice: form.shortTermAllowed ? form.shortTermPrice : null,
-      totalUnits: form.totalUnits,
+      totalUnits: form.availableUnits, // đã bỏ ô "Tổng số phòng" → tổng = số đang trống
       availableUnits: form.availableUnits,
       availableRoomNames: form.availableRoomNames || null,
       status: form.status,
@@ -317,8 +343,23 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
     onSubmit(submitData);
   };
 
-  // Approved properties only
-  const approvedProperties = properties;
+  // D1: Lọc CÔNG TY trước → chỉ hiện tòa nhà thuộc công ty đó.
+  const [companyFilter, setCompanyFilter] = useState('');
+  const companyList = useMemo(() => {
+    const m = new Map<string, string>();
+    properties.forEach(p => { if (p.companyId) m.set(p.companyId, p.companyName || 'Công ty'); });
+    return Array.from(m.entries()).map(([id, name]) => ({ id, name }));
+  }, [properties]);
+  const approvedProperties = useMemo(() => {
+    if (!companyFilter) return properties;
+    if (companyFilter === '__none') return properties.filter(p => !p.companyId);
+    return properties.filter(p => p.companyId === companyFilter);
+  }, [properties, companyFilter]);
+  const onCompanyFilterChange = (v: string) => {
+    setCompanyFilter(v);
+    const list = v === '' ? properties : v === '__none' ? properties.filter(p => !p.companyId) : properties.filter(p => p.companyId === v);
+    if (form.propertyId && !list.some(p => p.id === form.propertyId)) updateField('propertyId', '');
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -326,6 +367,17 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
       <div className="card">
         <h3 className="text-lg font-semibold text-stone-900 mb-4">Thông tin cơ bản</h3>
         <div className="grid md:grid-cols-2 gap-4">
+          {/* Chọn CÔNG TY trước → lọc tòa nhà thuộc công ty đó */}
+          {companyList.length > 0 && (
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-stone-700 mb-1.5">Công ty</label>
+              <select className="input-field" value={companyFilter} onChange={e => onCompanyFilterChange(e.target.value)}>
+                <option value="">— Tất cả công ty —</option>
+                {companyList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                <option value="__none">— Chưa thuộc công ty —</option>
+              </select>
+            </div>
+          )}
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-stone-700 mb-1.5">
               Tòa nhà <span className="text-red-500">*</span>
@@ -426,6 +478,11 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
             <label className="block text-sm font-medium text-stone-700 mb-1.5">
               Đặt cọc (VNĐ)
             </label>
+            <select className="input-field mb-2" value={form.depositType}
+              onChange={e => handleDepositType(e.target.value)}>
+              <option value="">— Chọn hình thức cọc —</option>
+              {DEPOSIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
             <input
               type="text"
               className="input-field"
@@ -501,40 +558,16 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1.5">
-              Tổng số phòng loại này
-            </label>
-            <input
-              type="number"
-              className="input-field"
-              min={1}
-              placeholder="VD: 1"
-              value={form.totalUnits || ''}
-              onChange={e => {
-                const val = parseInt(e.target.value) || 0;
-                updateField('totalUnits', val);
-                if (form.availableUnits > val) updateField('availableUnits', val);
-              }}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1.5">
               Số phòng đang trống
             </label>
             <input
               type="number"
               className="input-field"
               min={0}
-              max={form.totalUnits}
               placeholder="VD: 1"
               value={form.availableUnits || ''}
-              onChange={e => {
-                const val = parseInt(e.target.value) || 0;
-                updateField('availableUnits', Math.min(val, form.totalUnits || val));
-              }}
+              onChange={e => updateField('availableUnits', parseInt(e.target.value) || 0)}
             />
-            {form.availableUnits > form.totalUnits && (
-              <p className="text-xs text-red-500 mt-1">Không được lớn hơn tổng số phòng</p>
-            )}
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-stone-700 mb-1.5">
@@ -640,30 +673,14 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
       {/* Section 6b: Video tin đăng */}
       <div className="card">
         <h3 className="text-lg font-semibold text-stone-900 mb-1">Video tin đăng</h3>
-        <p className="text-xs text-stone-400 mb-4">Có thể dùng cả 2 cách: upload video tự quay và/hoặc dán link từ YouTube, TikTok, Facebook.</p>
+        <p className="text-xs text-stone-400 mb-4">Video ngắn 15-30 giây quay bằng điện thoại. Định dạng MP4/WebM/MOV, ≤ 50MB mỗi file.</p>
 
-        <div className="space-y-5">
-          <div>
-            <p className="text-sm font-medium text-stone-700 mb-1">📹 Upload video (tối đa 3)</p>
-            <p className="text-xs text-stone-400 mb-2">Video ngắn 15-30 giây quay bằng điện thoại. Định dạng MP4/WebM/MOV, ≤ 50MB mỗi file.</p>
-            <VideoUpload
-              videos={form.videos}
-              onChange={urls => updateField('videos', urls)}
-              maxVideos={3}
-              folder="videos"
-            />
-          </div>
-
-          <div className="pt-4 border-t border-stone-100">
-            <p className="text-sm font-medium text-stone-700 mb-1">🔗 Link video (tối đa 5)</p>
-            <p className="text-xs text-stone-400 mb-2">Dán link video từ YouTube, TikTok hoặc Facebook.</p>
-            <VideoLinkInput
-              videoLinks={form.videoLinks}
-              onChange={links => updateField('videoLinks', links)}
-              maxLinks={5}
-            />
-          </div>
-        </div>
+        <VideoUpload
+          videos={form.videos}
+          onChange={urls => updateField('videos', urls)}
+          maxVideos={3}
+          folder="videos"
+        />
       </div>
 
       {/* Section 7: Hoa hồng cho MG */}

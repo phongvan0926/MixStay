@@ -13,8 +13,11 @@ import Logo from '@/components/ui/Logo';
 import { getZaloLink } from '@/lib/zalo';
 
 const roomTypeLabels: Record<string, string> = {
-  don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1 khách 1 ngủ',
+  don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1 ngủ 1 khách',
   '2k1n': '2 ngủ 1 khách', studio: 'Studio', duplex: 'Duplex',
+};
+const DEPOSIT_LABELS: Record<string, string> = {
+  '1c1': 'đóng 1 cọc 1', '1c1.5': 'đóng 1 cọc 1,5', '1c2': 'đóng 1 cọc 2', '3c1': 'đóng 3 cọc 1',
 };
 
 // ==================== Related Room Card ====================
@@ -77,16 +80,17 @@ function RelatedSection({ roomTypeId }: { roomTypeId: string }) {
   }, [data]);
 
   // Xáo trộn lại mỗi khi đổi dữ liệu/tab → mỗi lượt xem thấy bộ sản phẩm đa dạng, khác nhau.
-  // Hiển thị tối đa 6 (API trả dư để có cái xáo trộn).
-  const bucket: any[] = useMemo(() => {
-    const items: any[] = data?.[tab] || [];
-    const a = [...items];
+  const [showAll, setShowAll] = useState(false);
+  useEffect(() => { setShowAll(false); }, [tab]); // đổi tab → thu gọn lại
+  const shuffled: any[] = useMemo(() => {
+    const a = [...(data?.[tab] || [])];
     for (let i = a.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [a[i], a[j]] = [a[j], a[i]];
     }
-    return a.slice(0, 6);
+    return a;
   }, [data, tab]);
+  const bucket = shuffled.slice(0, showAll ? shuffled.length : 6);
   const hasAny = (data?.sameBuilding?.length || 0) + (data?.samePrice?.length || 0) + (data?.sameDistrict?.length || 0) > 0;
 
   if (loading) {
@@ -101,9 +105,9 @@ function RelatedSection({ roomTypeId }: { roomTypeId: string }) {
   if (!hasAny) return null;
 
   const tabs: { key: typeof tab; label: string; count: number }[] = [
-    { key: 'sameBuilding', label: 'Cùng tòa nhà', count: Math.min(data?.sameBuilding?.length || 0, 6) },
-    { key: 'samePrice', label: 'Cùng mức giá', count: Math.min(data?.samePrice?.length || 0, 6) },
-    { key: 'sameDistrict', label: 'Cùng khu vực', count: Math.min(data?.sameDistrict?.length || 0, 6) },
+    { key: 'sameBuilding', label: 'Cùng tòa nhà', count: Math.min(data?.sameBuilding?.length || 0, 9) },
+    { key: 'samePrice', label: 'Cùng mức giá', count: Math.min(data?.samePrice?.length || 0, 9) },
+    { key: 'sameDistrict', label: 'Cùng khu vực', count: Math.min(data?.sameDistrict?.length || 0, 9) },
   ];
 
   return (
@@ -126,9 +130,19 @@ function RelatedSection({ roomTypeId }: { roomTypeId: string }) {
       {bucket.length === 0 ? (
         <p className="text-sm text-stone-400 text-center py-6">Không có tin nào ở mục này.</p>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {bucket.map((rt: any) => <RelatedRoomCard key={rt.id} rt={rt} />)}
-        </div>
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {bucket.map((rt: any) => <RelatedRoomCard key={rt.id} rt={rt} />)}
+          </div>
+          {!showAll && shuffled.length > 6 && (
+            <div className="text-center mt-4">
+              <button type="button" onClick={() => setShowAll(true)}
+                className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-sm font-medium bg-white border border-stone-200 text-stone-700 hover:border-brand-400 hover:text-brand-700 transition-all">
+                Xem thêm tin liên quan ({shuffled.length - 6})
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -318,6 +332,9 @@ export default function ShareViewClient() {
           {roomType.deposit > 0 && (
             <p className="text-sm text-stone-500 mb-2">
               Đặt cọc: <span className="font-semibold text-stone-700">{formatCurrency(roomType.deposit)}</span>
+              {roomType.depositType && DEPOSIT_LABELS[roomType.depositType] && (
+                <span className="text-stone-400"> ({DEPOSIT_LABELS[roomType.depositType]})</span>
+              )}
             </p>
           )}
 
@@ -331,73 +348,56 @@ export default function ShareViewClient() {
             </div>
           )}
 
-          {roomType.description && (
-            <div className="p-3 bg-stone-50 rounded-xl">
-              <p className="text-sm text-stone-600 leading-relaxed whitespace-pre-line">{roomType.description}</p>
-            </div>
-          )}
         </div>
 
-        {/* Section 3: Tiện ích (phòng + tòa nhà gộp chung) */}
-        {(roomType.amenities?.length > 0 || hasPropertyAmenities) && (
-          <div className="card">
-            <h2 className="font-display font-semibold text-lg mb-3">🛋️ Nội thất</h2>
-            {roomType.amenities?.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {roomType.amenities.map((a: string) => (
-                  <span key={a} className="px-3 py-1.5 bg-brand-50 text-brand-700 text-sm rounded-lg border border-brand-100 font-medium">{a}</span>
-                ))}
-              </div>
+        {/* Chi tiết phòng — GỘP: mô tả + nội thất + tiện ích tòa nhà + đặc biệt + dịch vụ (gọn, đỡ kéo) */}
+        {(roomType.description || roomType.amenities?.length > 0 || hasPropertyAmenities || hasPropertyFeatures || property?.services?.length > 0) && (
+          <div className="card space-y-4">
+            {roomType.description && (
+              <p className="text-sm text-stone-600 leading-relaxed whitespace-pre-line">{roomType.description}</p>
             )}
-            {hasPropertyAmenities && (
-              <div className={roomType.amenities?.length > 0 ? 'mt-4 pt-4 border-t border-stone-100' : ''}>
-                <p className="text-sm font-bold text-stone-700 mb-2 flex items-center gap-1.5">🏢 Tiện ích tòa nhà</p>
-                <div className="flex flex-wrap gap-2">
-                  {property.amenities.map((a: string) => (
-                    <span key={a} className="px-3 py-1.5 bg-emerald-50 text-emerald-700 text-sm rounded-lg border border-emerald-200 font-medium">{a}</span>
+            {roomType.amenities?.length > 0 && (
+              <div>
+                <p className="text-sm font-bold text-stone-700 mb-2">🛋️ Nội thất</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {roomType.amenities.map((a: string) => (
+                    <span key={a} className="px-2.5 py-1 bg-brand-50 text-brand-700 text-xs rounded-lg border border-brand-100 font-medium">{a}</span>
                   ))}
                 </div>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Section 4: Tiện ích đặc biệt tòa nhà */}
-        {hasPropertyFeatures && (
-          <div className="card">
-            <h2 className="font-display font-semibold text-lg mb-3">✨ Tiện ích đặc biệt</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {property?.parkingCar && (
-                <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 text-center">
-                  <div className="text-3xl mb-1">🚗</div>
-                  <p className="text-sm text-blue-700 font-medium">Ô tô đỗ cửa</p>
+            {hasPropertyAmenities && (
+              <div>
+                <p className="text-sm font-bold text-stone-700 mb-2">🏢 Tiện ích tòa nhà</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {property.amenities.map((a: string) => (
+                    <span key={a} className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs rounded-lg border border-emerald-200 font-medium">{a}</span>
+                  ))}
                 </div>
-              )}
-              {property?.parkingBike && (
-                <div className="p-4 bg-sky-50 rounded-xl border border-sky-100 text-center">
-                  <div className="text-3xl mb-1">🏍️</div>
-                  <p className="text-sm text-sky-700 font-medium">Để xe máy</p>
+              </div>
+            )}
+            {hasPropertyFeatures && (
+              <div>
+                <p className="text-sm font-bold text-stone-700 mb-2">✨ Tiện ích đặc biệt</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {property?.parkingCar && <span className="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs rounded-lg border border-blue-100 font-medium">🚗 Ô tô đỗ cửa</span>}
+                  {property?.parkingBike && <span className="px-2.5 py-1 bg-sky-50 text-sky-700 text-xs rounded-lg border border-sky-100 font-medium">🏍️ Để xe máy</span>}
+                  {property?.evCharging && <span className="px-2.5 py-1 bg-green-50 text-green-700 text-xs rounded-lg border border-green-100 font-medium">⚡ Sạc xe điện</span>}
+                  {property?.petAllowed && <span className="px-2.5 py-1 bg-amber-50 text-amber-700 text-xs rounded-lg border border-amber-100 font-medium">🐾 Thú cưng OK</span>}
+                  {property?.foreignerOk && <span className="px-2.5 py-1 bg-purple-50 text-purple-700 text-xs rounded-lg border border-purple-100 font-medium">🌍 Người nước ngoài</span>}
                 </div>
-              )}
-              {property?.evCharging && (
-                <div className="p-4 bg-green-50 rounded-xl border border-green-100 text-center">
-                  <div className="text-3xl mb-1">⚡</div>
-                  <p className="text-sm text-green-700 font-medium">Sạc xe điện</p>
+              </div>
+            )}
+            {property?.services?.length > 0 && (
+              <div>
+                <p className="text-sm font-bold text-stone-700 mb-2">🧾 Dịch vụ tòa nhà</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {property.services.map((s: any, i: number) => (
+                    <span key={i} className="px-2.5 py-1 bg-stone-100 text-stone-700 text-xs rounded-lg font-medium">{s.label}: {s.value}</span>
+                  ))}
                 </div>
-              )}
-              {property?.petAllowed && (
-                <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 text-center">
-                  <div className="text-3xl mb-1">🐾</div>
-                  <p className="text-sm text-amber-700 font-medium">Thú cưng OK</p>
-                </div>
-              )}
-              {property?.foreignerOk && (
-                <div className="p-4 bg-purple-50 rounded-xl border border-purple-100 text-center">
-                  <div className="text-3xl mb-1">🌍</div>
-                  <p className="text-sm text-purple-700 font-medium">Người nước ngoài</p>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -418,29 +418,6 @@ export default function ShareViewClient() {
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             Mở Google Maps để chỉ đường
           </a>
-        </div>
-
-        {/* Section 7: Liên hệ */}
-        <div className="card bg-gradient-to-br from-brand-600 to-brand-700 text-white border-0">
-          <h2 className="font-display font-semibold text-lg mb-2">Quan tâm phòng này?</h2>
-          <p className="text-brand-100 text-sm mb-4">Liên hệ hỗ trợ để được tư vấn và hẹn xem phòng miễn phí.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <a href={zaloLink} target="_blank" rel="noopener noreferrer"
-              className="bg-[#0068FF] text-white font-medium py-3 rounded-xl text-center text-sm hover:opacity-90 transition-all">
-              💬 Tư vấn qua Zalo
-            </a>
-            {contactPhone ? (
-              <a href={`tel:${contactPhone}`} className="bg-white text-brand-700 font-medium py-3 rounded-xl text-center text-sm hover:bg-brand-50 transition-all">
-                📞 Gọi hỗ trợ trực tiếp
-              </a>
-            ) : (
-              // Trang công khai /tin/[id] không gắn cộng tác viên → fallback HOTLINE công ty (số tĩnh,
-              // KHÔNG qua lib/zalo). Nút Zalo bên cạnh vẫn giữ định tuyến riêng → không bị đè.
-              <a href="tel:0379838222" className="bg-white text-brand-700 font-medium py-3 rounded-xl text-center text-sm hover:bg-brand-50 transition-all">
-                📞 Gọi hotline 0379 838 222
-              </a>
-            )}
-          </div>
         </div>
 
         {/* Section 8: Link MÔI GIỚI → nút sang KHO TỔNG của cộng tác viên (giữ khách, không thoát ra

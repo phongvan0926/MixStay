@@ -7,11 +7,11 @@ import DistrictPills from '@/components/ui/DistrictPills';
 import PriceRangeSlider from '@/components/ui/PriceRangeSlider';
 
 const ROOM_TYPES: { value: string; label: string }[] = [
-  { value: 'don', label: 'Phòng đơn' },
-  { value: 'gac_xep', label: 'Gác xép' },
-  { value: '1k1n', label: '1 khách 1 ngủ' },
-  { value: '2k1n', label: '2 ngủ 1 khách' },
   { value: 'studio', label: 'Studio' },
+  { value: 'gac_xep', label: 'Gác xép' },
+  { value: 'don', label: 'Phòng đơn' },
+  { value: '1k1n', label: '1 ngủ 1 khách' },
+  { value: '2k1n', label: '2 ngủ 1 khách' },
   { value: 'duplex', label: 'Duplex' },
 ];
 

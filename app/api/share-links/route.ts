@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
         where: propertyWhere,
         select: {
           id: true, name: true, district: true, streetName: true, city: true,
-          amenities: true, images: true, totalFloors: true,
+          amenities: true, images: true, totalFloors: true, services: true,
           fullAddress: true, // server-side dựng publicAddress (ẩn số nhà) — sanitizeProperty bỏ trước khi trả về
           parkingCar: true, parkingBike: true, evCharging: true, petAllowed: true, foreignerOk: true,
           company: { select: { id: true, name: true, logo: true, zaloGroupLink: true, description: true } },
@@ -120,7 +120,7 @@ export async function GET(req: NextRequest) {
           roomType: {
             select: {
               id: true, name: true, typeName: true, areaSqm: true,
-              priceMonthly: true, deposit: true, description: true,
+              priceMonthly: true, deposit: true, depositType: true, description: true,
               amenities: true, images: true, videos: true, videoLinks: true,
               listingCode: true,
               totalUnits: true, availableUnits: true,
@@ -130,7 +130,7 @@ export async function GET(req: NextRequest) {
               property: {
                 select: {
                   id: true, name: true, district: true, streetName: true, city: true,
-                  amenities: true, images: true, totalFloors: true,
+                  amenities: true, images: true, totalFloors: true, services: true,
                   fullAddress: true, // server-side dựng publicAddress (ẩn số nhà) — bỏ trước khi trả về
                   parkingCar: true, parkingBike: true, evCharging: true, petAllowed: true, foreignerOk: true,
                   // NO lat, lng, landlord phone

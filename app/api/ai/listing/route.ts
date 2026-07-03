@@ -20,7 +20,7 @@ function getGeminiKeys(): string[] {
 }
 
 const TYPE_LABELS: Record<string, string> = {
-  don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1 khách 1 ngủ',
+  don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1 ngủ 1 khách',
   '2k1n': '2 ngủ 1 khách', studio: 'Studio', duplex: 'Duplex',
 };
 

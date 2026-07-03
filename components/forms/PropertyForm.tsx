@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import ImageUpload from '@/components/ui/ImageUpload';
 import Combobox from '@/components/ui/Combobox';
-import { HANOI_DISTRICTS, COMMON_STREETS, findDistrictForStreet } from '@/lib/hanoi-locations';
+import { HANOI_DISTRICTS } from '@/lib/hanoi-locations';
 import { extractHouseNumber, redactHouseNumber } from '@/lib/address';
 
 interface PropertyData {
@@ -26,6 +25,7 @@ interface PropertyData {
   evCharging: boolean;
   petAllowed: boolean;
   foreignerOk: boolean;
+  services: { label: string; value: string }[]; // dịch vụ tòa nhà (điện/nước/...): {tên, mức phí}
   status?: string;
 }
 
@@ -43,9 +43,11 @@ interface PropertyFormProps {
 const AMENITY_OPTIONS = [
   'Thang máy', 'Bảo vệ 24/7', 'Camera an ninh', 'Wifi miễn phí',
   'Gửi xe miễn phí', 'Máy giặt chung', 'Sân phơi', 'Khoá vân tay',
-  'Điện năng lượng mặt trời', 'Nước giếng khoan', 'Phòng sinh hoạt chung',
-  'Sân thượng', 'Hầm để xe',
+  'Điện năng lượng mặt trời', 'Nhà để xe',
 ];
+
+// Dịch vụ mặc định của tòa nhà (người dùng điền mức phí; có thể thêm dịch vụ khác bằng tay).
+const DEFAULT_SERVICES = ['Điện', 'Nước', 'Dịch vụ chung', 'Internet'];
 
 const FEATURE_TOGGLES = [
   { key: 'parkingCar', label: 'Ô tô đỗ cửa', icon: '🚗' },
@@ -73,26 +75,15 @@ const defaultData: PropertyData = {
   evCharging: false,
   petAllowed: false,
   foreignerOk: false,
+  services: DEFAULT_SERVICES.map(label => ({ label, value: '' })),
   status: 'PENDING',
 };
 
 export default function PropertyForm({ initialData, onSubmit, isAdmin = false, canTransferOwnership = false, loading = false, companies = [], landlords = [] }: PropertyFormProps) {
   const [form, setForm] = useState<PropertyData>(defaultData);
   const [companyId, setCompanyId] = useState<string>(initialData?.companyId || '');
-  const [landlordId, setLandlordId] = useState<string>(initialData?.landlordId || '');
-  const [landlordSearch, setLandlordSearch] = useState('');
   const isEdit = !!initialData?.id;
-  const originalLandlordId = initialData?.landlordId || '';
-  // Selector chủ nhà khóa khi: đang edit VÀ không có quyền transfer
-  const landlordLocked = isEdit && !canTransferOwnership;
-  const landlordChanged = isEdit && !!landlordId && landlordId !== originalLandlordId;
-
-  const filteredLandlords = landlordSearch.trim()
-    ? landlords.filter(l => {
-        const q = landlordSearch.toLowerCase();
-        return l.name?.toLowerCase().includes(q) || l.email?.toLowerCase().includes(q);
-      })
-    : landlords;
+  // Đã bỏ ô chọn chủ nhà: tòa nhà thuộc CÔNG TY (chọn ở trên); admin tạo → server gắn admin.
 
   useEffect(() => {
     if (initialData) {
@@ -115,6 +106,9 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
         evCharging: initialData.evCharging ?? false,
         petAllowed: initialData.petAllowed ?? false,
         foreignerOk: initialData.foreignerOk ?? false,
+        services: (Array.isArray(initialData.services) && initialData.services.length)
+          ? initialData.services
+          : DEFAULT_SERVICES.map(label => ({ label, value: '' })),
         status: initialData.status || 'PENDING',
       });
     }
@@ -137,25 +131,34 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
     setForm(prev => ({ ...prev, [key]: !prev[key as keyof PropertyData] }));
   };
 
+  const updateService = (i: number, field: 'label' | 'value', v: string) => {
+    setForm(prev => ({ ...prev, services: prev.services.map((s, idx) => idx === i ? { ...s, [field]: v } : s) }));
+  };
+  const addService = () => setForm(prev => ({ ...prev, services: [...prev.services, { label: '', value: '' }] }));
+  const removeService = (i: number) => setForm(prev => ({ ...prev, services: prev.services.filter((_, idx) => idx !== i) }));
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!form.name.trim()) return toast.error('Vui lòng nhập tên tòa nhà');
     if (!form.fullAddress.trim()) return toast.error('Vui lòng nhập đường/ngõ/ngách');
     if (!form.district.trim()) return toast.error('Vui lòng nhập quận/huyện');
-    if (!form.streetName.trim()) return toast.error('Vui lòng nhập tên đường');
-    if (isAdmin && !isEdit && !landlordId) return toast.error('Vui lòng chọn chủ nhà cho tòa nhà này');
 
     // fullAddress lưu trữ (nội bộ/staff) = số nhà + đường/ngõ/ngách. Khách chỉ thấy phần đường/ngõ/ngách.
     const combinedFullAddress = [form.houseNumber.trim(), form.fullAddress.trim()].filter(Boolean).join(' ');
+    // Bỏ ô "Tên đường" → streetName lấy từ phần Đường/Ngõ/Ngách để vẫn phục vụ tìm kiếm/hiển thị.
+    const streetName = form.streetName.trim() || form.fullAddress.trim();
+    // Chỉ giữ dịch vụ có nhập cả tên + mức phí.
+    const services = form.services.filter(s => s.label.trim() && s.value.trim()).map(s => ({ label: s.label.trim(), value: s.value.trim() }));
 
     onSubmit({
       ...form,
+      streetName,
+      services,
       fullAddress: combinedFullAddress,
       houseNumber: form.houseNumber.trim() || null,
       companyId: companyId || null,
-      // Gửi landlordId khi: tạo mới (admin), hoặc edit + có quyền transfer
-      ...(isAdmin && landlordId && (!isEdit || canTransferOwnership) ? { landlordId } : {}),
+      // Không gửi landlordId nữa: admin tạo → server gắn admin; chủ nhà tự tạo → server gắn chính họ.
     });
   };
 
@@ -176,51 +179,6 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
             </div>
           )}
 
-          {/* Landlord selector (admin only — required when creating) */}
-          {isAdmin && (
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-stone-700 mb-1.5">
-                Chủ nhà {!isEdit && <span className="text-red-500">*</span>}
-              </label>
-              {landlords.length > 8 && (
-                <input
-                  type="text"
-                  className="input-field mb-2"
-                  placeholder="Tìm theo tên hoặc email…"
-                  value={landlordSearch}
-                  onChange={e => setLandlordSearch(e.target.value)}
-                />
-              )}
-              <select
-                className="input-field disabled:opacity-60 disabled:cursor-not-allowed"
-                value={landlordId}
-                onChange={e => setLandlordId(e.target.value)}
-                disabled={landlordLocked}
-                title={landlordLocked ? 'Cần quyền Chuyển sở hữu tòa nhà để đổi chủ nhà' : ''}
-              >
-                <option value="">-- Chọn chủ nhà --</option>
-                {filteredLandlords.map(l => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}{l.email ? ` — ${l.email}` : ''}
-                  </option>
-                ))}
-              </select>
-              {landlordLocked && (
-                <p className="text-xs text-stone-400 mt-1">🔒 Cần quyền <strong>Chuyển sở hữu tòa nhà</strong> (TRANSFER_PROPERTY_OWNERSHIP) để đổi chủ nhà.</p>
-              )}
-              {isEdit && canTransferOwnership && !landlordChanged && (
-                <p className="text-xs text-stone-400 mt-1">Bạn có quyền chuyển sở hữu — chọn chủ nhà khác để chuyển tòa nhà này.</p>
-              )}
-              {landlordChanged && (
-                <p className="text-xs text-amber-600 mt-1 font-medium">
-                  ⚠️ Đang chuyển tòa nhà sang chủ nhà khác. Tất cả tin đăng, giao dịch, link chia sẻ thuộc tòa sẽ chuyển theo.
-                </p>
-              )}
-              {!isEdit && landlords.length === 0 && (
-                <p className="text-xs text-amber-600 mt-1">Chưa có user role LANDLORD nào. Tạo user chủ nhà ở mục Quản lý người dùng trước.</p>
-              )}
-            </div>
-          )}
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-stone-700 mb-1.5">
               Tên tòa nhà <span className="text-red-500">*</span>
@@ -231,16 +189,6 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
               placeholder="VD: Chung cư mini Hoàng Mai"
               value={form.name}
               onChange={e => updateField('name', e.target.value)}
-            />
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-stone-700 mb-1.5">Mô tả</label>
-            <textarea
-              className="input-field min-h-[80px] resize-y"
-              placeholder="Mô tả ngắn về tòa nhà..."
-              value={form.description}
-              onChange={e => updateField('description', e.target.value)}
-              rows={3}
             />
           </div>
         </div>
@@ -278,23 +226,6 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
           </div>
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1.5">
-              Tên đường <span className="text-red-500">*</span>
-            </label>
-            <Combobox
-              options={COMMON_STREETS}
-              value={form.streetName}
-              onChange={v => {
-                updateField('streetName', v);
-                // Chọn xong tên đường → tự điền quận chứa đường đó (quận nổi tiếng hơn nếu trùng).
-                const d = findDistrictForStreet(v);
-                if (d) updateField('district', d);
-              }}
-              placeholder="VD: Lĩnh Nam (gõ để gợi ý)"
-              allowFreeText
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1.5">
               Quận/Huyện <span className="text-red-500">*</span>
             </label>
             <Combobox
@@ -315,18 +246,6 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
               onChange={e => updateField('city', e.target.value)}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1.5">Số tầng</label>
-            <input
-              type="number"
-              className="input-field"
-              min={1}
-              max={50}
-              placeholder="VD: 5"
-              value={form.totalFloors}
-              onChange={e => updateField('totalFloors', e.target.value)}
-            />
-          </div>
         </div>
       </div>
 
@@ -335,7 +254,7 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
         <h3 className="text-lg font-semibold text-stone-900 mb-4">Liên hệ & Ghi chú cho cộng tác viên</h3>
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1.5">SĐT Zalo chủ nhà</label>
+            <label className="block text-sm font-medium text-stone-700 mb-1.5">SĐT/Zalo người quản lý tòa nhà</label>
             <input
               type="text"
               className="input-field"
@@ -381,6 +300,28 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
         </div>
       </div>
 
+      {/* Section: Dịch vụ tòa nhà */}
+      <div className="card">
+        <h3 className="text-lg font-semibold text-stone-900 mb-4">Dịch vụ tòa nhà</h3>
+        <p className="text-xs text-stone-500 mb-3">Nhập mức phí các dịch vụ. Bấm &quot;+ Thêm dịch vụ&quot; nếu tòa nhà thu thêm dịch vụ khác.</p>
+        <div className="space-y-2">
+          {form.services.map((s, i) => (
+            <div key={i} className="flex gap-2 items-center">
+              <input type="text" className="input-field flex-1" placeholder="Tên dịch vụ (VD: Điện)"
+                value={s.label} onChange={e => updateService(i, 'label', e.target.value)} />
+              <input type="text" className="input-field flex-1" placeholder="Mức phí (VD: 4.000đ/số)"
+                value={s.value} onChange={e => updateService(i, 'value', e.target.value)} />
+              <button type="button" onClick={() => removeService(i)}
+                className="shrink-0 w-9 h-9 rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors">✕</button>
+            </div>
+          ))}
+        </div>
+        <button type="button" onClick={addService}
+          className="mt-3 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-brand-50 text-brand-700 hover:bg-brand-100 transition-colors">
+          + Thêm dịch vụ
+        </button>
+      </div>
+
       {/* Section 5: Đặc điểm */}
       <div className="card">
         <h3 className="text-lg font-semibold text-stone-900 mb-4">Đặc điểm nổi bật</h3>
@@ -401,17 +342,6 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Section 6: Ảnh tòa nhà */}
-      <div className="card">
-        <h3 className="text-lg font-semibold text-stone-900 mb-4">Ảnh tòa nhà</h3>
-        <ImageUpload
-          images={form.images}
-          onChange={urls => updateField('images', urls)}
-          maxImages={20}
-          folder="properties"
-        />
       </div>
 
       {/* Section 7: Admin - Trạng thái */}

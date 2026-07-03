@@ -12,7 +12,7 @@ import { SkeletonStats, SkeletonCardGrid } from '@/components/ui/Skeleton';
 import { normalizeListingCode } from '@/lib/listing-code';
 
 const ROOM_TYPE_LABELS: Record<string, string> = {
-  don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1K1N',
+  don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1N1K',
   '2k1n': '2N1K', studio: 'Studio', duplex: 'Duplex',
 };
 
@@ -272,10 +272,10 @@ export default function LandlordPropertiesPage() {
     } finally { setSubmitting(false); }
   };
 
-  // Cycle status: AVAILABLE → UPCOMING → UNAVAILABLE → AVAILABLE
+  // Cycle status: Còn phòng → Hết phòng → Sắp trống → Còn phòng
   const cycleStatus = async (id: string, current: 'AVAILABLE' | 'UPCOMING' | 'UNAVAILABLE') => {
     const next: 'AVAILABLE' | 'UPCOMING' | 'UNAVAILABLE' =
-      current === 'AVAILABLE' ? 'UPCOMING' : current === 'UPCOMING' ? 'UNAVAILABLE' : 'AVAILABLE';
+      current === 'AVAILABLE' ? 'UNAVAILABLE' : current === 'UNAVAILABLE' ? 'UPCOMING' : 'AVAILABLE';
 
     const body: any = { id, status: next };
     if (next === 'UPCOMING') {
@@ -714,7 +714,7 @@ export default function LandlordPropertiesPage() {
             <div className="p-6">
               <RoomTypeForm
                 initialData={editingRT || (preFilledPropId ? { propertyId: preFilledPropId } : undefined)}
-                properties={properties.map((p: any) => ({ id: p.id, name: p.name, district: p.district }))}
+                properties={properties.map((p: any) => ({ id: p.id, name: p.name, district: p.district, companyId: p.company?.id ?? p.companyId, companyName: p.company?.name }))}
                 onSubmit={handleRTSubmit}
                 isAdmin={false}
                 loading={submitting}
@@ -881,7 +881,7 @@ function RoomTypeCard({
             Sửa chi tiết
           </button>
           <button onClick={onToggle}
-            title="Bấm để đổi trạng thái: Còn → Sắp trống → Hết → Còn"
+            title="Bấm để đổi trạng thái: Còn → Hết → Sắp trống → Còn"
             className={'w-full py-1.5 rounded-lg text-xs font-medium transition-all border ' +
               (rt.status === 'UNAVAILABLE'
                 ? 'bg-red-50 text-red-700 hover:bg-red-100 border-red-200'
@@ -1001,7 +1001,7 @@ function RoomTypeListView({
                 <td className="px-3 py-2 text-center">
                   <button
                     onClick={() => onToggle(rt.id, rt.status || (rt.isAvailable === false ? 'UNAVAILABLE' : 'AVAILABLE'))}
-                    title="Bấm để đổi: Còn → Sắp trống → Hết → Còn"
+                    title="Bấm để đổi: Còn → Hết → Sắp trống → Còn"
                     className={'inline-flex flex-col items-center px-2 py-1 rounded-lg text-xs font-medium transition-all border ' +
                       (rt.status === 'UNAVAILABLE'
                         ? 'bg-red-50 text-red-700 hover:bg-red-100 border-red-200'

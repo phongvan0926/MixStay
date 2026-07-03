@@ -164,6 +164,7 @@ model Property {
   evCharging    Boolean        @default(false)  // Sạc xe điện
   petAllowed    Boolean        @default(false)  // Nuôi thú cưng
   foreignerOk   Boolean        @default(false)  // Cho người nước ngoài thuê
+  services      Json?          // Dịch vụ tòa nhà: [{label, value}] (điện/nước/dịch vụ chung/internet/...)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
@@ -189,6 +190,7 @@ model RoomType {
   areaSqm             Float
   priceMonthly        Float
   deposit             Float?    // mặc định = priceMonthly (1 tháng tiền thuê)
+  depositType         String?   // hình thức cọc: "1c1" | "1c1.5" | "1c2" | "3c1" (đóng X cọc Y)
   description         String?
   amenities           String[]  @default([])
   images              String[]  @default([])
