@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatServiceValue } from '@/lib/utils';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import VideoGallery from '@/components/ui/VideoGallery';
 import ZaloFab from '@/components/ui/ZaloFab';
@@ -324,19 +324,21 @@ export default function ShareViewClient() {
             </span>
           )}
 
-          <div className="text-3xl font-bold text-brand-600 mb-1">
-            {formatCurrency(roomType.priceMonthly)}
-            <span className="text-base font-normal text-stone-400">/tháng</span>
+          {/* Giá thuê (trái) + Đặt cọc (phải, sát lề) trên CÙNG 1 dòng — mobile tự xuống dòng nếu chật */}
+          <div className="flex flex-wrap items-end gap-x-3 gap-y-1 mb-2">
+            <div className="text-2xl sm:text-3xl font-bold text-brand-600">
+              {formatCurrency(roomType.priceMonthly)}
+              <span className="text-base font-normal text-stone-400">/tháng</span>
+            </div>
+            {roomType.deposit > 0 && (
+              <p className="text-sm text-stone-500 text-right ml-auto">
+                Đặt cọc: <span className="font-semibold text-stone-700">{formatCurrency(roomType.deposit)}</span>
+                {roomType.depositType && DEPOSIT_LABELS[roomType.depositType] && (
+                  <span className="text-stone-400"> ({DEPOSIT_LABELS[roomType.depositType]})</span>
+                )}
+              </p>
+            )}
           </div>
-
-          {roomType.deposit > 0 && (
-            <p className="text-sm text-stone-500 mb-2">
-              Đặt cọc: <span className="font-semibold text-stone-700">{formatCurrency(roomType.deposit)}</span>
-              {roomType.depositType && DEPOSIT_LABELS[roomType.depositType] && (
-                <span className="text-stone-400"> ({DEPOSIT_LABELS[roomType.depositType]})</span>
-              )}
-            </p>
-          )}
 
           {roomType.shortTermAllowed && (
             <div className="p-3 bg-violet-50 rounded-xl border border-violet-100 mb-4 mt-3">
@@ -393,7 +395,7 @@ export default function ShareViewClient() {
                 <p className="text-sm font-bold text-stone-700 mb-2">🧾 Dịch vụ tòa nhà</p>
                 <div className="flex flex-wrap gap-1.5">
                   {property.services.map((s: any, i: number) => (
-                    <span key={i} className="px-2.5 py-1 bg-stone-100 text-stone-700 text-xs rounded-lg font-medium">{s.label}: {s.value}</span>
+                    <span key={i} className="px-2.5 py-1 bg-stone-100 text-stone-700 text-xs rounded-lg font-medium">{s.label}: {formatServiceValue(s.label, s.value)}</span>
                   ))}
                 </div>
               </div>

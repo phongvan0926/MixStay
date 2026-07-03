@@ -46,8 +46,14 @@ const AMENITY_OPTIONS = [
   'Điện năng lượng mặt trời', 'Nhà để xe',
 ];
 
-// Dịch vụ mặc định của tòa nhà (người dùng điền mức phí; có thể thêm dịch vụ khác bằng tay).
-const DEFAULT_SERVICES = ['Điện', 'Nước', 'Dịch vụ chung', 'Internet'];
+// Dịch vụ mặc định của tòa nhà — điền SẴN mức phí thường gặp để người dùng chỉ cần sửa lại.
+// Đơn vị (số/người/phòng) tự suy khi hiển thị công khai (formatServiceValue).
+const DEFAULT_SERVICES: { label: string; value: string }[] = [
+  { label: 'Điện', value: '4000' },        // 4.000đ/số
+  { label: 'Nước', value: '120000' },      // 120.000đ/người
+  { label: 'Dịch vụ chung', value: '150000' }, // 150.000đ/người
+  { label: 'Internet', value: '100000' },  // 100.000đ/phòng
+];
 
 const FEATURE_TOGGLES = [
   { key: 'parkingCar', label: 'Ô tô đỗ cửa', icon: '🚗' },
@@ -75,7 +81,7 @@ const defaultData: PropertyData = {
   evCharging: false,
   petAllowed: false,
   foreignerOk: false,
-  services: DEFAULT_SERVICES.map(label => ({ label, value: '' })),
+  services: DEFAULT_SERVICES.map(s => ({ ...s })),
   status: 'PENDING',
 };
 
@@ -108,7 +114,7 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
         foreignerOk: initialData.foreignerOk ?? false,
         services: (Array.isArray(initialData.services) && initialData.services.length)
           ? initialData.services
-          : DEFAULT_SERVICES.map(label => ({ label, value: '' })),
+          : DEFAULT_SERVICES.map(s => ({ ...s })),
         status: initialData.status || 'PENDING',
       });
     }
@@ -303,13 +309,13 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
       {/* Section: Dịch vụ tòa nhà */}
       <div className="card">
         <h3 className="text-lg font-semibold text-stone-900 mb-4">Dịch vụ tòa nhà</h3>
-        <p className="text-xs text-stone-500 mb-3">Nhập mức phí các dịch vụ. Bấm &quot;+ Thêm dịch vụ&quot; nếu tòa nhà thu thêm dịch vụ khác.</p>
+        <p className="text-xs text-stone-500 mb-3">Đã điền sẵn mức phí phổ biến — chỉ cần sửa lại cho đúng tòa nhà của bạn. Bấm &quot;+ Thêm dịch vụ&quot; nếu thu thêm dịch vụ khác.</p>
         <div className="space-y-2">
           {form.services.map((s, i) => (
             <div key={i} className="flex gap-2 items-center">
               <input type="text" className="input-field flex-1" placeholder="Tên dịch vụ (VD: Điện)"
                 value={s.label} onChange={e => updateService(i, 'label', e.target.value)} />
-              <input type="text" className="input-field flex-1" placeholder="Mức phí (VD: 4.000đ/số)"
+              <input type="text" inputMode="numeric" className="input-field flex-1" placeholder="Mức phí (VD: 4000)"
                 value={s.value} onChange={e => updateService(i, 'value', e.target.value)} />
               <button type="button" onClick={() => removeService(i)}
                 className="shrink-0 w-9 h-9 rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors">✕</button>

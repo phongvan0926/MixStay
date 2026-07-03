@@ -233,6 +233,15 @@ mixstay/
 
 ## Changelog
 
+### v8.7 — 2026-07-03 (gọn giao diện + responsive admin + phí dịch vụ)
+- **Thẻ tin chỉ có video (không ảnh):** thay placeholder 🏠 trống bằng ảnh đại diện lấy từ video — video upload (khung hình đầu) / thumbnail YouTube / nền gradient + nút ▶ + badge 🎬. Helper chung `pickVideoCover()` (lib/video-utils.ts); API `rooms/public`, `companies/[id]/inventory`, `saved-listings` trả thêm `videos[]`.
+- **Gọn module tìm kiếm trang chủ** (`app/PublicSearch.tsx`): giảm padding/margin giữa các phần (p-3 sm:p-4, mb-6, divider mt-3 pt-3, pill px-2.5 py-1) → bớt khoảng trống ~35%.
+- **Bộ lọc admin gọn 1 hàng:** `admin/users` — 3 bộ lọc (vai trò/trạng thái/sắp xếp) vào `grid sm:grid-cols-3`, ô tìm kiếm riêng 1 dòng. `admin/rooms` — "Tất cả tòa nhà" tách RIÊNG 1 dòng dạng typeahead `SearchableSelect` (gõ lọc dần, bắt buộc chọn trong danh sách); Công ty + Kiểu phòng + Trạng thái cùng 1 hàng.
+- **Dịch vụ tòa nhà — điền sẵn mặc định** (`PropertyForm`): Điện 4000 / Nước 120000 / Dịch vụ chung 150000 / Internet 100000; người dùng chỉ sửa lại.
+- **Hiển thị phí dịch vụ đầy đủ:** helper `formatServiceValue(label,value)` (lib/utils.ts) → "Điện: 4.000đ/số", "Nước: 120.000đ/người", "Internet: 100.000đ/phòng" (thêm dấu nghìn + đơn vị suy từ tên; số <1000 hiểu là "nghìn"). Áp ở trang tin đăng.
+- **Trang tin đăng:** đưa Đặt cọc lên CÙNG dòng với giá thuê, đẩy sát lề phải (`ml-auto`), tự xuống dòng khi màn hình hẹp.
+- **Responsive admin (mobile + PC):** topbar padding `px-3 sm:px-6` + role label `truncate`; mobile bottom-nav hiện ĐỦ mục (cuộn ngang, bỏ giới hạn 4); `.stat-card`/`.table-cell`/`.table-header` padding co theo breakpoint; thêm util `.scrollbar-hide`.
+
 ### v8.6 — 2026-06-22
 - **Bật lại đăng nhập Google (OAuth) cho user tự đăng ký:**
   - Sửa flag hiển thị nút OAuth ở `app/login/page.tsx` + `app/register/page.tsx`: từ presence-based `!!(process.env.NEXT_PUBLIC_GOOGLE_ENABLED)` (lỗi: `!!"false" === true`) sang `=== 'true'` → để trống/"false" = ẩn nút, "true" = hiện. Áp cho cả google/facebook/apple.

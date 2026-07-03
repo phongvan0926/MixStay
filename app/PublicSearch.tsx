@@ -166,16 +166,16 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
         {/* Filter card */}
         <form
           onSubmit={handleSearch}
-          className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 shadow-sm mb-8"
+          className="rounded-2xl bg-white border border-stone-200 p-3 sm:p-4 shadow-sm mb-6"
         >
           {/* District pills (hybrid 7 + dropdown) */}
-          <div className="mb-4">
-            <label className="block text-xs font-medium text-stone-500 mb-2">Khu vực</label>
+          <div className="mb-3">
+            <label className="block text-xs font-medium text-stone-500 mb-1.5">Khu vực</label>
             <DistrictPills value={district} onChange={setDistrict} />
           </div>
 
           {/* Row 1: Kiểu phòng (1/3) + Slider giá (2/3) — mobile stack */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
             <div className="md:col-span-1">
               <label className="block text-xs font-medium text-stone-500 mb-1">Kiểu phòng</label>
               <select
@@ -198,8 +198,8 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
             </div>
           </div>
 
-          <div className="mt-4 pt-4 border-t border-stone-100">
-            <div className="flex items-center justify-between mb-2 gap-2">
+          <div className="mt-3 pt-3 border-t border-stone-100">
+            <div className="flex items-center justify-between mb-1.5 gap-2">
               <label className="block text-xs font-medium text-stone-500">Đặc điểm nổi bật</label>
               <button
                 type="button"
@@ -217,7 +217,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
                     key={f.key}
                     type="button"
                     onClick={() => toggleFeature(f.key)}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border transition-all ${
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border transition-all ${
                       active
                         ? 'bg-brand-600 border-brand-600 text-white shadow-sm'
                         : 'bg-white border-stone-200 text-stone-600 hover:border-stone-300'
@@ -233,7 +233,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
           </div>
 
           {/* Submit ở cuối form */}
-          <div className="mt-5 flex justify-end">
+          <div className="mt-3 flex justify-end">
             <button
               type="submit"
               disabled={loading}

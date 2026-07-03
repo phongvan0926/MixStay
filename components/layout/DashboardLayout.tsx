@@ -92,13 +92,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="min-h-screen bg-stone-50">
       {/* Top bar */}
       <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white/80 backdrop-blur-xl border-b border-stone-200/60">
-        <div className="h-full px-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="h-full px-3 sm:px-6 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Link href="/" className="flex items-center" aria-label="MixStay - Trang chủ">
               <Logo variant="light" className="h-7 w-auto" />
             </Link>
             <span className="text-stone-300">|</span>
-            <span className="text-sm font-medium text-stone-500">
+            <span className="text-sm font-medium text-stone-500 truncate max-w-[46vw] sm:max-w-none">
               {role === 'ADMIN' && 'Quản trị'}
               {role === 'ADMIN_STAFF' && 'Quản trị · Staff'}
               {role === 'BROKER' && 'Cộng tác viên'}
@@ -115,18 +115,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </span>
             )}
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <div className="text-right hidden sm:block">
               <p className="text-sm font-medium text-stone-900">{session.user?.name}</p>
               <p className="text-xs text-stone-500">
                 {company ? company.name : session.user?.email}
               </p>
             </div>
-            <div className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-semibold text-sm">
+            <div className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-semibold text-sm shrink-0">
               {session.user?.name?.charAt(0).toUpperCase()}
             </div>
-            <button onClick={() => signOut({ callbackUrl: '/login' })} className="btn-ghost text-xs text-stone-500">
-              Đăng xuất
+            <button onClick={() => signOut({ callbackUrl: '/login' })} className="btn-ghost text-xs text-stone-500 px-2 sm:px-4" title="Đăng xuất">
+              <span className="hidden sm:inline">Đăng xuất</span>
+              <span className="sm:hidden text-base">⏻</span>
             </button>
           </div>
         </div>
@@ -154,13 +155,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </nav>
         </aside>
 
-        {/* Mobile bottom nav */}
-        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-stone-200/60 flex lg:hidden">
-          {items.slice(0, 4).map((item) => {
+        {/* Mobile bottom nav — hiện ĐỦ mục, cuộn ngang nếu nhiều */}
+        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-stone-200/60 flex overflow-x-auto scrollbar-hide lg:hidden">
+          {items.map((item) => {
             const showBadge = unreadCount > 0 && item.href === badgeHref[role];
             return (
               <Link key={item.href + item.label} href={item.href}
-                className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-xs relative ${
+                className={`flex-1 shrink-0 min-w-[64px] flex flex-col items-center gap-1 py-2.5 text-xs relative ${
                   pathname === item.href ? 'text-brand-600 font-medium' : 'text-stone-500'
                 }`}>
                 <span className="text-lg relative">

@@ -245,9 +245,9 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Search + Filter + Sort */}
-      <div className="flex flex-wrap gap-3 mb-5">
-        {/* Search */}
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="mb-5 space-y-3">
+        {/* Search — riêng 1 dòng, rộng hết */}
+        <div className="relative">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
@@ -257,23 +257,26 @@ export default function AdminUsersPage() {
             className="input-field pl-9 w-full"
           />
         </div>
-        {/* Role filter */}
-        <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="input-field min-w-[140px]">
-          <option value="">Tất cả vai trò</option>
-          {ROLES.map(r => <option key={r} value={r}>{getRoleLabel(r)}</option>)}
-        </select>
-        {/* Status filter */}
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="input-field min-w-[140px]">
-          <option value="">Tất cả trạng thái</option>
-          <option value="active">Đang hoạt động</option>
-          <option value="inactive">Vô hiệu</option>
-        </select>
-        {/* Sort */}
-        <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="input-field min-w-[160px]">
-          <option value="createdAt_desc">Mới nhất trước</option>
-          <option value="name_asc">Tên A → Z</option>
-          <option value="role">Theo vai trò</option>
-        </select>
+        {/* 3 bộ lọc trên CÙNG 1 dòng (mobile xếp dọc) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Role filter */}
+          <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="input-field w-full">
+            <option value="">Tất cả vai trò</option>
+            {ROLES.map(r => <option key={r} value={r}>{getRoleLabel(r)}</option>)}
+          </select>
+          {/* Status filter */}
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="input-field w-full">
+            <option value="">Tất cả trạng thái</option>
+            <option value="active">Đang hoạt động</option>
+            <option value="inactive">Vô hiệu</option>
+          </select>
+          {/* Sort */}
+          <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="input-field w-full">
+            <option value="createdAt_desc">Mới nhất trước</option>
+            <option value="name_asc">Tên A → Z</option>
+            <option value="role">Theo vai trò</option>
+          </select>
+        </div>
       </div>
 
       {/* Users grid */}

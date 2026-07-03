@@ -48,7 +48,7 @@
     @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
   }
   .stat-card {
-    @apply rounded-2xl bg-white border border-stone-200/60 p-5;
+    @apply rounded-2xl bg-white border border-stone-200/60 p-4 sm:p-5;
   }
   .sidebar-link {
     @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-stone-600 transition-all hover:bg-stone-100 hover:text-stone-900;
@@ -57,12 +57,16 @@
     @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium bg-brand-50 text-brand-700 border border-brand-100;
   }
   .table-header {
-    @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-stone-500;
+    @apply px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold uppercase tracking-wider text-stone-500;
   }
   .table-cell {
-    @apply px-4 py-3.5 text-sm text-stone-700;
+    @apply px-3 py-3 sm:px-4 sm:py-3.5 text-sm text-stone-700;
   }
 }
+
+/* Ẩn thanh cuộn (dùng cho nav ngang mobile) mà vẫn cuộn được */
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }

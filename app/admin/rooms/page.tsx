@@ -7,6 +7,7 @@ import { hasPermission } from '@/lib/permissions';
 import RoomTypeForm from '@/components/forms/RoomTypeForm';
 import Pagination from '@/components/ui/Pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage';
+import SearchableSelect from '@/components/ui/SearchableSelect';
 import { useRoomTypes, useProperties, useCompanies } from '@/hooks/useData';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 
@@ -412,42 +413,60 @@ export default function AdminRoomsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-6">
-        <form onSubmit={e => { e.preventDefault(); setSearch(searchInput.trim()); setPage(1); }}
-          className="flex gap-2 w-full sm:w-auto">
-          <input className="input-field w-full sm:w-64" placeholder="Tìm theo mã (MS-…), tên, địa chỉ…"
-            value={searchInput} onChange={e => setSearchInput(e.target.value)} />
-          <button type="submit" className="btn-primary whitespace-nowrap">Tìm</button>
-          {search && (
-            <button type="button" onClick={() => { setSearchInput(''); setSearch(''); setPage(1); }}
-              className="px-3 py-2 text-sm text-stone-500 hover:text-stone-700 whitespace-nowrap">Xoá</button>
-          )}
-        </form>
-        <select className="input-field w-full sm:!w-auto sm:min-w-[160px]" value={filterCompany}
-          onChange={e => { setFilterCompany(e.target.value); setFilterProperty(''); }}>
-          <option value="">Tất cả công ty</option>
-          <option value="__none__">Chưa gán công ty</option>
-          {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
-        <select className="input-field w-full sm:!w-auto sm:min-w-[180px]" value={filterProperty} onChange={e => setFilterProperty(e.target.value)}>
-          <option value="">Tất cả tòa nhà</option>
-          {filteredProperties.map((p: any) => <option key={p.id} value={p.id}>{p.name} — {p.district}</option>)}
-        </select>
-        <select className="input-field w-full sm:!w-auto sm:min-w-[150px]" value={filterRoomType} onChange={e => setFilterRoomType(e.target.value)}>
-          <option value="">Tất cả kiểu phòng</option>
-          {Object.entries(ROOM_TYPE_LABELS).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
-        </select>
-        <select className="input-field w-full sm:!w-auto sm:min-w-[140px]" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-          <option value="">Tất cả trạng thái</option>
-          <option value="AVAILABLE">🟢 Còn phòng</option>
-          <option value="UNAVAILABLE">🔴 Hết phòng</option>
-          <option value="UPCOMING">🟡 Sắp trống</option>
-        </select>
-        {hasFilters && (
-          <button onClick={() => { setFilterCompany(''); setFilterProperty(''); setFilterRoomType(''); setFilterStatus(''); }}
-            className="px-3 py-2 text-sm text-stone-500 hover:text-stone-700 transition-colors">Xoá bộ lọc</button>
-        )}
-        <span className="self-center text-sm text-stone-400 ml-auto">Hiển thị {filteredRooms.length}/{rooms.length} phòng</span>
+      <div className="mb-6 space-y-3">
+        {/* Hàng 1: tìm kiếm + đếm + xoá lọc */}
+        <div className="flex flex-wrap gap-3 items-center">
+          <form onSubmit={e => { e.preventDefault(); setSearch(searchInput.trim()); setPage(1); }}
+            className="flex gap-2 w-full sm:w-auto">
+            <input className="input-field w-full sm:w-64" placeholder="Tìm theo mã (MS-…), tên, địa chỉ…"
+              value={searchInput} onChange={e => setSearchInput(e.target.value)} />
+            <button type="submit" className="btn-primary whitespace-nowrap">Tìm</button>
+            {search && (
+              <button type="button" onClick={() => { setSearchInput(''); setSearch(''); setPage(1); }}
+                className="px-3 py-2 text-sm text-stone-500 hover:text-stone-700 whitespace-nowrap">Xoá</button>
+            )}
+          </form>
+          <div className="flex items-center gap-3 sm:ml-auto">
+            {hasFilters && (
+              <button onClick={() => { setFilterCompany(''); setFilterProperty(''); setFilterRoomType(''); setFilterStatus(''); }}
+                className="px-3 py-2 text-sm text-stone-500 hover:text-stone-700 transition-colors whitespace-nowrap">Xoá bộ lọc</button>
+            )}
+            <span className="text-sm text-stone-400 whitespace-nowrap">Hiển thị {filteredRooms.length}/{rooms.length} phòng</span>
+          </div>
+        </div>
+
+        {/* Hàng 2: Tòa nhà — RIÊNG 1 dòng, gõ để lọc dần, bắt buộc chọn trong danh sách */}
+        <SearchableSelect
+          className="w-full"
+          value={filterProperty}
+          onChange={setFilterProperty}
+          options={[
+            { value: '', label: 'Tất cả tòa nhà' },
+            ...filteredProperties.map((p: any) => ({ value: p.id, label: `${p.name} — ${p.district}` })),
+          ]}
+          placeholder="Tất cả tòa nhà — gõ để tìm…"
+          emptyText="Không tìm thấy tòa nhà — hãy chọn từ danh sách"
+        />
+
+        {/* Hàng 3: Công ty + Kiểu phòng + Trạng thái — CÙNG 1 dòng */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <select className="input-field w-full" value={filterCompany}
+            onChange={e => { setFilterCompany(e.target.value); setFilterProperty(''); }}>
+            <option value="">Tất cả công ty</option>
+            <option value="__none__">Chưa gán công ty</option>
+            {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <select className="input-field w-full" value={filterRoomType} onChange={e => setFilterRoomType(e.target.value)}>
+            <option value="">Tất cả kiểu phòng</option>
+            {Object.entries(ROOM_TYPE_LABELS).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
+          </select>
+          <select className="input-field w-full" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+            <option value="">Tất cả trạng thái</option>
+            <option value="AVAILABLE">🟢 Còn phòng</option>
+            <option value="UNAVAILABLE">🔴 Hết phòng</option>
+            <option value="UPCOMING">🟡 Sắp trống</option>
+          </select>
+        </div>
       </div>
 
       <div className="card overflow-hidden">
