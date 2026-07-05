@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
             },
           },
           company: {
-            select: { id: true, name: true, logo: true },
+            select: { id: true, name: true, logo: true, isApproved: true },
           },
           roomTypes: {
             select: {
@@ -103,6 +103,14 @@ export async function POST(req: NextRequest) {
     // Đã bỏ ô chọn chủ nhà: LANDLORD tự tạo → chính họ; admin/staff → gắn chính người tạo
     // (tòa nhà thuộc CÔNG TY đã chọn). Vẫn cho phép truyền landlordId nếu có (tương thích cũ).
     const landlordId = session.user.role === 'LANDLORD' ? session.user.id : (body.landlordId || session.user.id);
+
+    // LANDLORD chỉ được gán tòa vào công ty ĐÃ DUYỆT, hoặc công ty do CHÍNH HỌ tạo (chờ duyệt).
+    if (body.companyId && session.user.role === 'LANDLORD') {
+      const co = await prisma.company.findUnique({ where: { id: body.companyId }, select: { isApproved: true, createdById: true } });
+      if (!co || (!co.isApproved && co.createdById !== session.user.id)) {
+        return NextResponse.json({ error: 'Không thể gán tòa nhà vào công ty này' }, { status: 403 });
+      }
+    }
 
     const property = await prisma.property.create({
       data: {
@@ -181,6 +189,14 @@ export async function PUT(req: NextRequest) {
       }
     } else {
       return NextResponse.json({ error: 'Không có quyền' }, { status: 403 });
+    }
+
+    // LANDLORD chỉ được gán tòa vào công ty ĐÃ DUYỆT, hoặc công ty do CHÍNH HỌ tạo (chờ duyệt).
+    if (session.user.role === 'LANDLORD' && data.companyId) {
+      const co = await prisma.company.findUnique({ where: { id: data.companyId }, select: { isApproved: true, createdById: true } });
+      if (!co || (!co.isApproved && co.createdById !== session.user.id)) {
+        return NextResponse.json({ error: 'Không thể gán tòa nhà vào công ty này' }, { status: 403 });
+      }
     }
 
     const property = await prisma.property.update({

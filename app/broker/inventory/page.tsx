@@ -9,7 +9,7 @@ import VideoGallery from '@/components/ui/VideoGallery';
 import ListingActionBar from '@/components/ui/ListingActionBar';
 import { buildListingText } from '@/lib/listing-text';
 import { pickVideoCover } from '@/lib/video-utils';
-import { useRoomTypes, useCompanies, useDashboardStats } from '@/hooks/useData';
+import { useRoomTypes, useActiveCompanies, useDashboardStats } from '@/hooks/useData';
 import { SkeletonStats, SkeletonCardGrid } from '@/components/ui/Skeleton';
 import DistrictPills from '@/components/ui/DistrictPills';
 import PriceRangeSlider from '@/components/ui/PriceRangeSlider';
@@ -466,7 +466,7 @@ export default function BrokerInventoryPage() {
 
   const { roomTypes: rooms, pagination, isLoading: loading, mutate } = useRoomTypes(swrParams);
   const { stats } = useDashboardStats();
-  const { companies } = useCompanies();
+  const { companies } = useActiveCompanies();
 
   const handleFilter = () => {
     // Apply pending price range vào filter chính (trigger SWR re-fetch)

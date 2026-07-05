@@ -233,6 +233,13 @@ mixstay/
 
 ## Changelog
 
+### v8.8 — 2026-07-03 (chủ nhà chọn/tạo công ty + duyệt công ty + lọc tòa nhà)
+- **Chủ nhà tự đăng tin chọn công ty:** form tòa nhà (`PropertyForm`) hiện ô "Thuộc công ty" cho CẢ chủ nhà (trước chỉ admin), lấy danh sách **công ty đang hoạt động + đã duyệt** (`useActiveCompanies` → `GET /api/companies?scope=active`).
+- **Tạo công ty mới ngay trong form** (nút "+ Công ty mới"): chủ nhà tự tạo → công ty **CHỜ DUYỆT** (`isApproved=false`), chưa vào danh sách đang chạy; admin/quản trị tạo → duyệt luôn. `POST /api/companies` cho phép LANDLORD (server tự set isApproved theo vai trò).
+- **Admin duyệt công ty:** `/admin/companies` thêm bộ lọc **Tất cả / Chờ duyệt (N) / Đã duyệt**, badge "Chờ duyệt" + viền vàng, nút **"✓ Duyệt công ty này"** (`PUT isApproved=true` → tự bật `isActive`). Đếm "N chờ duyệt" ở tiêu đề.
+- **Lọc tòa nhà nhanh:** `/admin/properties` thêm ô **gõ để lọc** theo tên/địa chỉ/quận/chủ nhà (không dấu, lọc tức thì client-side) — riêng 1 dòng; 3 select (công ty/chủ nhà/trạng thái) gom 1 hàng responsive.
+- **Schema:** `Company.isApproved Boolean @default(true)` (công ty cũ giữ nguyên đã duyệt) + `createdById`. Ẩn công ty chờ duyệt khỏi: ô chọn công ty (chủ nhà/CTV), kho công ty công khai (`/api/companies/[id]/inventory`, `/share/company/[id]` thêm `isApproved: true`). Kho CTV chuyển sang `useActiveCompanies`.
+
 ### v8.7 — 2026-07-03 (gọn giao diện + responsive admin + phí dịch vụ)
 - **Thẻ tin chỉ có video (không ảnh):** thay placeholder 🏠 trống bằng ảnh đại diện lấy từ video — video upload (khung hình đầu) / thumbnail YouTube / nền gradient + nút ▶ + badge 🎬. Helper chung `pickVideoCover()` (lib/video-utils.ts); API `rooms/public`, `companies/[id]/inventory`, `saved-listings` trả thêm `videos[]`.
 - **Gọn module tìm kiếm trang chủ** (`app/PublicSearch.tsx`): giảm padding/margin giữa các phần (p-3 sm:p-4, mb-6, divider mt-3 pt-3, pill px-2.5 py-1) → bớt khoảng trống ~35%.

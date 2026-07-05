@@ -82,7 +82,7 @@ export default function AdminDealsPage() {
         <select value={filterCompany} onChange={e => setFilterCompany(e.target.value)} className="input-field w-full sm:!w-auto sm:min-w-[160px]">
           <option value="">Tất cả công ty</option>
           <option value="__none__">Chưa gán công ty</option>
-          {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}{c.isApproved === false ? ' (chờ duyệt)' : ''}</option>)}
         </select>
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="input-field w-full sm:!w-auto sm:min-w-[140px]">
           <option value="">Tất cả trạng thái</option>

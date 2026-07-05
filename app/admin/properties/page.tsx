@@ -28,6 +28,7 @@ export default function AdminPropertiesPage() {
   const [submitting, setSubmitting] = useState(false);
 
   // Filters
+  const [search, setSearch] = useState('');
   const [filterCompany, setFilterCompany] = useState('');
   const [filterLandlord, setFilterLandlord] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -50,18 +51,26 @@ export default function AdminPropertiesPage() {
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [properties, filterCompany]);
 
+  // Bỏ dấu tiếng Việt + thường hoá → gõ tìm tòa nhà theo tên/địa chỉ/quận/chủ nhà không phân biệt dấu.
+  const norm = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
+
   const filtered = useMemo(() => {
+    const q = norm(search.trim());
     return properties.filter(p => {
       if (filterCompany && p.companyId !== filterCompany) return false;
       if (filterCompany === '__none__' && p.companyId) return false;
       if (filterLandlord && p.landlord?.id !== filterLandlord) return false;
       if (filterStatus && p.status !== filterStatus) return false;
+      if (q) {
+        const hay = norm([p.name, p.fullAddress, p.district, p.streetName, p.landlord?.name].filter(Boolean).join(' '));
+        if (!hay.includes(q)) return false;
+      }
       return true;
     });
-  }, [properties, filterCompany, filterLandlord, filterStatus]);
+  }, [properties, search, filterCompany, filterLandlord, filterStatus]);
 
   const resetFilters = () => {
-    setFilterCompany(''); setFilterLandlord(''); setFilterStatus('');
+    setSearch(''); setFilterCompany(''); setFilterLandlord(''); setFilterStatus('');
     setPage(1);
   };
 
@@ -116,7 +125,7 @@ export default function AdminPropertiesPage() {
 
   if (loading) return <div className="p-8"><SkeletonStats count={4} /><div className="mt-6"><SkeletonTable rows={5} cols={6} /></div></div>;
 
-  const hasFilters = filterCompany || filterLandlord || filterStatus;
+  const hasFilters = search || filterCompany || filterLandlord || filterStatus;
 
   return (
     <div>
@@ -150,29 +159,44 @@ export default function AdminPropertiesPage() {
       )}
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-5">
-        <select value={filterCompany} onChange={e => { setFilterCompany(e.target.value); setFilterLandlord(''); }} className="input-field w-full sm:!w-auto sm:min-w-[160px]">
-          <option value="">Tất cả công ty</option>
-          <option value="__none__">Chưa gán công ty</option>
-          {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
-        <select value={filterLandlord} onChange={e => setFilterLandlord(e.target.value)} className="input-field w-full sm:!w-auto sm:min-w-[160px]">
-          <option value="">Tất cả chủ nhà</option>
-          {landlords.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-        </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="input-field w-full sm:!w-auto sm:min-w-[140px]">
-          <option value="">Tất cả trạng thái</option>
-          <option value="PENDING">Chờ duyệt</option>
-          <option value="APPROVED">Đã duyệt</option>
-          <option value="REJECTED">Từ chối</option>
-        </select>
-        {hasFilters && (
-          <button onClick={resetFilters}
-            className="px-3 py-2 text-sm text-stone-500 hover:text-stone-700">Xoá bộ lọc</button>
-        )}
-        <span className="self-center text-sm text-stone-400 ml-auto">
-          {filtered.length}/{properties.length} tòa nhà
-        </span>
+      <div className="mb-5 space-y-3">
+        {/* Hàng 1: gõ để lọc nhanh (tên/địa chỉ/quận/chủ nhà) + đếm + xoá lọc */}
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[220px]">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input type="text" placeholder="Gõ để lọc tòa nhà theo tên, địa chỉ, quận, chủ nhà…"
+              value={search} onChange={e => setSearch(e.target.value)} className="input-field pl-9 w-full" />
+          </div>
+          <div className="flex items-center gap-3 sm:ml-auto">
+            {hasFilters && (
+              <button onClick={resetFilters}
+                className="px-3 py-2 text-sm text-stone-500 hover:text-stone-700 whitespace-nowrap">Xoá bộ lọc</button>
+            )}
+            <span className="text-sm text-stone-400 whitespace-nowrap">
+              {filtered.length}/{properties.length} tòa nhà
+            </span>
+          </div>
+        </div>
+        {/* Hàng 2: Công ty + Chủ nhà + Trạng thái cùng 1 hàng */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <select value={filterCompany} onChange={e => { setFilterCompany(e.target.value); setFilterLandlord(''); }} className="input-field w-full">
+            <option value="">Tất cả công ty</option>
+            <option value="__none__">Chưa gán công ty</option>
+            {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}{c.isApproved === false ? ' (chờ duyệt)' : ''}</option>)}
+          </select>
+          <select value={filterLandlord} onChange={e => setFilterLandlord(e.target.value)} className="input-field w-full">
+            <option value="">Tất cả chủ nhà</option>
+            {landlords.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+          </select>
+          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="input-field w-full">
+            <option value="">Tất cả trạng thái</option>
+            <option value="PENDING">Chờ duyệt</option>
+            <option value="APPROVED">Đã duyệt</option>
+            <option value="REJECTED">Từ chối</option>
+          </select>
+        </div>
       </div>
 
       {/* Table */}

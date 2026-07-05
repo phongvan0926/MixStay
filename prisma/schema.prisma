@@ -129,11 +129,16 @@ model Company {
   logo          String?
   zaloGroupLink String?    // link nhóm Zalo của hệ thống
   isActive      Boolean    @default(true)
+  // Duyệt công ty: mặc định true (công ty cũ giữ nguyên đang hoạt động). Chủ nhà tự tạo công ty mới → set false
+  // (chờ admin duyệt). Chỉ công ty isApproved=true + isActive=true mới vào danh sách chọn/công khai.
+  isApproved    Boolean    @default(true)
+  createdById   String?    // user đã tạo (chủ nhà tự tạo) — để lọc/hiển thị nếu cần
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
   properties    Property[]
 
+  @@index([isApproved])
   @@map("companies")
 }
 

@@ -7,7 +7,7 @@ import QuickRoomTypeForm, { QuickRoomTypeData } from '@/components/forms/QuickRo
 import RoomTypeForm from '@/components/forms/RoomTypeForm';
 import Pagination from '@/components/ui/Pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage';
-import { useProperties, useRoomTypes, useInquiries, useDashboardStats } from '@/hooks/useData';
+import { useProperties, useRoomTypes, useInquiries, useDashboardStats, useActiveCompanies } from '@/hooks/useData';
 import { SkeletonStats, SkeletonCardGrid } from '@/components/ui/Skeleton';
 import { normalizeListingCode } from '@/lib/listing-code';
 
@@ -48,6 +48,7 @@ export default function LandlordPropertiesPage() {
   const { roomTypes, mutate: mutateRT } = useRoomTypes({ limit: '500' });
   const { inquiries, mutate: mutateInquiries } = useInquiries();
   const { stats } = useDashboardStats();
+  const { companies: activeCompanies } = useActiveCompanies();
 
   // View mode
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -627,6 +628,7 @@ export default function LandlordPropertiesPage() {
                   initialData={editingProperty || undefined}
                   onSubmit={handlePropertySubmit}
                   isAdmin={false}
+                  companies={activeCompanies}
                   loading={submitting}
                 />
               )}

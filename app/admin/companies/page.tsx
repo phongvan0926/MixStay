@@ -10,12 +10,18 @@ const EMPTY_FORM = { name: '', description: '', phone: '', email: '', address: '
 export default function AdminCompaniesPage() {
   const { companies, isLoading: loading, mutate } = useCompanies();
   const [search, setSearch] = useState('');
+  const [approvalFilter, setApprovalFilter] = useState<'all' | 'pending' | 'approved'>('all');
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [submitting, setSubmitting] = useState(false);
 
+  // Công ty chờ duyệt = isApproved === false (chủ nhà tự tạo, chưa được admin duyệt).
+  const pendingCount = companies.filter(c => c.isApproved === false).length;
+
   const filtered = companies.filter(c => {
+    if (approvalFilter === 'pending' && c.isApproved !== false) return false;
+    if (approvalFilter === 'approved' && c.isApproved === false) return false;
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return c.name.toLowerCase().includes(q) || (c.email || '').toLowerCase().includes(q) || (c.phone || '').includes(q);
@@ -59,6 +65,18 @@ export default function AdminCompaniesPage() {
     } finally { setSubmitting(false); }
   };
 
+  const handleApprove = async (c: any) => {
+    const res = await fetch('/api/companies', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: c.id, isApproved: true }),
+    });
+    const data = await res.json();
+    if (!res.ok) { toast.error(data.error || 'Lỗi duyệt công ty'); return; }
+    toast.success(`Đã duyệt công ty "${c.name}"`);
+    mutate();
+  };
+
   const handleDelete = async (c: any) => {
     if (!confirm(`Xoá công ty "${c.name}"? Hành động này không thể hoàn tác.`)) return;
     const res = await fetch(`/api/companies?id=${c.id}`, { method: 'DELETE' });
@@ -77,7 +95,10 @@ export default function AdminCompaniesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="font-display text-2xl font-bold text-stone-900">Hệ thống công ty</h1>
-          <p className="text-sm text-stone-500 mt-0.5">{companies.length} công ty</p>
+          <p className="text-sm text-stone-500 mt-0.5">
+            {companies.length} công ty
+            {pendingCount > 0 && <span className="ml-2 text-amber-600 font-medium">· {pendingCount} chờ duyệt</span>}
+          </p>
         </div>
         <button onClick={openAdd} className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -87,13 +108,27 @@ export default function AdminCompaniesPage() {
         </button>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-6 max-w-md">
-        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        <input type="text" placeholder="Tìm công ty..." value={search} onChange={e => setSearch(e.target.value)}
-          className="input-field pl-9 w-full" />
+      {/* Search + lọc duyệt */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+        <div className="relative flex-1 max-w-md">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input type="text" placeholder="Tìm công ty..." value={search} onChange={e => setSearch(e.target.value)}
+            className="input-field pl-9 w-full" />
+        </div>
+        <div className="flex gap-1.5 shrink-0">
+          {([['all', 'Tất cả'], ['pending', `Chờ duyệt${pendingCount ? ` (${pendingCount})` : ''}`], ['approved', 'Đã duyệt']] as const).map(([val, label]) => (
+            <button key={val} type="button" onClick={() => setApprovalFilter(val)}
+              className={`px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+                approvalFilter === val
+                  ? (val === 'pending' ? 'bg-amber-500 text-white' : 'bg-brand-600 text-white')
+                  : (val === 'pending' && pendingCount ? 'bg-amber-50 text-amber-700 hover:bg-amber-100' : 'bg-stone-100 text-stone-600 hover:bg-stone-200')
+              }`}>
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (
@@ -101,19 +136,25 @@ export default function AdminCompaniesPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map(c => (
-            <div key={c.id} className="card hover:shadow-md transition-shadow">
+            <div key={c.id} className={`card hover:shadow-md transition-shadow ${c.isApproved === false ? 'ring-1 ring-amber-300 bg-amber-50/30' : ''}`}>
               <div className="p-5">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-brand-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-sm">
                     {c.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center flex-wrap gap-1.5 mb-1">
                       <h3 className="font-semibold text-stone-900 truncate">{c.name}</h3>
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${c.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${c.isActive ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                        {c.isActive ? 'Hoạt động' : 'Tạm dừng'}
-                      </span>
+                      {c.isApproved === false ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Chờ duyệt
+                        </span>
+                      ) : (
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${c.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${c.isActive ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                          {c.isActive ? 'Hoạt động' : 'Tạm dừng'}
+                        </span>
+                      )}
                     </div>
                     {c.description && <p className="text-xs text-stone-500 truncate">{c.description}</p>}
                     {c.phone && <p className="text-xs text-stone-400 mt-1">{c.phone}</p>}
@@ -139,6 +180,14 @@ export default function AdminCompaniesPage() {
                       </svg>
                       Nhóm Zalo hệ thống
                     </a>
+                  </div>
+                )}
+
+                {/* Duyệt công ty chờ duyệt */}
+                {c.isApproved === false && (
+                  <div className="mt-3 pt-3 border-t border-stone-100">
+                    <button onClick={() => handleApprove(c)}
+                      className="btn-success w-full !py-2 text-sm">✓ Duyệt công ty này</button>
                   </div>
                 )}
 

@@ -36,8 +36,10 @@ interface PropertyFormProps {
   /** Cho phép đổi chủ nhà khi EDIT (cần permission TRANSFER_PROPERTY_OWNERSHIP). Mặc định false. */
   canTransferOwnership?: boolean;
   loading?: boolean;
-  companies?: { id: string; name: string }[];
+  companies?: { id: string; name: string; isApproved?: boolean }[];
   landlords?: { id: string; name: string; email?: string }[];
+  /** Cho phép tạo công ty mới ngay trong form (chủ nhà tự đăng tin). Mặc định true. */
+  allowCreateCompany?: boolean;
 }
 
 const AMENITY_OPTIONS = [
@@ -85,10 +87,52 @@ const defaultData: PropertyData = {
   status: 'PENDING',
 };
 
-export default function PropertyForm({ initialData, onSubmit, isAdmin = false, canTransferOwnership = false, loading = false, companies = [], landlords = [] }: PropertyFormProps) {
+export default function PropertyForm({ initialData, onSubmit, isAdmin = false, canTransferOwnership = false, loading = false, companies = [], landlords = [], allowCreateCompany = true }: PropertyFormProps) {
   const [form, setForm] = useState<PropertyData>(defaultData);
   const [companyId, setCompanyId] = useState<string>(initialData?.companyId || '');
   const isEdit = !!initialData?.id;
+
+  // Tạo công ty mới ngay trong form (chờ admin duyệt). extraCompanies giữ công ty vừa tạo/đang gán.
+  const [extraCompanies, setExtraCompanies] = useState<{ id: string; name: string; isApproved?: boolean }[]>(
+    initialData?.company ? [{ id: initialData.company.id, name: initialData.company.name, isApproved: initialData.company.isApproved }] : []
+  );
+  const [showNewCompany, setShowNewCompany] = useState(false);
+  const [newCompanyName, setNewCompanyName] = useState('');
+  const [newCompanyPhone, setNewCompanyPhone] = useState('');
+  const [creatingCompany, setCreatingCompany] = useState(false);
+
+  // Chỉ hiện công ty ĐÃ DUYỆT (isApproved !== false) + công ty vừa tạo (để chọn ngay). Bỏ trùng theo id.
+  const companyOptions = (() => {
+    const map = new Map<string, { id: string; name: string; isApproved?: boolean }>();
+    // Hiện công ty đã duyệt + công ty đang được chọn (kể cả chờ duyệt) để select không bị trống khi sửa.
+    for (const c of companies) if ((c as any).isApproved !== false || c.id === companyId) map.set(c.id, c);
+    for (const c of extraCompanies) map.set(c.id, c);
+    return Array.from(map.values());
+  })();
+
+  const handleCreateCompany = async () => {
+    const name = newCompanyName.trim();
+    if (!name) return toast.error('Nhập tên công ty');
+    setCreatingCompany(true);
+    try {
+      const res = await fetch('/api/companies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone: newCompanyPhone.trim() || null }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Không tạo được công ty');
+      setExtraCompanies(prev => [...prev, { id: data.id, name: data.name, isApproved: data.isApproved }]);
+      setCompanyId(data.id);
+      setShowNewCompany(false);
+      setNewCompanyName(''); setNewCompanyPhone('');
+      toast.success(data.isApproved ? 'Đã tạo công ty' : 'Đã tạo công ty — chờ admin duyệt');
+    } catch (e: any) {
+      toast.error(e.message || 'Lỗi tạo công ty');
+    } finally {
+      setCreatingCompany(false);
+    }
+  };
   // Đã bỏ ô chọn chủ nhà: tòa nhà thuộc CÔNG TY (chọn ở trên); admin tạo → server gắn admin.
 
   useEffect(() => {
@@ -174,16 +218,40 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
       <div className="card">
         <h3 className="text-lg font-semibold text-stone-900 mb-4">Thông tin cơ bản</h3>
         <div className="grid md:grid-cols-2 gap-4">
-          {/* Company selector (only for admin with companies) */}
-          {isAdmin && companies.length > 0 && (
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-stone-700 mb-1.5">Thuộc công ty</label>
-              <select className="input-field" value={companyId} onChange={e => setCompanyId(e.target.value)}>
+          {/* Thuộc công ty — chọn công ty ĐANG HOẠT ĐỘNG hoặc TẠO công ty mới (chờ admin duyệt) */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-stone-700 mb-1.5">Thuộc công ty</label>
+            <div className="flex gap-2">
+              <select className="input-field flex-1" value={companyId} onChange={e => setCompanyId(e.target.value)} disabled={creatingCompany}>
                 <option value="">— Không thuộc công ty nào —</option>
-                {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {companyOptions.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}{c.isApproved === false ? ' (chờ duyệt)' : ''}</option>
+                ))}
               </select>
+              {allowCreateCompany && (
+                <button type="button" onClick={() => setShowNewCompany(v => !v)}
+                  className="shrink-0 px-3 py-2 rounded-xl text-sm font-medium bg-brand-50 text-brand-700 hover:bg-brand-100 transition-colors whitespace-nowrap">
+                  + Công ty mới
+                </button>
+              )}
             </div>
-          )}
+            {allowCreateCompany && showNewCompany && (
+              <div className="mt-2 p-3 rounded-xl border border-brand-100 bg-brand-50/40 space-y-2">
+                <p className="text-xs text-stone-500">Tạo công ty mới — cần <b>admin duyệt</b> trước khi vào danh sách công ty đang hoạt động.</p>
+                <input className="input-field" placeholder="Tên công ty *" value={newCompanyName}
+                  onChange={e => setNewCompanyName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateCompany(); } }} />
+                <input className="input-field" placeholder="SĐT/Zalo liên hệ (tuỳ chọn)" value={newCompanyPhone}
+                  onChange={e => setNewCompanyPhone(e.target.value)} />
+                <div className="flex gap-2">
+                  <button type="button" onClick={handleCreateCompany} disabled={creatingCompany}
+                    className="btn-primary text-sm !py-2">{creatingCompany ? 'Đang tạo...' : 'Tạo công ty'}</button>
+                  <button type="button" onClick={() => { setShowNewCompany(false); setNewCompanyName(''); setNewCompanyPhone(''); }}
+                    className="px-3 py-2 text-sm text-stone-500 hover:text-stone-700">Huỷ</button>
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-stone-700 mb-1.5">

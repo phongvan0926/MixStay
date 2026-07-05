@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const companyId = params.id;
 
     const company = await prisma.company.findFirst({
-      where: { id: companyId, isActive: true },
+      where: { id: companyId, isActive: true, isApproved: true },
       select: { id: true, name: true, logo: true, zaloGroupLink: true, phone: true },
     });
     if (!company) {

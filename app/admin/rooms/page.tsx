@@ -454,7 +454,7 @@ export default function AdminRoomsPage() {
             onChange={e => { setFilterCompany(e.target.value); setFilterProperty(''); }}>
             <option value="">Tất cả công ty</option>
             <option value="__none__">Chưa gán công ty</option>
-            {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}{c.isApproved === false ? ' (chờ duyệt)' : ''}</option>)}
           </select>
           <select className="input-field w-full" value={filterRoomType} onChange={e => setFilterRoomType(e.target.value)}>
             <option value="">Tất cả kiểu phòng</option>

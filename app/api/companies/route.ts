@@ -12,10 +12,25 @@ export async function GET(req: NextRequest) {
 
   try {
     const session = await getServerSession(authOptions);
+    const url = new URL(req.url);
+    const scope = url.searchParams.get('scope');
+
+    // scope=active: danh sách công ty ĐANG HOẠT ĐỘNG + ĐÃ DUYỆT — cho các ô CHỌN công ty
+    // (chủ nhà tự đăng tin, CTV lọc, form gán công ty). Mọi user đã đăng nhập đều gọi được.
+    if (scope === 'active') {
+      if (!session?.user) return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+      const activeCompanies = await prisma.company.findMany({
+        where: { isActive: true, isApproved: true },
+        select: { id: true, name: true, logo: true },
+        orderBy: { name: 'asc' },
+      });
+      return NextResponse.json(activeCompanies);
+    }
+
+    // Mặc định: trang QUẢN TRỊ công ty — cần MANAGE_COMPANIES, trả TẤT CẢ (kể cả chờ duyệt).
     const denial = requirePermission(session, 'MANAGE_COMPANIES');
     if (denial) return denial;
 
-    const url = new URL(req.url);
     const search = url.searchParams.get('search');
 
     const where: any = {};
@@ -59,22 +74,32 @@ export async function POST(req: NextRequest) {
 
   try {
     const session = await getServerSession(authOptions);
-    const denial = requirePermission(session, 'MANAGE_COMPANIES');
-    if (denial) return denial;
+    if (!session?.user) return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+
+    // Quản trị (MANAGE_COMPANIES) tạo → duyệt luôn. CHỦ NHÀ tự tạo → CHỜ DUYỆT (isApproved=false).
+    const isManager = !requirePermission(session, 'MANAGE_COMPANIES');
+    const role = (session.user as any).role;
+    if (!isManager && role !== 'LANDLORD') {
+      return NextResponse.json({ error: 'Không có quyền tạo công ty' }, { status: 403 });
+    }
 
     const body = await req.json();
-    if (!body.name) return NextResponse.json({ error: 'Tên công ty là bắt buộc' }, { status: 400 });
+    if (!body.name?.trim()) return NextResponse.json({ error: 'Tên công ty là bắt buộc' }, { status: 400 });
+
+    const isApproved = isManager ? (body.isApproved ?? true) : false;
 
     const company = await prisma.company.create({
       data: {
-        name: body.name,
+        name: body.name.trim(),
         description: body.description || null,
         phone: body.phone || null,
         email: body.email || null,
         address: body.address || null,
         logo: body.logo || null,
         zaloGroupLink: normalizeZaloInput(body.zaloGroupLink),
-        isActive: body.isActive ?? true,
+        isActive: isManager ? (body.isActive ?? true) : true,
+        isApproved,
+        createdById: (session.user as any).id || null,
       },
     });
 
@@ -108,6 +133,8 @@ export async function PUT(req: NextRequest) {
         ...(data.logo !== undefined && { logo: data.logo || null }),
         ...(data.zaloGroupLink !== undefined && { zaloGroupLink: normalizeZaloInput(data.zaloGroupLink) }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
+        // Duyệt công ty (admin bấm "Duyệt") — duyệt thì đồng thời bật hoạt động.
+        ...(data.isApproved !== undefined && { isApproved: data.isApproved, ...(data.isApproved ? { isActive: true } : {}) }),
       },
     });
 

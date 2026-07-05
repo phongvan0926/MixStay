@@ -6,7 +6,7 @@ import CompanyCatalogClient from './CompanyCatalogClient';
 // công ty, không cần đăng nhập.
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const company = await prisma.company.findFirst({
-    where: { id: params.id, isActive: true },
+    where: { id: params.id, isActive: true, isApproved: true },
     select: { name: true, logo: true },
   });
   if (!company) return { title: 'Kho phòng không tồn tại' };

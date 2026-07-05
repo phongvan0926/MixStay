@@ -21,7 +21,7 @@ export async function getUserCompany(userId: string): Promise<UserCompany> {
       company: {
         select: {
           id: true, name: true, logo: true, zaloGroupLink: true,
-          description: true, phone: true, email: true, address: true,
+          description: true, phone: true, email: true, address: true, isApproved: true,
         },
       },
     },
@@ -35,5 +35,9 @@ export async function getUserCompany(userId: string): Promise<UserCompany> {
   if (companyIds.length !== 1) return null;
 
   const linked = properties.find((p) => p.companyId === companyIds[0]);
-  return linked?.company ?? null;
+  const co = linked?.company;
+  // Công ty CHỜ DUYỆT chưa hiện ở topbar chủ nhà (chỉ hiện khi đã được admin duyệt).
+  if (!co || co.isApproved === false) return null;
+  const { isApproved, ...rest } = co;
+  return rest;
 }

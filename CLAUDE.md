@@ -49,7 +49,8 @@ middleware.ts       → Route protection theo role (+ chặn /admin/{companies,u
 ```
 
 ## Database schema tóm tắt
-- companies: id, name, description, phone, email, address, logo, zaloGroupLink, isActive
+- companies: id, name, description, phone, email, address, logo, zaloGroupLink, isActive, isApproved (mặc định true; chủ nhà tự tạo công ty → false = chờ admin duyệt), createdById
+  - Chủ nhà đăng tin chọn công ty (đang hoạt động + đã duyệt) HOẶC tạo công ty mới (chờ duyệt). `GET /api/companies?scope=active` (mọi user đã đăng nhập) trả công ty isActive+isApproved cho ô chọn; `POST /api/companies` cho LANDLORD tạo (isApproved=false) lẫn admin (isApproved=true); admin duyệt bằng `PUT {isApproved:true}` (tự bật isActive) ở /admin/companies. Hook `useActiveCompanies()`
 - users: id, name, email, phone, password, role (ADMIN/ADMIN_STAFF/BROKER/LANDLORD/CUSTOMER), avatar, permissions[] (chỉ có hiệu lực khi role=ADMIN_STAFF), isActive, setupComplete
 - accounts: id, userId, type, provider, providerAccountId (OAuth accounts)
 - properties: id, companyId?, landlordId, name, fullAddress, district, streetName, zaloPhone, landlordNotes, parkingCar, parkingBike, evCharging, petAllowed, foreignerOk, status (PENDING/APPROVED/REJECTED)

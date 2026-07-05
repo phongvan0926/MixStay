@@ -101,6 +101,21 @@ export function useCompanies() {
   };
 }
 
+// Công ty ĐANG HOẠT ĐỘNG + ĐÃ DUYỆT — cho ô CHỌN công ty (chủ nhà đăng tin, CTV lọc). Mọi role gọi được.
+export function useActiveCompanies() {
+  const { data, error, isLoading, mutate } = useSWR(
+    '/api/companies?scope=active',
+    fetcher,
+    SWR_OPTIONS
+  );
+  return {
+    companies: (Array.isArray(data) ? data : []) as { id: string; name: string; logo?: string | null }[],
+    error,
+    isLoading,
+    mutate,
+  };
+}
+
 export function useDashboardStats() {
   const { data, error, isLoading, mutate } = useSWR(
     '/api/dashboard-stats',
