@@ -59,6 +59,7 @@ type PublicRoom = {
 };
 
 export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean }) {
+  const [keyword, setKeyword] = useState('');
   const [district, setDistrict] = useState<string[]>([]);
   const [typeName, setTypeName] = useState('');
   const [minPrice, setMinPrice] = useState('');
@@ -75,6 +76,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
     setFeatures(prev => ({ ...prev, [key]: !prev[key] }));
 
   const resetFilters = () => {
+    setKeyword('');
     setDistrict([]);
     setTypeName('');
     setMinPrice('');
@@ -94,6 +96,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
 
   const buildParams = (pageToLoad: number) => {
     const params = new URLSearchParams();
+    if (keyword.trim()) params.set('q', keyword.trim());
     if (district.length) params.set('district', district.join(','));
     if (typeName) params.set('typeName', typeName);
     if (minPrice) params.set('minPrice', minPrice);
@@ -151,16 +154,16 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
   }, [autoLoad]);
 
   return (
-    <section id="tim-phong" className="relative pt-24 sm:pt-28 pb-12 sm:pb-16 px-4 sm:px-6 overflow-hidden bg-white scroll-mt-20">
+    <section id="tim-phong" className="relative pt-20 sm:pt-28 pb-12 sm:pb-16 px-4 sm:px-6 overflow-hidden bg-white scroll-mt-20">
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-white via-stone-50 to-white" />
 
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-6 sm:mb-8">
-          <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 border border-brand-100 px-3 py-1 text-xs font-medium text-brand-700 mb-3">
+        <div className="text-center mb-4 sm:mb-8">
+          <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 border border-brand-100 px-3 py-1 text-xs font-medium text-brand-700 mb-2 sm:mb-3">
             🔎 Tìm phòng công khai
           </div>
-          <h2 className="font-display text-3xl sm:text-4xl font-bold text-stone-900 mb-2">Tìm Phòng Khó Có <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-gold-600">MixStay</span> Lo</h2>
-          <p className="text-stone-500 text-base">Không cần đăng nhập — lọc nhanh theo khu vực, kiểu phòng & giá</p>
+          <h2 className="font-display text-2xl sm:text-4xl font-bold text-stone-900 mb-1.5 sm:mb-2">Tìm Phòng Khó Có <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-gold-600">MixStay</span> Lo</h2>
+          <p className="text-stone-500 text-sm sm:text-base">Không cần đăng nhập — lọc nhanh theo khu vực, kiểu phòng & giá</p>
         </div>
 
         {/* Filter card */}
@@ -168,6 +171,31 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
           onSubmit={handleSearch}
           className="rounded-2xl bg-white border border-stone-200 p-3 sm:p-4 shadow-sm mb-6"
         >
+          {/* Ô TÌM THEO TỪ KHÓA — trên cùng, có nút Tìm ngay (thấy được khi vừa vào, không cần cuộn) */}
+          <div className="flex gap-2 mb-3">
+            <div className="relative flex-1">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={keyword}
+                onChange={e => setKeyword(e.target.value)}
+                placeholder="Tìm theo tên tin, khu vực, mã MS-…"
+                aria-label="Tìm phòng theo từ khóa"
+                className="input-field pl-9 pr-8 text-sm"
+              />
+              {keyword && (
+                <button type="button" onClick={() => setKeyword('')} aria-label="Xoá từ khóa"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-sm">✕</button>
+              )}
+            </div>
+            <button type="submit" disabled={loading}
+              className="btn-primary shrink-0 px-5 sm:px-6 text-sm font-medium">
+              {loading ? '…' : 'Tìm'}
+            </button>
+          </div>
+
           {/* District pills (hybrid 7 + dropdown) */}
           <div className="mb-3">
             <label className="block text-xs font-medium text-stone-500 mb-1.5">Khu vực</label>

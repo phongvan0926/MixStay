@@ -233,6 +233,10 @@ mixstay/
 
 ## Changelog
 
+### v8.9 — 2026-07-06 (tìm phòng theo từ khóa + nút tìm nổi ngay trang chủ)
+- **Tìm theo TỪ KHÓA ở trang chủ:** thêm ô tìm + nút "Tìm" ngay ĐẦU khung lọc (`app/PublicSearch.tsx`). API `/api/rooms/public` nhận `?q=` → khớp tên tin, mã tin (MS-…), mô tả, tên đường/khu vực, quận, tên tòa (case-insensitive; các điều kiện property được AND với bộ lọc gốc nên không lộ tin ẩn/chưa duyệt). Từ khóa gộp AND với các bộ lọc khác; `loadMore` giữ nguyên từ khóa; "Xoá lọc" xoá cả từ khóa.
+- **Mobile: thấy nút Tìm ngay khi vào** (không phải vuốt): gọn hero (`pt-20`, tiêu đề `text-2xl`, bớt margin) + đặt ô tìm + nút "Tìm" lên trên cùng khung lọc → nút search nằm ~y222px (trên nếp gấp màn 375×812).
+
 ### v8.8 — 2026-07-03 (chủ nhà chọn/tạo công ty + duyệt công ty + lọc tòa nhà)
 - **Chủ nhà tự đăng tin chọn công ty:** form tòa nhà (`PropertyForm`) hiện ô "Thuộc công ty" cho CẢ chủ nhà (trước chỉ admin), lấy danh sách **công ty đang hoạt động + đã duyệt** (`useActiveCompanies` → `GET /api/companies?scope=active`).
 - **Tạo công ty mới ngay trong form** (nút "+ Công ty mới"): chủ nhà tự tạo → công ty **CHỜ DUYỆT** (`isApproved=false`), chưa vào danh sách đang chạy; admin/quản trị tạo → duyệt luôn. `POST /api/companies` cho phép LANDLORD (server tự set isApproved theo vai trò).

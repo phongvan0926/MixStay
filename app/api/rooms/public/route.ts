@@ -48,6 +48,21 @@ export async function GET(req: NextRequest) {
     if (minPrice) where.priceMonthly = { ...where.priceMonthly, gte: parseFloat(minPrice) };
     if (maxPrice) where.priceMonthly = { ...where.priceMonthly, lte: parseFloat(maxPrice) };
 
+    // Tìm theo TỪ KHÓA (q): khớp tên tin, mã tin (MS-…), mô tả (đều CÔNG KHAI) + quận.
+    // CỐ Ý KHÔNG tìm trên property.streetName/name/fullAddress (có thể chứa số nhà — app đang
+    // redact số nhà; tìm trên field thô sẽ cho phép dò số nhà qua kết quả). Tên tòa/đường mà chủ
+    // nhà muốn công khai thường đã nằm trong tiêu đề tin (name). where.OR được AND với where.property
+    // (status=APPROVED, isActive) nên không lộ tin ẩn/chưa duyệt.
+    const q = url.searchParams.get('q')?.trim();
+    if (q) {
+      where.OR = [
+        { name: { contains: q, mode: 'insensitive' } },
+        { listingCode: { contains: q, mode: 'insensitive' } },
+        { description: { contains: q, mode: 'insensitive' } },
+        { property: { district: { contains: q, mode: 'insensitive' } } },
+      ];
+    }
+
     const { page, limit, skip } = getPaginationParams(url);
 
     const [roomTypes, total] = await Promise.all([
