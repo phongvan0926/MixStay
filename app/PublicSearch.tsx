@@ -160,10 +160,9 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-4 sm:mb-8">
           <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 border border-brand-100 px-3 py-1 text-xs font-medium text-brand-700 mb-2 sm:mb-3">
-            🔎 Tìm phòng công khai
+            🔎 Tìm phòng công khai - Không cần đăng nhập
           </div>
-          <h2 className="font-display text-2xl sm:text-4xl font-bold text-stone-900 mb-1.5 sm:mb-2">Tìm Phòng Khó Có <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-gold-600">MixStay</span> Lo</h2>
-          <p className="text-stone-500 text-sm sm:text-base">Không cần đăng nhập — lọc nhanh theo khu vực, kiểu phòng & giá</p>
+          <h2 className="font-display text-2xl sm:text-4xl font-bold text-stone-900">Tìm Phòng Khó Có <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-gold-600">MixStay</span> Lo</h2>
         </div>
 
         {/* Filter card */}
