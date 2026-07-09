@@ -144,10 +144,24 @@ export async function POST(req: NextRequest) {
     const commissionBroker = commissionTotal * (brokerPercent / 100);
     const commissionCompany = commissionTotal * (companyPercent / 100);
 
+    // BROKER tự tạo → gắn chính mình. ADMIN/ADMIN_STAFF gán brokerId → BẮT BUỘC là 1 CTV (role=BROKER)
+    // đang hoạt động, tránh gán giao dịch/hoa hồng cho tài khoản bất kỳ.
+    let dealBrokerId = session.user.id;
+    if (role !== 'BROKER') {
+      if (!body.brokerId) {
+        return NextResponse.json({ error: 'Thiếu brokerId (cộng tác viên)' }, { status: 400 });
+      }
+      const broker = await prisma.user.findUnique({ where: { id: body.brokerId }, select: { role: true, isActive: true } });
+      if (!broker || broker.role !== 'BROKER' || !broker.isActive) {
+        return NextResponse.json({ error: 'brokerId không phải cộng tác viên hợp lệ' }, { status: 400 });
+      }
+      dealBrokerId = body.brokerId;
+    }
+
     const deal = await prisma.deal.create({
       data: {
         roomTypeId: body.roomTypeId,
-        brokerId: session.user.role === 'BROKER' ? session.user.id : body.brokerId,
+        brokerId: dealBrokerId,
         customerId: body.customerId || null,
         customerName: body.customerName,
         customerPhone: body.customerPhone,

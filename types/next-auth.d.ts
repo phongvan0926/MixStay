@@ -23,6 +23,7 @@ declare module 'next-auth' {
       canViewContact?: boolean;
       canViewCommission?: boolean;
       needsRoleSetup?: boolean;
+      isActive?: boolean;
     } & DefaultSession['user'];
   }
 }
@@ -36,5 +37,7 @@ declare module 'next-auth/jwt' {
     canViewContact?: boolean;
     canViewCommission?: boolean;
     needsRoleSetup?: boolean;
+    isActive?: boolean;
+    refreshedAt?: number;
   }
 }

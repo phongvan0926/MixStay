@@ -17,7 +17,11 @@ export function requirePermission(
   if (!session?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  const user = session.user as { role?: string; permissions?: string[] };
+  const user = session.user as { role?: string; permissions?: string[]; isActive?: boolean };
+  // Tài khoản bị KHOÁ không được thao tác quản trị (isActive refresh ~60s/lần qua JWT).
+  if (user.isActive === false) {
+    return NextResponse.json({ error: 'Tài khoản đã bị khoá' }, { status: 403 });
+  }
   if (user.role === 'ADMIN') return null; // super-admin bypass
   if (user.role !== 'ADMIN_STAFF') {
     return NextResponse.json({ error: 'Chỉ admin mới có quyền này' }, { status: 403 });

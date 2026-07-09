@@ -127,24 +127,49 @@ export const authOptions: NextAuthOptions = {
         return token;
       }
 
+      // Sao chép các field NHẠY (bảo mật) từ DB vào token — dùng cho cả login và refresh định kỳ.
+      const applyDbUser = (dbUser: any) => {
+        token.id = dbUser.id;
+        token.role = dbUser.role;
+        token.phone = dbUser.phone ?? undefined;
+        token.permissions = dbUser.permissions ?? [];
+        token.canViewContact = dbUser.canViewContact ?? false;
+        token.canViewCommission = dbUser.canViewCommission ?? false;
+        token.isActive = dbUser.isActive;
+        token.refreshedAt = Math.floor(Date.now() / 1000);
+      };
+
       if (user) {
         // Fetch fresh user from DB (adapter user may lack custom fields)
         const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
         if (!dbUser) return token;
-
-        token.id = dbUser.id;
-        token.role = dbUser.role;
-        token.phone = dbUser.phone ?? undefined;
-        token.permissions = (dbUser as any).permissions ?? [];
-        // Quyền CTV (BROKER) — admin cấp; đổi quyền cần đăng nhập lại để cập nhật token.
-        token.canViewContact = (dbUser as any).canViewContact ?? false;
-        token.canViewCommission = (dbUser as any).canViewCommission ?? false;
+        applyDbUser(dbUser);
 
         // OAuth user who hasn't completed role setup yet
         if (account?.type === 'oauth' && !dbUser.password && !dbUser.setupComplete) {
           token.needsRoleSetup = true;
         } else {
           token.needsRoleSetup = false;
+        }
+        return token;
+      }
+
+      // Request kế tiếp: re-validate ĐỊNH KỲ (mỗi ~60s) để tài khoản bị KHOÁ (isActive=false),
+      // đổi vai trò, hoặc THU HỒI quyền (permissions/canViewContact/canViewCommission) có hiệu lực
+      // trong ~60s thay vì kẹt suốt 30 ngày của JWT. Tài khoản bị xoá → isActive=false.
+      const REFRESH_S = 60;
+      const now = Math.floor(Date.now() / 1000);
+      if (token.id && now - (token.refreshedAt ?? 0) > REFRESH_S) {
+        try {
+          const dbUser = await prisma.user.findUnique({ where: { id: token.id } });
+          if (!dbUser) {
+            token.isActive = false;
+            token.refreshedAt = now;
+          } else {
+            applyDbUser(dbUser);
+          }
+        } catch {
+          // Lỗi DB tạm thời KHÔNG được đăng xuất tất cả — giữ token cũ, thử lại lần sau.
         }
       }
 
@@ -159,6 +184,7 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).permissions = token.permissions ?? [];
         (session.user as any).canViewContact = token.canViewContact ?? false;
         (session.user as any).canViewCommission = token.canViewCommission ?? false;
+        (session.user as any).isActive = token.isActive ?? true;
       }
       return session;
     },

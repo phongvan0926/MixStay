@@ -1,0 +1,47 @@
+name: Backup Database (pg_dump)
+
+# Sao lưu DB hằng ngày (02:00 UTC ≈ 09:00 giờ VN) + chạy tay khi cần.
+# Cấu hình secrets trong repo: Settings > Secrets and variables > Actions:
+#   DIRECT_URL              (bắt buộc) — chuỗi kết nối TRỰC TIẾP Supabase (không pooler)
+#   BACKUP_GPG_PASSPHRASE   (khuyến nghị) — mã hoá bản dump trước khi lưu
+#   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / BACKUP_S3_BUCKET (tuỳ chọn) — đẩy offsite S3
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # pg_dump phải cùng major version với server (Supabase = PG 15/16). Cài client 16.
+      - name: Install postgresql-client 16
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          sudo apt-get update && sudo apt-get install -y postgresql-client-16
+
+      - name: Run backup
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          BACKUP_GPG_PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
+          BACKUP_S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        run: |
+          chmod +x scripts/backup-db.sh
+          ./scripts/backup-db.sh
+
+      # Lưu bản dump làm artifact của Actions (giữ 30 ngày) — lớp backup thứ 2 ngoài S3.
+      # Nếu KHÔNG mã hoá GPG, artifact chứa dữ liệu thô: hãy đặt BACKUP_GPG_PASSPHRASE.
+      - name: Upload dump as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: backups/*
+          retention-days: 30
+          if-no-files-found: error

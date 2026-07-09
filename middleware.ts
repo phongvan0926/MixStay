@@ -10,6 +10,12 @@ export default withAuth(
       return NextResponse.redirect(new URL('/login', req.url));
     }
 
+    // Tài khoản bị KHOÁ (isActive=false) → đá về login ngay, kể cả khi JWT chưa hết hạn.
+    // isActive được refresh vào token ~mỗi 60s ở jwt callback (lib/auth.ts).
+    if ((token as any).isActive === false) {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
+
     // OAuth users who haven't chosen a role (setupComplete=false) must finish role setup
     // before reaching ANY dashboard — enforced server-side so it can't be skipped/raced.
     if ((token as any).needsRoleSetup === true && !pathname.startsWith('/auth/callback')) {

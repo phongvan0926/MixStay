@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma';
 import { nanoid } from 'nanoid';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { requirePermission } from '@/lib/permissions-server';
+import { redactName, redactHouseNumber } from '@/lib/address';
 
 // GET /api/share-links/system?token=xxx — public: lấy tất cả RoomType trống của landlord
 export async function GET(req: NextRequest) {
@@ -68,10 +69,18 @@ export async function GET(req: NextRequest) {
 
     const landlord = await prisma.user.findUnique({
       where: { id: landlordId },
-      select: { name: true, phone: true }, // phone dùng cho FAB Zalo deeplink (KHÔNG render UI)
+      select: { name: true, phone: true }, // phone: nút "Gọi ngay"/Zalo trên catalog CHÍNH chủ nhà
     });
 
-    return NextResponse.json({ link, landlord, properties });
+    // Ẩn SỐ NHÀ với khách (đồng bộ chính sách redact ở mọi endpoint công khai khác).
+    const safeProperties = properties.map(p => ({
+      ...p,
+      name: redactName(p.name),
+      streetName: redactHouseNumber(p.streetName),
+      publicAddress: redactHouseNumber(p.streetName),
+    }));
+
+    return NextResponse.json({ link, landlord, properties: safeProperties });
   } catch (error: any) {
     console.error('/api/share-links/system error:', error);
     return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });
@@ -99,6 +108,10 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+    // Chặn expiresAt không hợp lệ (tránh new Date('invalid') → lỗi Prisma / rò thông tin lỗi).
+    if (body.expiresAt != null && Number.isNaN(Date.parse(body.expiresAt))) {
+      return NextResponse.json({ error: 'expiresAt không hợp lệ' }, { status: 400 });
+    }
     const token = nanoid(12);
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 

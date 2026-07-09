@@ -1,5 +1,34 @@
+// Content-Security-Policy — cân chỉnh cho app: nhúng YouTube/TikTok/Facebook, ảnh/video Supabase,
+// Google Fonts. 'unsafe-eval' CHỈ bật ở dev (HMR cần); prod chặt hơn. 'unsafe-inline' cho script
+// vẫn cần vì Next App Router chèn inline hydration script (chưa dùng nonce) — vẫn chặn script ngoài.
+const isDev = process.env.NODE_ENV !== 'production';
+const CSP = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'self'",
+  "form-action 'self'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' https://fonts.gstatic.com data:",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com",
+  "media-src 'self' https://*.supabase.co blob:",
+  "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.tiktok.com https://www.facebook.com https://web.facebook.com",
+  'upgrade-insecure-requests',
+].join('; ');
+
+const SECURITY_HEADERS = [
+  { key: 'Content-Security-Policy', value: CSP },
+  { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' },
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  poweredByHeader: false,
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**.supabase.co' },
@@ -17,6 +46,8 @@ const nextConfig = {
   },
   async headers() {
     return [
+      // Header bảo mật áp cho MỌI route (CSP, chống clickjacking, nosniff, referrer, permissions).
+      { source: '/:path*', headers: SECURITY_HEADERS },
       {
         source: '/manifest.json',
         headers: [{ key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=604800' }],

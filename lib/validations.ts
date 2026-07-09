@@ -13,7 +13,7 @@ export const registerSchema = z.object({
   // Email KHÔNG bắt buộc. Cần ít nhất 1 trong email/SĐT (định danh đăng nhập) — refine bên dưới.
   email: z.string().email('Email không hợp lệ').optional().or(z.literal('')),
   phone: z.string().min(8, 'Số điện thoại không hợp lệ').max(20).optional().or(z.literal('')),
-  password: z.string().min(6, 'Mật khẩu tối thiểu 6 ký tự'),
+  password: z.string().min(8, 'Mật khẩu tối thiểu 8 ký tự'),
   role: z.enum(['BROKER', 'LANDLORD', 'CUSTOMER'], { message: 'Vai trò không hợp lệ' }),
 }).refine(d => !!(d.email && d.email.trim()) || !!(d.phone && d.phone.trim()), {
   message: 'Vui lòng nhập Email hoặc Số điện thoại',
@@ -171,7 +171,7 @@ export const userCreateSchema = z.object({
   // Lưu ý: email là field đăng nhập — user không email chưa login bằng email/mật khẩu được.
   email: z.string().email('Email không hợp lệ').optional().or(z.literal('')),
   phone: z.string().max(20).optional().nullable(),
-  password: z.string().min(6, 'Mật khẩu tối thiểu 6 ký tự'),
+  password: z.string().min(8, 'Mật khẩu tối thiểu 8 ký tự'),
   role: z.enum(ROLES, { message: 'Vai trò không hợp lệ' }),
   isActive: z.boolean().optional(),
   permissions: z.array(z.enum(PERMISSIONS)).optional(),
@@ -184,7 +184,7 @@ export const userUpdateSchema = z.object({
   name: z.string().min(2).max(100).optional(),
   email: z.string().email('Email không hợp lệ').optional().or(z.literal('')),
   phone: z.string().max(20).optional().nullable(),
-  password: z.string().min(6, 'Mật khẩu tối thiểu 6 ký tự').optional().or(z.literal('')),
+  password: z.string().min(8, 'Mật khẩu tối thiểu 8 ký tự').optional().or(z.literal('')),
   role: z.enum(ROLES).optional(),
   isActive: z.boolean().optional(),
   permissions: z.array(z.enum(PERMISSIONS)).optional(),
