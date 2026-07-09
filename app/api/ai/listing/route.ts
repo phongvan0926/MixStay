@@ -65,7 +65,7 @@ Hãy viết lại phần mô tả:`;
 }
 
 export async function POST(req: NextRequest) {
-  const rateLimited = applyRateLimit(req, 'api');
+  const rateLimited = await applyRateLimit(req, 'api');
   if (rateLimited) return rateLimited;
 
   try {

@@ -6,7 +6,7 @@ import { applyRateLimit } from '@/lib/rate-limit';
 
 // POST /api/rooms/import — bulk import room types from parsed Excel data
 export async function POST(req: NextRequest) {
-  const rateLimited = applyRateLimit(req, 'api');
+  const rateLimited = await applyRateLimit(req, 'api');
   if (rateLimited) return rateLimited;
 
   try {

@@ -7,7 +7,7 @@ import { redactName, redactHouseNumber } from '@/lib/address';
 // Trả company (chỉ khi đang hoạt động) + tất cả phòng trống/sắp trống ĐÃ DUYỆT thuộc công ty.
 // Không cần đăng nhập; cache CDN ngắn.
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const rateLimited = applyRateLimit(req, 'api');
+  const rateLimited = await applyRateLimit(req, 'api');
   if (rateLimited) return rateLimited;
 
   try {

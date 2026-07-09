@@ -18,7 +18,7 @@ const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
-  const rateLimited = applyRateLimit(req, 'upload');
+  const rateLimited = await applyRateLimit(req, 'upload');
   if (rateLimited) return rateLimited;
 
   const session = await getServerSession(authOptions);

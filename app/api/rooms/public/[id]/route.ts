@@ -10,7 +10,7 @@ import { publicAddress, redactName, redactHouseNumber } from '@/lib/address';
 // ({ roomType, broker }) so ShareViewClient can render it directly (broker = null → no
 // broker attribution; contact falls back to company group / landlord Zalo).
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const rateLimited = applyRateLimit(req, 'api');
+  const rateLimited = await applyRateLimit(req, 'api');
   if (rateLimited) return rateLimited;
 
   try {

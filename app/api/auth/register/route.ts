@@ -5,7 +5,7 @@ import { applyRateLimit } from '@/lib/rate-limit';
 import { registerSchema, validateBody } from '@/lib/validations';
 
 export async function POST(req: NextRequest) {
-  const rateLimited = applyRateLimit(req, 'auth');
+  const rateLimited = await applyRateLimit(req, 'auth');
   if (rateLimited) return rateLimited;
 
   try {

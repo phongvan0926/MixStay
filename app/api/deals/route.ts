@@ -8,7 +8,7 @@ import { dealCreateSchema, dealUpdateSchema, validateBody } from '@/lib/validati
 import { hasPermission } from '@/lib/permissions';
 
 export async function GET(req: NextRequest) {
-  const rateLimited = applyRateLimit(req, 'api');
+  const rateLimited = await applyRateLimit(req, 'api');
   if (rateLimited) return rateLimited;
 
   try {
@@ -116,7 +116,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const rateLimited = applyRateLimit(req, 'api');
+  const rateLimited = await applyRateLimit(req, 'api');
   if (rateLimited) return rateLimited;
 
   try {
@@ -182,7 +182,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const rateLimited = applyRateLimit(req, 'api');
+  const rateLimited = await applyRateLimit(req, 'api');
   if (rateLimited) return rateLimited;
 
   try {

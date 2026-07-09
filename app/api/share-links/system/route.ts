@@ -9,7 +9,7 @@ import { redactName, redactHouseNumber } from '@/lib/address';
 
 // GET /api/share-links/system?token=xxx — public: lấy tất cả RoomType trống của landlord
 export async function GET(req: NextRequest) {
-  const rateLimited = applyRateLimit(req, 'api');
+  const rateLimited = await applyRateLimit(req, 'api');
   if (rateLimited) return rateLimited;
 
   try {
@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/share-links/system — tạo system share link (landlord/admin only)
 export async function POST(req: NextRequest) {
-  const rateLimited = applyRateLimit(req, 'api');
+  const rateLimited = await applyRateLimit(req, 'api');
   if (rateLimited) return rateLimited;
 
   try {
