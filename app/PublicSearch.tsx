@@ -157,7 +157,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
     <section id="tim-phong" className="relative pt-20 sm:pt-28 pb-12 sm:pb-16 px-4 sm:px-6 overflow-hidden bg-white scroll-mt-20">
       {/* Ảnh nền cityscape dưới khu tìm kiếm — neo PHẢI (khoe tòa nhà, kể cả mobile),
           phủ trắng NHẸ để chữ vẫn đọc mà ảnh không bị "trắng xoá". Thiếu file → nền trắng (không vỡ). */}
-      <div aria-hidden="true" className="absolute inset-x-0 top-0 z-0 pointer-events-none h-[460px] sm:h-[620px] overflow-hidden">
+      <div aria-hidden="true" className="absolute inset-x-0 top-0 z-0 pointer-events-none h-[880px] sm:h-[760px] overflow-hidden">
         {/* ảnh nền (thẻ <img> để chắc chắn render + tối ưu). Vị trí ảnh (object-position) có thể do admin chỉnh. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/hero-city.jpg" alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: 'right top' }} />
