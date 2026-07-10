@@ -155,7 +155,16 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
 
   return (
     <section id="tim-phong" className="relative pt-20 sm:pt-28 pb-12 sm:pb-16 px-4 sm:px-6 overflow-hidden bg-white scroll-mt-20">
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-white via-stone-50 to-white" />
+      {/* Ảnh nền cityscape "chìm" dưới khu tìm kiếm — dải trên cùng, phủ trắng để chữ + thẻ nổi rõ,
+          fade về trắng ở đáy để tan vào phần dưới. Không có ảnh → nền trắng dịu (không vỡ layout). */}
+      <div aria-hidden="true" className="absolute inset-x-0 top-0 -z-10 h-[440px] sm:h-[600px] overflow-hidden">
+        {/* nền dịu khi CHƯA có ảnh */}
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-50/50 via-white to-white" />
+        {/* ảnh: đặt file tại public/hero-city.jpg (nén ~1920px, JPG/WebP). Thiếu file → lớp này trong suốt. */}
+        <div className="absolute inset-0 bg-cover bg-top bg-no-repeat" style={{ backgroundImage: "url('/hero-city.jpg')" }} />
+        {/* phủ trắng: đậm dần xuống dưới → chữ đọc rõ + ảnh tan vào nền trắng */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-white/60 to-white" />
+      </div>
 
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-4 sm:mb-8">
