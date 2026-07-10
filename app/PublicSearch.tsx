@@ -178,7 +178,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
         {/* Filter card */}
         <form
           onSubmit={handleSearch}
-          className="rounded-2xl bg-white border border-stone-200 p-3 sm:p-4 shadow-sm mb-6"
+          className="rounded-2xl p-0 sm:p-2 mb-6"
         >
           {/* Ô TÌM THEO TỪ KHÓA — trên cùng, có nút Tìm ngay (thấy được khi vừa vào, không cần cuộn) */}
           <div className="flex gap-2 mb-3">
