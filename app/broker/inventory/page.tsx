@@ -88,9 +88,11 @@ function RoomImageCarousel({ room }: { room: any }) {
         </div>
       );
     }
+    // Không ảnh + không video → ảnh mặc định hệ thống.
     return (
-      <div className="h-48 bg-gradient-to-br from-brand-100 to-brand-50 rounded-xl flex items-center justify-center">
-        <span className="text-4xl">🏢</span>
+      <div className="h-48 rounded-xl overflow-hidden bg-stone-100">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/default.jpg" alt="Ảnh mặc định" className="w-full h-full object-cover" loading="lazy" />
       </div>
     );
   }

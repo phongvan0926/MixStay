@@ -157,16 +157,17 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
     <section id="tim-phong" className="relative pt-20 sm:pt-28 pb-12 sm:pb-16 px-4 sm:px-6 overflow-hidden bg-white scroll-mt-20">
       {/* Ảnh nền cityscape dưới khu tìm kiếm — neo PHẢI (khoe tòa nhà, kể cả mobile),
           phủ trắng NHẸ để chữ vẫn đọc mà ảnh không bị "trắng xoá". Thiếu file → nền trắng (không vỡ). */}
-      <div aria-hidden="true" className="absolute inset-x-0 top-0 -z-10 h-[460px] sm:h-[620px] overflow-hidden">
-        {/* ảnh: file tại public/hero-city.jpg. Thiếu file → lớp này trong suốt. */}
-        <div className="absolute inset-0 bg-cover bg-no-repeat" style={{ backgroundImage: "url('/hero-city.jpg')", backgroundPosition: 'right top' }} />
+      <div aria-hidden="true" className="absolute inset-x-0 top-0 z-0 pointer-events-none h-[460px] sm:h-[620px] overflow-hidden">
+        {/* ảnh nền (thẻ <img> để chắc chắn render + tối ưu). Vị trí ảnh (object-position) có thể do admin chỉnh. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/hero-city.jpg" alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: 'right top' }} />
         {/* phủ trắng RẤT nhẹ ở trên (ảnh hiện rõ), đậm dần xuống đáy để tan vào nền trắng */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/15 to-white" />
         {/* thêm chút trắng bên trái nơi có chữ tiêu đề để chữ nổi, phần tòa nhà bên phải giữ rõ */}
         <div className="absolute inset-0 bg-gradient-to-r from-white/35 via-transparent to-transparent" />
       </div>
 
-      <div className="max-w-6xl mx-auto">
+      <div className="relative z-10 max-w-6xl mx-auto">
         <div className="text-center mb-4 sm:mb-8">
           <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 border border-brand-100 px-3 py-1 text-xs font-medium text-brand-700 mb-2 sm:mb-3">
             🔎 Tìm phòng công khai - Không cần đăng nhập
@@ -268,12 +269,12 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
             </div>
           </div>
 
-          {/* Submit ở cuối form */}
-          <div className="mt-3 flex justify-end">
+          {/* Submit ở cuối form — CĂN GIỮA (tránh bị FAB hotline góc phải che) */}
+          <div className="mt-3 flex justify-center">
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full sm:w-auto px-8 py-2.5 text-sm font-medium"
+              className="btn-primary w-full sm:w-auto px-10 py-2.5 text-sm font-medium"
             >
               {loading ? 'Đang tìm...' : 'Tìm phòng'}
             </button>

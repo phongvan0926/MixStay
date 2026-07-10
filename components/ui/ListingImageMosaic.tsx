@@ -67,9 +67,11 @@ export default function ListingImageMosaic({
         </div>
       );
     }
+    // Không có ảnh lẫn video → dùng ảnh mặc định của hệ thống (public/default.jpg).
     return (
-      <div className={`relative w-full ${className} bg-gradient-to-br from-brand-100 to-brand-50 flex items-center justify-center`}>
-        <span className="text-4xl opacity-50">🏠</span>
+      <div className={`relative w-full ${className} overflow-hidden bg-stone-100`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/default.jpg" alt={alt} className="w-full h-full object-cover" loading="lazy" />
       </div>
     );
   }
