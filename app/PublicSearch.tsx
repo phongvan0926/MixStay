@@ -155,15 +155,15 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
 
   return (
     <section id="tim-phong" className="relative pt-20 sm:pt-28 pb-12 sm:pb-16 px-4 sm:px-6 overflow-hidden bg-white scroll-mt-20">
-      {/* Ảnh nền cityscape "chìm" dưới khu tìm kiếm — dải trên cùng, phủ trắng để chữ + thẻ nổi rõ,
-          fade về trắng ở đáy để tan vào phần dưới. Không có ảnh → nền trắng dịu (không vỡ layout). */}
-      <div aria-hidden="true" className="absolute inset-x-0 top-0 -z-10 h-[440px] sm:h-[600px] overflow-hidden">
-        {/* nền dịu khi CHƯA có ảnh */}
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-50/50 via-white to-white" />
-        {/* ảnh: đặt file tại public/hero-city.jpg (nén ~1920px, JPG/WebP). Thiếu file → lớp này trong suốt. */}
-        <div className="absolute inset-0 bg-cover bg-top bg-no-repeat" style={{ backgroundImage: "url('/hero-city.jpg')" }} />
-        {/* phủ trắng: đậm dần xuống dưới → chữ đọc rõ + ảnh tan vào nền trắng */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-white/60 to-white" />
+      {/* Ảnh nền cityscape dưới khu tìm kiếm — neo PHẢI (khoe tòa nhà, kể cả mobile),
+          phủ trắng NHẸ để chữ vẫn đọc mà ảnh không bị "trắng xoá". Thiếu file → nền trắng (không vỡ). */}
+      <div aria-hidden="true" className="absolute inset-x-0 top-0 -z-10 h-[460px] sm:h-[620px] overflow-hidden">
+        {/* ảnh: file tại public/hero-city.jpg. Thiếu file → lớp này trong suốt. */}
+        <div className="absolute inset-0 bg-cover bg-no-repeat" style={{ backgroundImage: "url('/hero-city.jpg')", backgroundPosition: 'right top' }} />
+        {/* phủ trắng RẤT nhẹ ở trên (ảnh hiện rõ), đậm dần xuống đáy để tan vào nền trắng */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/15 to-white" />
+        {/* thêm chút trắng bên trái nơi có chữ tiêu đề để chữ nổi, phần tòa nhà bên phải giữ rõ */}
+        <div className="absolute inset-0 bg-gradient-to-r from-white/35 via-transparent to-transparent" />
       </div>
 
       <div className="max-w-6xl mx-auto">
