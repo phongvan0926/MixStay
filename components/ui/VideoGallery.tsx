@@ -190,14 +190,12 @@ export default function VideoGallery({ videos = [], videoLinks = [], images = []
     if (tab === 'videos' && !hasVideos && hasImages) setTab('images');
   }, [tab, hasImages, hasVideos]);
 
-  // Empty state
+  // Không có ảnh lẫn video → ảnh mặc định hệ thống (public/default.jpg).
   if (!hasImages && !hasVideos) {
     return (
-      <div className="h-64 md:h-80 bg-gradient-to-br from-brand-100 via-brand-50 to-gold-50 rounded-2xl flex items-center justify-center">
-        <div className="text-center">
-          <span className="text-5xl">🏢</span>
-          <p className="text-sm text-stone-400 mt-2">Chưa có ảnh/video</p>
-        </div>
+      <div className="relative h-64 md:h-80 rounded-2xl overflow-hidden bg-stone-100">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/default.jpg" alt="Ảnh mặc định" className="w-full h-full object-cover" />
       </div>
     );
   }

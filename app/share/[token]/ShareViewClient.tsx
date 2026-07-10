@@ -35,7 +35,8 @@ function RelatedRoomCard({ rt }: { rt: any }) {
         {cover ? (
           <OptimizedImage src={cover} alt={rt.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 33vw" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-3xl opacity-40">🏠</div>
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src="/default.jpg" alt={rt.name} className="w-full h-full object-cover" loading="lazy" />
         )}
         <span className="absolute top-2 left-2 badge bg-white/90 text-stone-700 text-[10px] backdrop-blur-sm">
           {roomTypeLabels[rt.typeName] || rt.typeName}

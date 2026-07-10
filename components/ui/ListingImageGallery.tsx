@@ -48,8 +48,9 @@ export default function ListingImageGallery({
 
   if (list.length === 0) {
     return (
-      <div className={`relative w-full aspect-[16/10] bg-gradient-to-br from-brand-100 to-brand-50 rounded-2xl flex items-center justify-center ${className}`}>
-        <span className="text-5xl opacity-50">🏠</span>
+      <div className={`relative w-full aspect-[16/10] rounded-2xl overflow-hidden bg-stone-100 ${className}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/default.jpg" alt={alt} className="w-full h-full object-cover" />
       </div>
     );
   }
