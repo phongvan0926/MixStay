@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import prisma from '@/lib/prisma';
 import ShareViewClient from '@/app/share/[token]/ShareViewClient';
+import { ogImage, largeCard } from '@/lib/og';
 
 export async function generateMetadata({ params }: { params: { token: string } }): Promise<Metadata> {
   const link = await prisma.shareLink.findUnique({
@@ -20,7 +21,8 @@ export async function generateMetadata({ params }: { params: { token: string } }
   const prop = rt.property;
   const title = `${prop?.name} - ${rt.name} | MixStay`;
   const description = `${rt.name} ${rt.areaSqm}m² tại ${prop?.district}. Giá từ ${(rt.priceMonthly / 1000000).toFixed(1)} triệu/tháng.`;
-  const image = rt.images?.[0] || undefined;
+  // /api/og/[id] → JPEG 1200×630 (ảnh gốc .webp không hiện được trong chat Zalo).
+  const images = [ogImage(rt.id, rt.name)];
 
   return {
     title,
@@ -28,11 +30,12 @@ export async function generateMetadata({ params }: { params: { token: string } }
     openGraph: {
       title,
       description,
-      ...(image ? { images: [{ url: image }] } : {}),
+      images,
       type: 'website',
       locale: 'vi_VN',
       siteName: 'MixStay',
     },
+    twitter: { ...largeCard, title, description, images },
   };
 }
 

@@ -229,9 +229,14 @@ mixstay/
 - **Error Boundaries:** `app/error.tsx`, `app/loading.tsx`, `app/not-found.tsx` cho UX mượt
 - **Skeleton Loading:** Pulse animation skeletons thay thế text "Đang tải..." trên tất cả trang dashboard
 - **SEO:** Dynamic OG tags cho share pages (`generateMetadata`), sitemap.xml, robots.txt
+- **OG image chuẩn Zalo:** `app/api/og/[id]` render ảnh tin đăng thành **JPEG 1200×630** (Zalo không đọc được WebP/HEIC — ảnh gốc Supabase phần lớn là .webp). `lib/og.ts` dựng URL tuyệt đối theo host request cho mọi trang chia sẻ
 - **PWA:** Web app manifest, SVG icons, standalone display mode
 
 ## Changelog
+
+### v9.0 — 2026-07-13 (nút liên hệ trang kho CTV + ảnh preview link Zalo)
+- **Trang kho CTV (`/share/system/[token]`) luôn có nút liên hệ:** trước đây nút Zalo/Gọi chỉ hiện khi người tạo link có SĐT trong hồ sơ → 4/8 CTV không điền SĐT ⇒ trang kho của họ KHÔNG có nút liên hệ nào. Nay FAB Zalo + Gọi luôn hiển thị (không có SĐT → lùi về Zalo/hotline hệ thống, giống trang tin đăng lẻ). Thêm nút liên hệ **dính đáy modal chi tiết phòng** (FAB bị lớp phủ modal che) và nút Zalo/Gọi trong thẻ CTA cuối trang.
+- **Ảnh preview khi share link lên Zalo:** `og:image` cũ trỏ thẳng ảnh gốc Supabase — 324/465 tin có ảnh đầu là `.webp` mà **Zalo không hiển thị WebP** ⇒ mất thumbnail trong chat (link nào ảnh `.jpg` thì hiện → tưởng lỗi theo loại link). Nay mọi trang chia sẻ (`/tin/[id]`, `/share/[token]`, `/p/[token]`, `/share/system/[token]`) dùng `og:image = /api/og/{roomTypeId}` → JPEG 1200×630 (sharp), kèm `og:image:width/height/type` + `twitter:card=summary_large_image`. Thứ tự nguồn ảnh: ảnh phòng → ảnh tòa nhà → thumbnail YouTube (tin chỉ có video) → `/default.jpg`. Link kho (`/share/system`) trước đây KHÔNG có `og:image` nào, nay có ảnh đại diện.
 
 ### v8.9 — 2026-07-06 (tìm phòng theo từ khóa + nút tìm nổi ngay trang chủ)
 - **Tìm theo TỪ KHÓA ở trang chủ:** thêm ô tìm + nút "Tìm" ngay ĐẦU khung lọc (`app/PublicSearch.tsx`). API `/api/rooms/public` nhận `?q=` → khớp tên tin, mã tin (MS-…), mô tả, tên đường/khu vực, quận, tên tòa (case-insensitive; các điều kiện property được AND với bộ lọc gốc nên không lộ tin ẩn/chưa duyệt). Từ khóa gộp AND với các bộ lọc khác; `loadMore` giữ nguyên từ khóa; "Xoá lọc" xoá cả từ khóa.

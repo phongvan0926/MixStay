@@ -147,9 +147,13 @@ export default function SystemShareClient() {
   const contact = isBroker ? data.broker : data.landlord;
   const contactName = contact?.name || (isBroker ? 'Cộng tác viên' : 'Chủ nhà');
   const contactDigits = (contact?.phone || '').replace(/\D/g, '');
+  // CTV chưa điền SĐT trong hồ sơ → KHÔNG bỏ trống nút liên hệ (trước đây trang kho không có nút
+  // nào cả), mà lùi về Zalo/hotline hệ thống — giống trang tin đăng lẻ (/share/[token]).
   const zaloLink = isBroker
-    ? (contactDigits ? `https://zalo.me/${contactDigits}` : 'https://zalo.me/')
+    ? (contactDigits ? `https://zalo.me/${contactDigits}` : getSystemZaloLink(null))
     : getSystemZaloLink({ landlord: data.landlord, properties: data.properties });
+  const HOTLINE = '0379838222';
+  const callDigits = contactDigits || HOTLINE;
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -408,7 +412,17 @@ export default function SystemShareClient() {
         <div className="mt-10 mb-6 text-center">
           <div className="card bg-gradient-to-br from-brand-600 to-brand-700 text-white border-0 max-w-lg mx-auto">
             <p className="font-display font-semibold text-lg mb-1">Quan tâm phòng nào?</p>
-            <p className="text-brand-100 text-sm">Liên hệ hỗ trợ để được tư vấn và hẹn xem phòng miễn phí.</p>
+            <p className="text-brand-100 text-sm">Liên hệ {contactName} để được tư vấn và hẹn xem phòng miễn phí.</p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <a href={zaloLink} target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 bg-white text-[#0068FF] font-semibold py-2.5 rounded-xl text-sm hover:bg-brand-50 transition-colors">
+                💬 Tư vấn Zalo
+              </a>
+              <a href={`tel:${callDigits}`}
+                className="flex items-center justify-center gap-2 bg-brand-900/40 border border-white/40 text-white font-semibold py-2.5 rounded-xl text-sm hover:bg-brand-900/60 transition-colors">
+                📞 Gọi ngay
+              </a>
+            </div>
           </div>
           <p className="text-xs text-stone-400 mt-6 mb-16">
             Powered by MixStay • Kho phòng của {contactName}
@@ -416,21 +430,14 @@ export default function SystemShareClient() {
         </div>
       </div>
 
-      {/* Liên hệ nổi.
-          - Link MÔI GIỚI: CHỈ Zalo + gọi cộng tác viên (ẩn hotline công ty) → khách không sang kênh khác.
-          - Link chủ nhà: Zalo chủ nhà/công ty + hotline công ty (như cũ). */}
-      {isBroker ? (
-        contactDigits ? (
-          <>
-            <ZaloFab href={zaloLink} />
-            <CallFab phone={contactDigits} display={contact?.phone || contactDigits} label="Gọi ngay" showNumber={false} />
-          </>
-        ) : null
+      {/* Liên hệ nổi — LUÔN hiển thị, đi theo khi cuộn trang (giống trang tin đăng lẻ).
+          - Có SĐT (CTV/chủ nhà) → Zalo + gọi đúng người đó.
+          - Không có SĐT → Zalo/hotline hệ thống, không để khách rơi vào ngõ cụt. */}
+      <ZaloFab href={zaloLink} />
+      {contactDigits ? (
+        <CallFab phone={contactDigits} display={contact?.phone || contactDigits} label="Gọi ngay" showNumber={false} />
       ) : (
-        <>
-          <ZaloFab href={zaloLink} />
-          <CallFab label="Gọi ngay" showNumber={false} />
-        </>
+        <CallFab label="Gọi ngay" showNumber={false} />
       )}
 
       {/* Room detail modal */}
@@ -580,6 +587,24 @@ export default function SystemShareClient() {
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 Chỉ đường (Google Maps)
               </a>
+
+              {/* Nút liên hệ trong modal — FAB nổi bị lớp phủ modal (z-60) che, nên phải có CTA riêng
+                  ở đây; dính đáy modal để luôn nhìn thấy khi khách cuộn xem chi tiết phòng. */}
+              <div className="sticky bottom-0 -mx-5 -mb-5 px-5 pt-3 pb-5 bg-white/95 backdrop-blur-sm border-t border-stone-100 grid grid-cols-2 gap-2">
+                <a href={zaloLink} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 bg-[#0068FF] hover:bg-[#0057d9] text-white font-semibold py-3 rounded-xl text-sm transition-colors">
+                  <svg width="20" height="20" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                    <path d="M32 4C15.43 4 2 14.95 2 28.46c0 7.5 4.06 14.2 10.42 18.7-.3 2.21-1.36 5.62-3.27 8.32-.39.55.07 1.31.74 1.18 4.6-.86 9.45-2.86 12.42-4.7 2.83.83 5.84 1.27 8.69 1.27 16.57 0 30-10.95 30-24.46S48.57 4 32 4Z" fill="white" />
+                    <text x="32" y="36" textAnchor="middle" fontFamily="Arial,sans-serif" fontWeight="900" fontSize="18" fill="#0068FF">Zalo</text>
+                  </svg>
+                  Tư vấn Zalo
+                </a>
+                <a href={`tel:${callDigits}`}
+                  className="flex items-center justify-center gap-2 bg-brand-700 hover:bg-brand-800 text-white font-semibold py-3 rounded-xl text-sm transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                  Gọi ngay
+                </a>
+              </div>
             </div>
           </div>
         </div>
