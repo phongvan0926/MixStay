@@ -157,9 +157,12 @@ export const authOptions: NextAuthOptions = {
       // Request kế tiếp: re-validate ĐỊNH KỲ (mỗi ~60s) để tài khoản bị KHOÁ (isActive=false),
       // đổi vai trò, hoặc THU HỒI quyền (permissions/canViewContact/canViewCommission) có hiệu lực
       // trong ~60s thay vì kẹt suốt 30 ngày của JWT. Tài khoản bị xoá → isActive=false.
+      // trigger 'update' không kèm payload (vd sau khi user tự sửa hồ sơ ở /broker/profile) →
+      // ép nạp lại từ DB NGAY, đừng bắt user chờ hết 60s mới thấy SĐT mới trong session.
       const REFRESH_S = 60;
       const now = Math.floor(Date.now() / 1000);
-      if (token.id && now - (token.refreshedAt ?? 0) > REFRESH_S) {
+      const forceRefresh = trigger === 'update';
+      if (token.id && (forceRefresh || now - (token.refreshedAt ?? 0) > REFRESH_S)) {
         try {
           const dbUser = await prisma.user.findUnique({ where: { id: token.id } });
           if (!dbUser) {

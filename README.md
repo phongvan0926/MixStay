@@ -234,6 +234,12 @@ mixstay/
 
 ## Changelog
 
+### v9.1 — 2026-07-13 (CTV bắt buộc có SĐT trước khi tạo link chia sẻ)
+- **Trang hồ sơ tự phục vụ:** `app/broker/profile` + API `app/api/users/me` (GET/PUT) — trước đây chỉ có `PUT /api/users` (gated `MANAGE_USERS` = admin) nên CTV **không có cách nào tự điền SĐT**. `/api/users/me` chỉ cho sửa `name` + `phone`, KHÔNG đụng role/permissions/isActive (chống tự nâng quyền); chặn SĐT trùng tài khoản khác (409) vì SĐT là field đăng nhập.
+- **Chặn tạo link khi thiếu SĐT:** `POST /api/share-links` kiểm SĐT trong DB với role BROKER (cả link lẻ lẫn link kho) → 400 `{ code: 'PHONE_REQUIRED' }`. Client (`/broker/inventory`, `/broker/share-links`) bắt code này → toast + đẩy sang `/broker/profile?need=phone`.
+- **Nhắc trước khi bấm:** `components/ui/PhoneRequiredNotice.tsx` — banner vàng ở đầu trang Kho hàng + Link chia sẻ khi CTV chưa có SĐT. Sidebar CTV thêm mục "Hồ sơ".
+- **Session refresh ngay:** `lib/auth.ts` jwt callback nạp lại DB khi `trigger === 'update'` (trước chỉ refresh mỗi 60s) → lưu hồ sơ xong là banner tắt luôn.
+
 ### v9.0 — 2026-07-13 (nút liên hệ trang kho CTV + ảnh preview link Zalo)
 - **Trang kho CTV (`/share/system/[token]`) luôn có nút liên hệ:** trước đây nút Zalo/Gọi chỉ hiện khi người tạo link có SĐT trong hồ sơ → 4/8 CTV không điền SĐT ⇒ trang kho của họ KHÔNG có nút liên hệ nào. Nay FAB Zalo + Gọi luôn hiển thị (không có SĐT → lùi về Zalo/hotline hệ thống, giống trang tin đăng lẻ). Thêm nút liên hệ **dính đáy modal chi tiết phòng** (FAB bị lớp phủ modal che) và nút Zalo/Gọi trong thẻ CTA cuối trang.
 - **Ảnh preview khi share link lên Zalo:** `og:image` cũ trỏ thẳng ảnh gốc Supabase — 324/465 tin có ảnh đầu là `.webp` mà **Zalo không hiển thị WebP** ⇒ mất thumbnail trong chat (link nào ảnh `.jpg` thì hiện → tưởng lỗi theo loại link). Nay mọi trang chia sẻ (`/tin/[id]`, `/share/[token]`, `/p/[token]`, `/share/system/[token]`) dùng `og:image = /api/og/{roomTypeId}` → JPEG 1200×630 (sharp), kèm `og:image:width/height/type` + `twitter:card=summary_large_image`. Thứ tự nguồn ảnh: ảnh phòng → ảnh tòa nhà → thumbnail YouTube (tin chỉ có video) → `/default.jpg`. Link kho (`/share/system`) trước đây KHÔNG có `og:image` nào, nay có ảnh đại diện.

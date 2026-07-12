@@ -26,6 +26,7 @@ const menuItems: Record<string, MenuItem[]> = {
     { label: 'Tin đã lưu', href: '/broker/saved', icon: '🔖' },
     { label: 'Giao dịch', href: '/broker/deals', icon: '💰' },
     { label: 'Link chia sẻ', href: '/broker/share-links', icon: '🔗' },
+    { label: 'Hồ sơ', href: '/broker/profile', icon: '👤' },
   ],
   LANDLORD: [
     { label: 'Tòa nhà', href: '/landlord/properties', icon: '🏠' },

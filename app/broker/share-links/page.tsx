@@ -1,14 +1,17 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage';
+import PhoneRequiredNotice from '@/components/ui/PhoneRequiredNotice';
 import { useShareLinks } from '@/hooks/useData';
 import { SkeletonStats, SkeletonList } from '@/components/ui/Skeleton';
 
 export default function BrokerShareLinksPage() {
   const [page, setPage] = useState(1);
+  const router = useRouter();
 
   const { links, pagination, isLoading: loading, mutate } = useShareLinks({ page: String(page), limit: '20' });
 
@@ -33,6 +36,9 @@ export default function BrokerShareLinksPage() {
         try { await navigator.clipboard.writeText(data.url); } catch {}
         toast.success('Đã copy link kho hàng! Khách chỉ thấy liên hệ của bạn.');
         mutate();
+      } else if (data.code === 'PHONE_REQUIRED') {
+        toast.error(data.error);
+        router.push('/broker/profile?need=phone');
       } else {
         toast.error(data.error || 'Không tạo được link');
       }
@@ -53,6 +59,7 @@ export default function BrokerShareLinksPage() {
 
   return (
     <div>
+      <PhoneRequiredNotice />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="font-display text-2xl font-bold">Link chia sẻ</h1>

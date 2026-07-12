@@ -192,6 +192,19 @@ export const userUpdateSchema = z.object({
   canViewCommission: z.boolean().optional(),
 });
 
+/**
+ * Hồ sơ CÁ NHÂN (user tự sửa của mình qua /api/users/me) — KHÔNG có role/isActive/permissions
+ * để user không tự nâng quyền. SĐT bắt buộc: link chia sẻ của CTV định tuyến liên hệ về SĐT này,
+ * thiếu là khách rơi về hotline công ty (mất lead của CTV).
+ */
+export const profileUpdateSchema = z.object({
+  name: z.string().min(2, 'Tên tối thiểu 2 ký tự').max(100),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^(0\d{8,10}|\+84\d{8,9})$/, 'Số điện thoại không hợp lệ (VD: 0912345678)'),
+});
+
 // ===== Notification =====
 export const notificationUpdateSchema = z.object({
   id: z.string().optional(),

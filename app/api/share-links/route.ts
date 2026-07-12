@@ -229,6 +229,25 @@ export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+    // CTV BẮT BUỘC có SĐT trước khi tạo link: mọi nút liên hệ trên trang share (Zalo + gọi) đều
+    // deeplink về SĐT của CTV. Thiếu SĐT → khách rơi về hotline công ty ⇒ CTV mất lead.
+    // Kiểm tra ở DB (không tin token, phone có thể vừa đổi) cho cả link lẻ lẫn link kho.
+    if (session.user.role === 'BROKER') {
+      const me = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { phone: true },
+      });
+      if (!me?.phone?.trim()) {
+        return NextResponse.json(
+          {
+            error: 'Bạn cần cập nhật số điện thoại trong hồ sơ trước khi tạo link chia sẻ — khách sẽ liên hệ bạn qua số này.',
+            code: 'PHONE_REQUIRED',
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     const body = await req.json();
     const validated = validateBody(shareLinkCreateSchema, body);
     if (!validated.success) {

@@ -1,7 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
+import PhoneRequiredNotice from '@/components/ui/PhoneRequiredNotice';
 import { formatCurrency } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage';
@@ -415,6 +417,7 @@ function RoomDetailModal({
 
 export default function BrokerInventoryPage() {
   const { data: session } = useSession();
+  const router = useRouter();
   // Quyền CTV: mặc định ẩn liên hệ + hoa hồng cho tới khi admin cấp.
   const canViewContact = !!(session?.user as any)?.canViewContact;
   const canViewCommission = !!(session?.user as any)?.canViewCommission;
@@ -494,6 +497,11 @@ export default function BrokerInventoryPage() {
       setCopiedLink(roomTypeId);
       toast.success('Đã tạo & copy link!');
       setTimeout(() => setCopiedLink(''), 3000);
+    } else if (data.code === 'PHONE_REQUIRED') {
+      toast.error(data.error);
+      router.push('/broker/profile?need=phone');
+    } else {
+      toast.error(data.error || 'Không tạo được link');
     }
   };
 
@@ -510,6 +518,9 @@ export default function BrokerInventoryPage() {
       if (res.ok && data.url) {
         try { await navigator.clipboard.writeText(data.url); } catch {}
         toast.success('Đã copy link kho hàng! Khách chỉ thấy liên hệ của bạn.');
+      } else if (data.code === 'PHONE_REQUIRED') {
+        toast.error(data.error);
+        router.push('/broker/profile?need=phone');
       } else {
         toast.error(data.error || 'Không tạo được link');
       }
@@ -531,6 +542,7 @@ export default function BrokerInventoryPage() {
 
   return (
     <div>
+      <PhoneRequiredNotice />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="font-display text-2xl font-bold">Kho hàng</h1>
