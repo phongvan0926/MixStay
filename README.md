@@ -234,6 +234,12 @@ mixstay/
 
 ## Changelog
 
+### v9.2 — 2026-07-14 (giữ bộ lọc tìm phòng khi bấm Back)
+- **Lỗi:** khách lọc phòng ở trang chủ / `/phong`, bấm vào 1 tin để xem rồi Back → bộ lọc, danh sách kết quả và vị trí cuộn **mất sạch** (phải lọc lại từ đầu). Nguyên nhân: `app/PublicSearch.tsx` giữ toàn bộ filter + results trong React state, không có trong URL — Back làm component mount lại với state rỗng.
+- **Sửa:** mỗi lần tìm / "Xem thêm", bộ lọc + số trang đã tải được ghi vào URL bằng `history.replaceState` (`?q=&district=&typeName=&minPrice=&maxPrice=&parkingCar=…&p=2`). Lúc mount, component đọc lại URL → khôi phục form và **gộp N trang vào 1 request** (`limit = 12×N`, tối đa 8 trang vì API kẹp `limit ≤ 100`) nên "Xem thêm" tiếp theo vẫn khớp offset, không trùng/sót tin.
+- **Cuộn về đúng chỗ:** vị trí cuộn được lưu vào `sessionStorage` khi bấm vào thẻ phòng, khôi phục sau khi kết quả render xong (Next tự khôi phục scroll quá sớm — lúc đó danh sách chưa có).
+- **Phụ:** link có bộ lọc giờ chia sẻ / bookmark được (mở ra là thấy đúng kết quả); "Xoá lọc" khi đang có kết quả sẽ tìm lại không lọc để URL luôn khớp danh sách đang hiện.
+
 ### v9.1 — 2026-07-13 (CTV bắt buộc có SĐT trước khi tạo link chia sẻ)
 - **Trang hồ sơ tự phục vụ:** `app/broker/profile` + API `app/api/users/me` (GET/PUT) — trước đây chỉ có `PUT /api/users` (gated `MANAGE_USERS` = admin) nên CTV **không có cách nào tự điền SĐT**. `/api/users/me` chỉ cho sửa `name` + `phone`, KHÔNG đụng role/permissions/isActive (chống tự nâng quyền); chặn SĐT trùng tài khoản khác (409) vì SĐT là field đăng nhập.
 - **Chặn tạo link khi thiếu SĐT:** `POST /api/share-links` kiểm SĐT trong DB với role BROKER (cả link lẻ lẫn link kho) → 400 `{ code: 'PHONE_REQUIRED' }`. Client (`/broker/inventory`, `/broker/share-links`) bắt code này → toast + đẩy sang `/broker/profile?need=phone`.

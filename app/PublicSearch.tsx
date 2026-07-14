@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import ListingImageMosaic from '@/components/ui/ListingImageMosaic';
 import { formatCurrency } from '@/lib/utils';
@@ -58,6 +58,54 @@ type PublicRoom = {
   shareToken: string | null;
 };
 
+type Filters = {
+  keyword: string;
+  district: string[];
+  typeName: string;
+  minPrice: string;
+  maxPrice: string;
+  features: Record<FeatureKey, boolean>;
+};
+
+const EMPTY_FEATURES: Record<FeatureKey, boolean> = {
+  parkingCar: false, parkingBike: false, evCharging: false, petAllowed: false, foreignerOk: false,
+};
+const EMPTY_FILTERS: Filters = {
+  keyword: '', district: [], typeName: '', minPrice: '', maxPrice: '', features: EMPTY_FEATURES,
+};
+const FEATURE_KEYS = Object.keys(EMPTY_FEATURES) as FeatureKey[];
+const URL_KEYS = ['q', 'district', 'typeName', 'minPrice', 'maxPrice', 'p', ...FEATURE_KEYS];
+
+// Bộ lọc -> query string (dùng cho cả URL trình duyệt lẫn gọi API)
+const filtersToQuery = (f: Filters) => {
+  const p = new URLSearchParams();
+  if (f.keyword.trim()) p.set('q', f.keyword.trim());
+  if (f.district.length) p.set('district', f.district.join(','));
+  if (f.typeName) p.set('typeName', f.typeName);
+  if (f.minPrice) p.set('minPrice', f.minPrice);
+  if (f.maxPrice) p.set('maxPrice', f.maxPrice);
+  FEATURE_KEYS.forEach(k => { if (f.features[k]) p.set(k, 'true'); });
+  return p;
+};
+
+const queryToFilters = (search: string) => {
+  const sp = new URLSearchParams(search);
+  const features = { ...EMPTY_FEATURES };
+  FEATURE_KEYS.forEach(k => { if (sp.get(k) === 'true') features[k] = true; });
+  const filters: Filters = {
+    keyword: sp.get('q') || '',
+    district: (sp.get('district') || '').split(',').map(s => s.trim()).filter(Boolean),
+    typeName: sp.get('typeName') || '',
+    minPrice: sp.get('minPrice') || '',
+    maxPrice: sp.get('maxPrice') || '',
+    features,
+  };
+  const pagesLoaded = Math.max(1, parseInt(sp.get('p') || '1', 10) || 1);
+  return { filters, pagesLoaded, hasQuery: URL_KEYS.some(k => sp.has(k)) };
+};
+
+const SCROLL_KEY = 'mixstay:search-scroll';
+
 export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean }) {
   const [keyword, setKeyword] = useState('');
   const [district, setDistrict] = useState<string[]>([]);
@@ -81,7 +129,10 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
     setTypeName('');
     setMinPrice('');
     setMaxPrice('');
-    setFeatures({ parkingCar: false, parkingBike: false, evCharging: false, petAllowed: false, foreignerOk: false });
+    setFeatures(EMPTY_FEATURES);
+    // Đang có kết quả → tìm lại không lọc (URL cũng được dọn theo) để URL luôn khớp danh sách đang hiện
+    if (searched) runSearch(EMPTY_FILTERS, 1);
+    else syncUrl(EMPTY_FILTERS, 1);
   };
 
   const [results, setResults] = useState<PublicRoom[] | null>(null);
@@ -93,40 +144,51 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
   const [error, setError] = useState('');
 
   const PAGE_SIZE = 12;
+  // API kẹp limit ở 100 → khôi phục tối đa 8 trang (96 tin) trong 1 lần gọi, "Xem thêm" chạy tiếp từ đó
+  const MAX_RESTORE_PAGES = 8;
 
-  const buildParams = (pageToLoad: number) => {
-    const params = new URLSearchParams();
-    if (keyword.trim()) params.set('q', keyword.trim());
-    if (district.length) params.set('district', district.join(','));
-    if (typeName) params.set('typeName', typeName);
-    if (minPrice) params.set('minPrice', minPrice);
-    if (maxPrice) params.set('maxPrice', maxPrice);
-    (Object.keys(features) as FeatureKey[]).forEach(k => {
-      if (features[k]) params.set(k, 'true');
-    });
-    params.set('limit', String(PAGE_SIZE));
-    params.set('page', String(pageToLoad));
-    return params;
+  const currentFilters = (): Filters => ({ keyword, district, typeName, minPrice, maxPrice, features });
+
+  // Ghi bộ lọc + số trang đã tải vào URL (replaceState: không tạo history entry mới, không cuộn trang).
+  // Nhờ vậy khi khách bấm vào 1 phòng rồi Back, URL vẫn còn bộ lọc → khôi phục lại được kết quả.
+  const syncUrl = (f: Filters, pagesLoaded: number) => {
+    const params = filtersToQuery(f);
+    if (pagesLoaded > 1) params.set('p', String(pagesLoaded));
+    const qs = params.toString();
+    const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+    window.history.replaceState(window.history.state, '', url);
   };
 
-  const handleSearch = async (e?: React.FormEvent) => {
-    e?.preventDefault();
+  const pendingScroll = useRef<number | null>(null);
+
+  // Nhận filters làm tham số (không đọc state) để dùng được cả lúc khôi phục từ URL lúc mount.
+  const runSearch = async (f: Filters, pagesToLoad = 1) => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`/api/rooms/public?${buildParams(1).toString()}`);
+      const params = filtersToQuery(f);
+      params.set('page', '1');
+      params.set('limit', String(PAGE_SIZE * pagesToLoad)); // gộp N trang vào 1 request khi khôi phục
+      const res = await fetch(`/api/rooms/public?${params.toString()}`);
       if (!res.ok) throw new Error('Không tải được dữ liệu');
       const json = await res.json();
       setResults(json.data || []);
       setTotal(json.pagination?.total || 0);
-      setPage(1);
+      setPage(pagesToLoad);
       setSearched(true);
+      syncUrl(f, pagesToLoad);
     } catch (err: any) {
       setError(err.message || 'Có lỗi xảy ra');
       setResults([]);
+      pendingScroll.current = null;
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    runSearch(currentFilters(), 1);
   };
 
   // "Xem thêm" — nạp trang kế tiếp và nối vào danh sách (xem toàn bộ phòng mới nhất)
@@ -134,12 +196,17 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
     setLoadingMore(true);
     try {
       const next = page + 1;
-      const res = await fetch(`/api/rooms/public?${buildParams(next).toString()}`);
+      const f = currentFilters();
+      const params = filtersToQuery(f);
+      params.set('page', String(next));
+      params.set('limit', String(PAGE_SIZE));
+      const res = await fetch(`/api/rooms/public?${params.toString()}`);
       if (!res.ok) throw new Error('Không tải được dữ liệu');
       const json = await res.json();
       setResults(prev => [...(prev || []), ...(json.data || [])]);
       setTotal(json.pagination?.total || 0);
       setPage(next);
+      syncUrl(f, next);
     } catch {
       /* giữ kết quả hiện có nếu lỗi */
     } finally {
@@ -147,11 +214,52 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
     }
   };
 
-  // Trang /phong (autoLoad): tự nạp phòng mới nhất ngay khi mở, không cần bấm "Tìm phòng"
+  // Lưu vị trí cuộn ngay trước khi rời sang trang chi tiết phòng
+  const rememberScroll = () => {
+    try {
+      sessionStorage.setItem(SCROLL_KEY, JSON.stringify({
+        url: window.location.pathname + window.location.search,
+        y: window.scrollY,
+      }));
+    } catch { /* private mode: bỏ qua */ }
+  };
+
+  // Mount: khôi phục bộ lọc từ URL (khi Back từ trang chi tiết) — hoặc autoLoad cho trang /phong
   useEffect(() => {
-    if (autoLoad) handleSearch();
+    const { filters, pagesLoaded, hasQuery } = queryToFilters(window.location.search);
+
+    try {
+      const saved = sessionStorage.getItem(SCROLL_KEY);
+      if (saved) {
+        sessionStorage.removeItem(SCROLL_KEY);
+        const s = JSON.parse(saved);
+        if (s?.url === window.location.pathname + window.location.search) pendingScroll.current = s.y;
+      }
+    } catch { /* bỏ qua */ }
+
+    if (hasQuery) {
+      setKeyword(filters.keyword);
+      setDistrict(filters.district);
+      setTypeName(filters.typeName);
+      setMinPrice(filters.minPrice);
+      setMaxPrice(filters.maxPrice);
+      setFeatures(filters.features);
+      runSearch(filters, Math.min(MAX_RESTORE_PAGES, pagesLoaded));
+    } else if (autoLoad) {
+      runSearch(EMPTY_FILTERS, 1);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoLoad]);
+
+  // Kết quả đã render xong → cuộn về đúng chỗ khách đang xem trước khi bấm vào phòng
+  useEffect(() => {
+    if (!results || pendingScroll.current == null) return;
+    const y = pendingScroll.current;
+    pendingScroll.current = null;
+    requestAnimationFrame(() => window.scrollTo(0, y));
+    const t = setTimeout(() => window.scrollTo(0, y), 150); // ảnh load xong, chiều cao đổi → chỉnh lại
+    return () => clearTimeout(t);
+  }, [results]);
 
   return (
     <section id="tim-phong" className="relative pt-20 sm:pt-28 pb-12 sm:pb-16 px-4 sm:px-6 overflow-hidden bg-white scroll-mt-20">
@@ -308,6 +416,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
                   <Link
                     key={rt.id}
                     href={href}
+                    onClick={rememberScroll}
                     className="group bg-white rounded-2xl border border-stone-200 overflow-hidden hover:shadow-lg hover:-translate-y-0.5 hover:border-stone-300 transition-all"
                   >
                     <div className="relative">
