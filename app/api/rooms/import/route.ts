@@ -101,6 +101,7 @@ export async function POST(req: NextRequest) {
           shortTermPrice: row.shortTermPrice ? parseFloat(row.shortTermPrice) : null,
           status: 'AVAILABLE',
           isApproved: true,
+          createdById: session.user.id, // truy vết: admin đã import tin này
         },
       });
       createdRoomTypes++;

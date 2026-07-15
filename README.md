@@ -234,6 +234,14 @@ mixstay/
 
 ## Changelog
 
+### v9.4 — 2026-07-15 (admin xem nguồn tin đăng + truy vết tài khoản tạo)
+- **Nhu cầu:** admin muốn biết một tin do ai tạo (kể cả admin tạo hộ / import), tài khoản nào, đăng/cập nhật lúc nào.
+- **Truy vết người tạo (mới):** thêm cột `RoomType.createdById` (`String?`, quan hệ `RoomTypeCreatedBy` → User, `onDelete: SetNull`, nullable cho 666 tin cũ) — ghi **tài khoản thực sự bấm tạo** ở `POST /api/rooms` và `POST /api/rooms/import` (`session.user.id`). Khác với "Chủ nhà" = chủ sở hữu tòa nhà (`property.landlordId`). Tin cũ hiện "Tin cũ — chưa ghi tài khoản tạo".
+- **API:** `GET /api/rooms` trả thêm `createdBy {id,name,email,role}` — CHỈ cho ADMIN (không lộ ai tạo cho CTV/khách).
+- **Modal Sửa tin đăng** (`app/admin/rooms`): khối "Nguồn tin đăng" (chỉ khi sửa tin có sẵn) — Người tạo (tên + badge vai trò + email) / Chủ nhà / Tài khoản chủ nhà (email) / SĐT (bấm gọi) / Công ty / Tòa nhà / Lượt xem / Đăng lúc / Cập nhật (`formatDateTime`).
+- **Bảng danh sách:** cột "Tin đăng" thêm dòng nhỏ `👤 {tên chủ} · {ngày}` để liếc nhanh.
+- ADMIN_STAFF thiếu quyền xem liên hệ vẫn thấy người tạo/công ty/thời gian, còn email/SĐT chủ nhà hiện "—".
+
 ### v9.3 — 2026-07-15 (cài web thành app trên điện thoại — PWA đầy đủ)
 - **Vấn đề:** iPhone thêm web vào Màn hình chính nhưng icon là ảnh chụp trang + mở ra vẫn có thanh Safari (không giống app). Nguyên nhân: thiếu `apple-touch-icon` và các meta `apple-mobile-web-app-*` (iOS bỏ qua `manifest.json`, chỉ đọc meta apple-*).
 - **Icon app:** tạo `public/apple-touch-icon.png` 180×180 (flatten nền xanh `#1b3624` để iOS không bo góc thành viền đen) + `favicon-32.png`. Khai báo qua `metadata.icons` + `metadata.appleWebApp` trong `app/layout.tsx`; `theme_color`/manifest đồng bộ về `#1b3624`.

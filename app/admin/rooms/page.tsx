@@ -2,7 +2,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatDate, formatDateTime, getRoleLabel } from '@/lib/utils';
 import { hasPermission } from '@/lib/permissions';
 import RoomTypeForm from '@/components/forms/RoomTypeForm';
 import Pagination from '@/components/ui/Pagination';
@@ -508,6 +508,13 @@ export default function AdminRoomsPage() {
                       {r.listingCode && (
                         <p className="text-[10px] font-mono font-semibold text-stone-400 mt-0.5">Mã: {r.listingCode}</p>
                       )}
+                      {/* Đăng bởi ai + khi nào — liếc nhanh, chi tiết (SĐT/email/cập nhật) xem trong modal Sửa */}
+                      {(r.property?.landlord?.name || r.createdAt) && (
+                        <p className="text-[10px] text-stone-400 mt-0.5">
+                          👤 {r.property?.landlord?.name || 'Không rõ'}
+                          {r.createdAt && <> · {formatDate(r.createdAt)}</>}
+                        </p>
+                      )}
                     </td>
                     <td className="table-cell">
                       <p className="text-stone-700">{r.property?.name}</p>
@@ -619,6 +626,60 @@ export default function AdminRoomsPage() {
               </button>
             </div>
             <div className="p-6">
+              {/* Nguồn tin đăng — chỉ ADMIN xem: ai đăng, tài khoản nào, đăng/cập nhật khi nào */}
+              {editingRoom && (
+                <div className="mb-5 rounded-xl border border-stone-200 bg-stone-50 p-4">
+                  <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">Nguồn tin đăng</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div className="flex items-start gap-2 sm:col-span-2">
+                      <span className="text-stone-400 w-20 flex-shrink-0">Người tạo</span>
+                      {editingRoom.createdBy ? (
+                        <span className="font-medium text-stone-800">
+                          {editingRoom.createdBy.name || editingRoom.createdBy.email || 'Không rõ'}
+                          <span className="ml-1.5 badge bg-stone-200 text-stone-600 text-[10px]">{getRoleLabel(editingRoom.createdBy.role)}</span>
+                          {editingRoom.createdBy.email && <span className="text-stone-400 font-normal"> · {editingRoom.createdBy.email}</span>}
+                        </span>
+                      ) : (
+                        <span className="text-stone-400 italic">Tin cũ — chưa ghi tài khoản tạo</span>
+                      )}
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-stone-400 w-20 flex-shrink-0">Chủ nhà</span>
+                      <span className="font-medium text-stone-800">{editingRoom.property?.landlord?.name || 'Không rõ'}</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-stone-400 w-20 flex-shrink-0">Tài khoản</span>
+                      <span className="font-medium text-stone-800 break-all">{editingRoom.property?.landlord?.email || '—'}</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-stone-400 w-20 flex-shrink-0">SĐT</span>
+                      {editingRoom.property?.landlord?.phone
+                        ? <a href={`tel:${editingRoom.property.landlord.phone}`} className="font-medium text-brand-600 hover:underline">{editingRoom.property.landlord.phone}</a>
+                        : <span className="font-medium text-stone-800">—</span>}
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-stone-400 w-20 flex-shrink-0">Công ty</span>
+                      <span className="font-medium text-stone-800">{editingRoom.property?.company?.name || 'Không thuộc công ty'}</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-stone-400 w-20 flex-shrink-0">Tòa nhà</span>
+                      <span className="font-medium text-stone-800">{editingRoom.property?.name || '—'}</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-stone-400 w-20 flex-shrink-0">Lượt xem</span>
+                      <span className="font-medium text-stone-800">{editingRoom.viewCount ?? 0}</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-stone-400 w-20 flex-shrink-0">Đăng lúc</span>
+                      <span className="font-medium text-stone-800">{formatDateTime(editingRoom.createdAt)}</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-stone-400 w-20 flex-shrink-0">Cập nhật</span>
+                      <span className="font-medium text-stone-800">{formatDateTime(editingRoom.updatedAt)}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
               <RoomTypeForm
                 initialData={editingRoom || undefined}
                 properties={properties.map((p: any) => ({ id: p.id, name: p.name, district: p.district, companyId: p.company?.id ?? p.companyId, companyName: p.company?.name }))}

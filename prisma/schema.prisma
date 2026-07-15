@@ -75,6 +75,7 @@ model User {
   sentInquiries   RoomInquiry[] @relation("BrokerInquiries")
   notifications   Notification[]
   savedListings   SavedListing[]
+  createdRoomTypes RoomType[]  @relation("RoomTypeCreatedBy")
 
   @@index([role])
   @@index([isActive])
@@ -218,11 +219,13 @@ model RoomType {
 
   landlordNotes       String?   // lưu ý cho MG
   viewCount           Int       @default(0)
+  createdById         String?   // Tài khoản THỰC SỰ bấm tạo tin (kể cả admin tạo hộ / import). Nullable: tin cũ trước khi thêm cột không có.
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
   // Relations
   property            Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdBy           User?     @relation("RoomTypeCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   deals               Deal[]
   shareLinks          ShareLink[]
   inquiries           RoomInquiry[]
@@ -234,6 +237,7 @@ model RoomType {
   @@index([priceMonthly])
   @@index([typeName])
   @@index([status, isApproved, priceMonthly])
+  @@index([createdById])
   @@map("room_types")
 }
 

@@ -141,6 +141,10 @@ export async function GET(req: NextRequest) {
           viewCount: isBrokerOrAdmin ? true : false,
           createdAt: true,
           updatedAt: true,
+          // Người THỰC SỰ bấm tạo tin (truy vết) — chỉ admin-family cần thấy
+          ...(isAdmin ? {
+            createdBy: { select: { id: true, name: true, email: true, role: true } },
+          } : {}),
           property: {
             select: {
               id: true,
@@ -260,6 +264,7 @@ export async function POST(req: NextRequest) {
         status: body.status || 'AVAILABLE',
         expectedAvailableDate: body.expectedAvailableDate ? new Date(body.expectedAvailableDate) : null,
         isApproved: session.user.role === 'ADMIN' ? (body.isApproved ?? true) : false,
+        createdById: session.user.id, // truy vết: tài khoản thực sự bấm tạo (kể cả admin tạo hộ chủ nhà)
       },
     });
 
