@@ -234,6 +234,12 @@ mixstay/
 
 ## Changelog
 
+### v9.4.1 — 2026-07-16 (hotfix sửa lỗi refresh trang ở tìm kiếm CTV)
+- **Sửa lỗi:** CTV gõ vào ô "Tìm kiếm thông minh" bị refresh/giật trang và mất focus. Nguyên nhân do `if (loading) return Skeleton` unmount toàn bộ component (bao gồm cả ô input).
+- **Giải pháp:**
+  - Loại bỏ check loading unmount toàn bộ giao diện; chuyển skeleton loading xuống phần danh sách tin đăng (`ROOM CARDS`).
+  - Tách ô tìm kiếm sang state `localSearch`, chỉ trigger re-fetch thực sự khi bấm Enter hoặc click nút "Lọc" (hoặc khi tương tác các bộ lọc khác), đồng bộ với cơ chế dual slider giá để tránh spam API và tăng hiệu năng.
+
 ### v9.4 — 2026-07-15 (admin xem nguồn tin đăng + truy vết tài khoản tạo)
 - **Nhu cầu:** admin muốn biết một tin do ai tạo (kể cả admin tạo hộ / import), tài khoản nào, đăng/cập nhật lúc nào.
 - **Truy vết người tạo (mới):** thêm cột `RoomType.createdById` (`String?`, quan hệ `RoomTypeCreatedBy` → User, `onDelete: SetNull`, nullable cho 666 tin cũ) — ghi **tài khoản thực sự bấm tạo** ở `POST /api/rooms` và `POST /api/rooms/import` (`session.user.id`). Khác với "Chủ nhà" = chủ sở hữu tòa nhà (`property.landlordId`). Tin cũ hiện "Tin cũ — chưa ghi tài khoản tạo".

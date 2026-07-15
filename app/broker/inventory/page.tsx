@@ -454,6 +454,9 @@ export default function BrokerInventoryPage() {
   const [pendingPrice, setPendingPrice] = useState({ min: '', max: '' });
   const priceDirty = pendingPrice.min !== filter.minPrice || pendingPrice.max !== filter.maxPrice;
 
+  // Local search query — gõ chỉ update local, đợi bấm Enter hoặc nút Lọc mới apply
+  const [localSearch, setLocalSearch] = useState('');
+
   // Build SWR params from filter
   const swrParams: Record<string, string> = { page: String(page), limit: '20' };
   if (filter.status === 'available') swrParams.available = 'true';
@@ -473,15 +476,23 @@ export default function BrokerInventoryPage() {
   const { stats } = useDashboardStats();
   const { companies } = useActiveCompanies();
 
-  const handleFilter = () => {
-    // Apply pending price range vào filter chính (trigger SWR re-fetch)
-    setFilter(prev => ({ ...prev, minPrice: pendingPrice.min, maxPrice: pendingPrice.max }));
+  const applyFilters = (extraUpdates: Partial<typeof filter> = {}) => {
+    setFilter(prev => ({
+      ...prev,
+      minPrice: pendingPrice.min,
+      maxPrice: pendingPrice.max,
+      search: localSearch,
+      ...extraUpdates,
+    }));
     setPage(1);
   };
 
+  const handleFilter = () => {
+    applyFilters();
+  };
+
   const toggleFilter = (key: string, value: any) => {
-    setFilter(prev => ({ ...prev, [key]: value }));
-    setPage(1);
+    applyFilters({ [key]: value });
   };
 
   const handlePageChange = (newPage: number) => { setPage(newPage); };
@@ -538,8 +549,6 @@ export default function BrokerInventoryPage() {
     }
   };
 
-  if (loading) return <div className="p-8"><SkeletonStats count={4} /><div className="mt-6"><SkeletonCardGrid count={6} /></div></div>;
-
   return (
     <div>
       <PhoneRequiredNotice />
@@ -558,7 +567,7 @@ export default function BrokerInventoryPage() {
         </button>
       </div>
 
-      {stats && (
+      {stats ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {[
             { label: 'Tổng deal', value: stats.totalDeals, icon: '📊', color: '' },
@@ -576,6 +585,10 @@ export default function BrokerInventoryPage() {
             </div>
           ))}
         </div>
+      ) : (
+        <div className="mb-6">
+          <SkeletonStats count={canViewCommission ? 4 : 3} />
+        </div>
       )}
 
       {/* === FILTERS === */}
@@ -584,14 +597,14 @@ export default function BrokerInventoryPage() {
         <div className="flex flex-wrap gap-3 items-end mb-4">
           <div className="flex-1 min-w-[200px]">
             <label className="block text-xs font-medium text-stone-500 mb-1">Tìm kiếm thông minh</label>
-            <input className="input-field" placeholder="Mã tin (MS-...), tên phòng, địa chỉ, SĐT..." value={filter.search}
-              onChange={e => setFilter({ ...filter, search: e.target.value })}
+            <input className="input-field" placeholder="Mã tin (MS-...), tên phòng, địa chỉ, SĐT..." value={localSearch}
+              onChange={e => setLocalSearch(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleFilter()} />
           </div>
           <div className="w-full sm:w-40">
             <label className="block text-xs font-medium text-stone-500 mb-1">Hệ thống/Công ty</label>
             <select className="input-field" value={filter.companyId}
-              onChange={e => { setFilter({ ...filter, companyId: e.target.value }); }}>
+              onChange={e => { applyFilters({ companyId: e.target.value }); }}>
               <option value="">Tất cả</option>
               {companies.map((c: any) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
@@ -601,7 +614,7 @@ export default function BrokerInventoryPage() {
           <div className="w-full sm:w-36">
             <label className="block text-xs font-medium text-stone-500 mb-1">Kiểu phòng</label>
             <select className="input-field" value={filter.roomType}
-              onChange={e => setFilter({ ...filter, roomType: e.target.value })}>
+              onChange={e => applyFilters({ roomType: e.target.value })}>
               {roomTypeOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
@@ -611,7 +624,7 @@ export default function BrokerInventoryPage() {
         {/* Row 2: Quận pills */}
         <div className="mb-4">
           <label className="block text-xs font-medium text-stone-500 mb-2">Khu vực</label>
-          <DistrictPills value={filter.district} onChange={d => { setFilter(prev => ({ ...prev, district: d })); setPage(1); }} />
+          <DistrictPills value={filter.district} onChange={d => applyFilters({ district: d })} />
         </div>
 
         {/* Row 3: Khoảng giá - dual range slider (kéo → pending, bấm "Lọc" để apply) */}
@@ -669,172 +682,180 @@ export default function BrokerInventoryPage() {
       </div>
 
       {/* === ROOM CARDS === */}
-      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
-        {rooms.map((room: any) => {
-          const commission = parseCommission(room.commissionJson);
-          const hasCommission = Object.keys(commission).length > 0;
-          const zaloPhone = room.property?.zaloPhone || room.property?.landlord?.phone;
-          const zaloLink = zaloPhone ? 'https://zalo.me/' + zaloPhone.replace(/\s/g, '') : null;
-          const company = room.property?.company;
+      {loading ? (
+        <div className="mt-6">
+          <SkeletonCardGrid count={6} />
+        </div>
+      ) : (
+        <>
+          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {rooms.map((room: any) => {
+              const commission = parseCommission(room.commissionJson);
+              const hasCommission = Object.keys(commission).length > 0;
+              const zaloPhone = room.property?.zaloPhone || room.property?.landlord?.phone;
+              const zaloLink = zaloPhone ? 'https://zalo.me/' + zaloPhone.replace(/\s/g, '') : null;
+              const company = room.property?.company;
 
-          return (
-            <div key={room.id} className="card-hover group overflow-hidden cursor-pointer"
-              onClick={() => setSelectedRoom(room)}>
-              {/* Image carousel */}
-              <div className="relative -mx-4 -mt-4 mb-3 sm:-mx-5 sm:-mt-5">
-                <RoomImageCarousel room={room} />
-                {/* Room type badge */}
-                {room.typeName && (
-                  <span className="absolute top-3 left-3 badge bg-white/90 text-brand-700 text-xs shadow-sm font-semibold backdrop-blur-sm">
-                    {roomTypeLabels[room.typeName] || room.typeName}
-                  </span>
-                )}
-                {/* Short-term badge */}
-                {room.shortTermAllowed && (
-                  <span className="absolute top-3 right-3 badge bg-violet-500/90 text-white text-[10px] shadow-sm backdrop-blur-sm">
-                    📅 Ngắn hạn{room.shortTermMonths ? `: từ ${room.shortTermMonths} tháng` : ''}
-                  </span>
-                )}
-              </div>
+              return (
+                <div key={room.id} className="card-hover group overflow-hidden cursor-pointer"
+                  onClick={() => setSelectedRoom(room)}>
+                  {/* Image carousel */}
+                  <div className="relative -mx-4 -mt-4 mb-3 sm:-mx-5 sm:-mt-5">
+                    <RoomImageCarousel room={room} />
+                    {/* Room type badge */}
+                    {room.typeName && (
+                      <span className="absolute top-3 left-3 badge bg-white/90 text-brand-700 text-xs shadow-sm font-semibold backdrop-blur-sm">
+                        {roomTypeLabels[room.typeName] || room.typeName}
+                      </span>
+                    )}
+                    {/* Short-term badge */}
+                    {room.shortTermAllowed && (
+                      <span className="absolute top-3 right-3 badge bg-violet-500/90 text-white text-[10px] shadow-sm backdrop-blur-sm">
+                        📅 Ngắn hạn{room.shortTermMonths ? `: từ ${room.shortTermMonths} tháng` : ''}
+                      </span>
+                    )}
+                  </div>
 
-              {/* Title + type */}
-              <div className="mb-1">
-                <h3 className="font-semibold text-stone-900 text-[15px]">{room.name}</h3>
-                <p className="text-sm text-stone-500">
-                  {room.property?.name} • {room.areaSqm}m²
-                </p>
-                {room.listingCode && (
-                  <p className="text-[10px] font-mono font-semibold text-stone-400 mt-0.5">Mã: {room.listingCode}</p>
-                )}
-              </div>
+                  {/* Title + type */}
+                  <div className="mb-1">
+                    <h3 className="font-semibold text-stone-900 text-[15px]">{room.name}</h3>
+                    <p className="text-sm text-stone-500">
+                      {room.property?.name} • {room.areaSqm}m²
+                    </p>
+                    {room.listingCode && (
+                      <p className="text-[10px] font-mono font-semibold text-stone-400 mt-0.5">Mã: {room.listingCode}</p>
+                    )}
+                  </div>
 
-              {/* Price */}
-              <div className="flex items-baseline gap-2 mb-2">
-                <p className="text-xl font-bold text-brand-600">
-                  {formatCurrency(room.priceMonthly)}<span className="text-sm font-normal text-stone-400">/tháng</span>
-                </p>
-                {room.shortTermAllowed && room.shortTermPrice && (
-                  <span className="text-xs text-violet-600 font-medium">
-                    Ngắn hạn: {formatCurrency(room.shortTermPrice)}
-                  </span>
-                )}
-              </div>
+                  {/* Price */}
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <p className="text-xl font-bold text-brand-600">
+                      {formatCurrency(room.priceMonthly)}<span className="text-sm font-normal text-stone-400">/tháng</span>
+                    </p>
+                    {room.shortTermAllowed && room.shortTermPrice && (
+                      <span className="text-xs text-violet-600 font-medium">
+                        Ngắn hạn: {formatCurrency(room.shortTermPrice)}
+                      </span>
+                    )}
+                  </div>
 
-              {/* Deposit */}
-              {room.deposit > 0 && (
-                <p className="text-xs text-amber-600 font-medium mb-2">Cọc: {formatCurrency(room.deposit)}</p>
-              )}
-
-              {/* Available units */}
-              <div className="flex items-center gap-2 mb-2">
-                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                  room.availableUnits > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'
-                }`}>
-                  Còn {room.availableUnits}/{room.totalUnits} phòng
-                </span>
-                {room.availableRoomNames && (
-                  <span className="text-[11px] text-stone-500 truncate">{room.availableRoomNames}</span>
-                )}
-              </div>
-
-              {/* Commission — chỉ CTV được cấp quyền xem hoa hồng */}
-              {canViewCommission && hasCommission && (
-                <div className="p-2.5 bg-emerald-50 rounded-lg mb-2 border border-emerald-100">
-                  <p className="text-xs font-bold text-emerald-700">
-                    💰 HH: {formatCommissionLine(commission, room.priceMonthly)}
-                  </p>
-                </div>
-              )}
-
-              {/* Zalo nhóm công ty — chỉ khi được quyền xem liên hệ */}
-              {canViewContact && company?.zaloGroupLink && (
-                <a href={company.zaloGroupLink} target="_blank" rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="flex items-center gap-1.5 mb-2 px-2.5 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors">
-                  💬 Zalo nhóm {company.name}
-                </a>
-              )}
-
-              {/* Property-level special amenities */}
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {room.property?.parkingCar && <span className="text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🚗 Ô tô đỗ cửa</span>}
-                {room.property?.parkingBike && <span className="text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🏍️ Để xe máy</span>}
-                {room.property?.evCharging && <span className="text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">⚡ Sạc xe điện</span>}
-                {room.property?.petAllowed && <span className="text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🐾 Thú cưng OK</span>}
-                {room.property?.foreignerOk && <span className="text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🌍 Người nước ngoài</span>}
-              </div>
-
-              {/* Landlord notes */}
-              {(room.landlordNotes || room.property?.landlordNotes) && (
-                <div className="p-2 bg-amber-50 rounded-lg mb-2 border border-amber-100">
-                  <p className="text-[10px] font-semibold text-amber-700 mb-0.5">📝 LƯU Ý</p>
-                  <p className="text-xs text-amber-800">{room.landlordNotes || room.property?.landlordNotes}</p>
-                </div>
-              )}
-
-              {/* Liên hệ chủ nhà — chỉ CTV được cấp quyền; ngược lại nút gửi hỗ trợ Zalo admin */}
-              {canViewContact ? (
-                <>
-                  {room.property?.fullAddress && (
-                    <p className="text-xs text-stone-500 mb-2">📍 {room.property.fullAddress}</p>
+                  {/* Deposit */}
+                  {room.deposit > 0 && (
+                    <p className="text-xs text-amber-600 font-medium mb-2">Cọc: {formatCurrency(room.deposit)}</p>
                   )}
-                  {room.property?.landlord && (
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <span className="text-xs text-stone-600">👤 {room.property.landlord.name}</span>
-                      {room.property.landlord.phone && (
-                        <a href={'tel:' + room.property.landlord.phone}
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-xs text-brand-600 hover:underline">
-                          📞 {room.property.landlord.phone}
-                        </a>
-                      )}
-                      {zaloLink && (
-                        <a href={zaloLink} target="_blank" rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded hover:bg-blue-700 font-medium">Zalo</a>
-                      )}
+
+                  {/* Available units */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                      room.availableUnits > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'
+                    }`}>
+                      Còn {room.availableUnits}/{room.totalUnits} phòng
+                    </span>
+                    {room.availableRoomNames && (
+                      <span className="text-[11px] text-stone-500 truncate">{room.availableRoomNames}</span>
+                    )}
+                  </div>
+
+                  {/* Commission — chỉ CTV được cấp quyền xem hoa hồng */}
+                  {canViewCommission && hasCommission && (
+                    <div className="p-2.5 bg-emerald-50 rounded-lg mb-2 border border-emerald-100">
+                      <p className="text-xs font-bold text-emerald-700">
+                        💰 HH: {formatCommissionLine(commission, room.priceMonthly)}
+                      </p>
                     </div>
                   )}
-                </>
-              ) : (
-                <button type="button" onClick={(e) => { e.stopPropagation(); sendSupportRequest(room); }}
-                  className="flex items-center gap-1.5 mb-2 px-2.5 py-1.5 bg-violet-50 border border-violet-200 rounded-lg text-xs font-medium text-violet-700 hover:bg-violet-100 transition-colors">
-                  💬 Gửi hỗ trợ qua Zalo admin
-                </button>
-              )}
 
-              {/* Actions */}
-              <div className="flex gap-2 pt-3 border-t border-stone-100">
-                <button onClick={(e) => { e.stopPropagation(); toggleSave(room.id); }}
-                  title={savedSet.has(room.id) ? 'Bỏ lưu tin' : 'Lưu tin để xem lại sau'}
-                  className={'text-xs py-2 px-2.5 rounded-lg font-medium transition-all border ' +
-                    (savedSet.has(room.id) ? 'bg-amber-400 border-amber-400 text-white' : 'bg-white border-stone-200 text-stone-500 hover:border-amber-300')}>
-                  🔖
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); createShareLink(room.id); }}
-                  className={'flex-1 text-xs py-2 rounded-lg font-medium transition-all ' +
-                    (copiedLink === room.id ? 'bg-emerald-100 text-emerald-700' : 'bg-brand-50 text-brand-700 hover:bg-brand-100')}>
-                  {copiedLink === room.id ? '✓ Copied' : '🔗 Tạo link khách'}
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); sendInquiry(room.id); }}
-                  disabled={inquirySent.has(room.id)}
-                  className={'flex-1 text-xs py-2 rounded-lg font-medium transition-all ' +
-                    (inquirySent.has(room.id) ? 'bg-amber-100 text-amber-700' : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200')}>
-                  {inquirySent.has(room.id) ? '✓ Đã hỏi' : '❓ Còn phòng?'}
-                </button>
+                  {/* Zalo nhóm công ty — chỉ khi được quyền xem liên hệ */}
+                  {canViewContact && company?.zaloGroupLink && (
+                    <a href={company.zaloGroupLink} target="_blank" rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex items-center gap-1.5 mb-2 px-2.5 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors">
+                      💬 Zalo nhóm {company.name}
+                    </a>
+                  )}
+
+                  {/* Property-level special amenities */}
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {room.property?.parkingCar && <span className="text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🚗 Ô tô đỗ cửa</span>}
+                    {room.property?.parkingBike && <span className="text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🏍️ Để xe máy</span>}
+                    {room.property?.evCharging && <span className="text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">⚡ Sạc xe điện</span>}
+                    {room.property?.petAllowed && <span className="text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🐾 Thú cưng OK</span>}
+                    {room.property?.foreignerOk && <span className="text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🌍 Người nước ngoài</span>}
+                  </div>
+
+                  {/* Landlord notes */}
+                  {(room.landlordNotes || room.property?.landlordNotes) && (
+                    <div className="p-2 bg-amber-50 rounded-lg mb-2 border border-amber-100">
+                      <p className="text-[10px] font-semibold text-amber-700 mb-0.5">📝 LƯU Ý</p>
+                      <p className="text-xs text-amber-800">{room.landlordNotes || room.property?.landlordNotes}</p>
+                    </div>
+                  )}
+
+                  {/* Liên hệ chủ nhà — chỉ CTV được cấp quyền; ngược lại nút gửi hỗ trợ Zalo admin */}
+                  {canViewContact ? (
+                    <>
+                      {room.property?.fullAddress && (
+                        <p className="text-xs text-stone-500 mb-2">📍 {room.property.fullAddress}</p>
+                      )}
+                      {room.property?.landlord && (
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <span className="text-xs text-stone-600">👤 {room.property.landlord.name}</span>
+                          {room.property.landlord.phone && (
+                            <a href={'tel:' + room.property.landlord.phone}
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-xs text-brand-600 hover:underline">
+                              📞 {room.property.landlord.phone}
+                            </a>
+                          )}
+                          {zaloLink && (
+                            <a href={zaloLink} target="_blank" rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded hover:bg-blue-700 font-medium">Zalo</a>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <button type="button" onClick={(e) => { e.stopPropagation(); sendSupportRequest(room); }}
+                      className="flex items-center gap-1.5 mb-2 px-2.5 py-1.5 bg-violet-50 border border-violet-200 rounded-lg text-xs font-medium text-violet-700 hover:bg-violet-100 transition-colors">
+                      💬 Gửi hỗ trợ qua Zalo admin
+                    </button>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-3 border-t border-stone-100">
+                    <button onClick={(e) => { e.stopPropagation(); toggleSave(room.id); }}
+                      title={savedSet.has(room.id) ? 'Bỏ lưu tin' : 'Lưu tin để xem lại sau'}
+                      className={'text-xs py-2 px-2.5 rounded-lg font-medium transition-all border ' +
+                        (savedSet.has(room.id) ? 'bg-amber-400 border-amber-400 text-white' : 'bg-white border-stone-200 text-stone-500 hover:border-amber-300')}>
+                      🔖
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); createShareLink(room.id); }}
+                      className={'flex-1 text-xs py-2 rounded-lg font-medium transition-all ' +
+                        (copiedLink === room.id ? 'bg-emerald-100 text-emerald-700' : 'bg-brand-50 text-brand-700 hover:bg-brand-100')}>
+                      {copiedLink === room.id ? '✓ Copied' : '🔗 Tạo link khách'}
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); sendInquiry(room.id); }}
+                      disabled={inquirySent.has(room.id)}
+                      className={'flex-1 text-xs py-2 rounded-lg font-medium transition-all ' +
+                        (inquirySent.has(room.id) ? 'bg-amber-100 text-amber-700' : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200')}>
+                      {inquirySent.has(room.id) ? '✓ Đã hỏi' : '❓ Còn phòng?'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+            {rooms.length === 0 && (
+              <div className="md:col-span-3 text-center py-16 text-stone-400">
+                <p className="text-4xl mb-3">📦</p><p>Không tìm thấy phòng phù hợp</p>
               </div>
-            </div>
-          );
-        })}
-        {rooms.length === 0 && (
-          <div className="md:col-span-3 text-center py-16 text-stone-400">
-            <p className="text-4xl mb-3">📦</p><p>Không tìm thấy phòng phù hợp</p>
+            )}
           </div>
-        )}
-      </div>
 
-      {pagination && (
-        <Pagination page={page} totalPages={pagination.totalPages} total={pagination.total} onPageChange={handlePageChange} />
+          {pagination && (
+            <Pagination page={page} totalPages={pagination.totalPages} total={pagination.total} onPageChange={handlePageChange} />
+          )}
+        </>
       )}
 
       {/* Room detail modal */}
