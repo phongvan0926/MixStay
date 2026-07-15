@@ -1,6 +1,7 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Toaster } from 'react-hot-toast';
 import AuthProvider from '@/components/layout/AuthProvider';
+import InstallPWA from '@/components/ui/InstallPWA';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -11,6 +12,18 @@ export const metadata: Metadata = {
   },
   description: 'Nền tảng kết nối chủ nhà, cộng tác viên và khách thuê chung cư mini. Tìm phòng miễn phí, hoa hồng minh bạch.',
   keywords: ['chung cư mini', 'thuê phòng', 'Hà Nội', 'phòng trọ', 'cộng tác viên', 'MixStay'],
+  applicationName: 'MixStay',
+  manifest: '/manifest.json',
+  // Cài lên Màn hình chính iPhone: iOS bỏ qua manifest, chỉ đọc các meta apple-* dưới đây.
+  appleWebApp: {
+    capable: true,        // mở full-screen như app (ẩn thanh Safari)
+    title: 'MixStay',
+    statusBarStyle: 'default',
+  },
+  icons: {
+    icon: [{ url: '/favicon-32.png', sizes: '32x32', type: 'image/png' }],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
   openGraph: {
     title: 'MixStay - Tìm phòng chung cư mini',
     description: 'Nền tảng kết nối chủ nhà, cộng tác viên và khách thuê chung cư mini.',
@@ -20,16 +33,20 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: '#1b3624',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover', // tràn viền dưới notch/thanh home khi chạy standalone
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi">
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#2f6440" />
-      </head>
       <body>
         <AuthProvider>
           {children}
+          <InstallPWA />
           <Toaster
             position="top-right"
             toastOptions={{

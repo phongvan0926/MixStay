@@ -230,9 +230,16 @@ mixstay/
 - **Skeleton Loading:** Pulse animation skeletons thay thế text "Đang tải..." trên tất cả trang dashboard
 - **SEO:** Dynamic OG tags cho share pages (`generateMetadata`), sitemap.xml, robots.txt
 - **OG image chuẩn Zalo:** `app/api/og/[id]` render ảnh tin đăng thành **JPEG 1200×630** (Zalo không đọc được WebP/HEIC — ảnh gốc Supabase phần lớn là .webp). `lib/og.ts` dựng URL tuyệt đối theo host request cho mọi trang chia sẻ
-- **PWA:** Web app manifest, SVG icons, standalone display mode
+- **PWA (cài như app):** `manifest.json` (standalone, portrait), icon 192/512 + maskable, `apple-touch-icon` 180×180 + meta `apple-mobile-web-app-*` (icon + full-screen trên iPhone), service worker `public/sw.js` (network-first cho trang, không cache /api → luôn dữ liệu thật), banner cài đặt `components/ui/InstallPWA.tsx` (Android 1 chạm / hướng dẫn Safari cho iPhone). Đăng nhập nhớ sẵn qua session JWT 30 ngày.
 
 ## Changelog
+
+### v9.3 — 2026-07-15 (cài web thành app trên điện thoại — PWA đầy đủ)
+- **Vấn đề:** iPhone thêm web vào Màn hình chính nhưng icon là ảnh chụp trang + mở ra vẫn có thanh Safari (không giống app). Nguyên nhân: thiếu `apple-touch-icon` và các meta `apple-mobile-web-app-*` (iOS bỏ qua `manifest.json`, chỉ đọc meta apple-*).
+- **Icon app:** tạo `public/apple-touch-icon.png` 180×180 (flatten nền xanh `#1b3624` để iOS không bo góc thành viền đen) + `favicon-32.png`. Khai báo qua `metadata.icons` + `metadata.appleWebApp` trong `app/layout.tsx`; `theme_color`/manifest đồng bộ về `#1b3624`.
+- **Service worker** `public/sw.js`: đủ điều kiện "cài đặt" trên Android/Chrome (cần SW có fetch handler) + mở được khi mất mạng. An toàn: trang = network-first (offline mới lấy cache), `/api` + `/_next/data` KHÔNG cache (dữ liệu & đăng nhập luôn thật), tĩnh băm hash = cache-first. Chỉ đăng ký ở domain thật, bỏ qua localhost.
+- **Banner cài đặt** `components/ui/InstallPWA.tsx`: tự nhận diện thiết bị — Android/Chrome desktop bắt `beforeinstallprompt` → nút "Cài đặt" 1 chạm; iPhone Safari → hướng dẫn Chia sẻ → Thêm vào Màn hình chính; iPhone mở bằng Chrome/app khác → nhắc mở lại bằng Safari. Ẩn khi đã chạy standalone hoặc user tắt (nhớ trong localStorage).
+- **Nhớ đăng nhập:** session JWT đã đặt `maxAge` 30 ngày → mở app lần sau vẫn đăng nhập sẵn (không phải đổi gì).
 
 ### v9.2 — 2026-07-14 (giữ bộ lọc tìm phòng khi bấm Back)
 - **Lỗi:** khách lọc phòng ở trang chủ / `/phong`, bấm vào 1 tin để xem rồi Back → bộ lọc, danh sách kết quả và vị trí cuộn **mất sạch** (phải lọc lại từ đầu). Nguyên nhân: `app/PublicSearch.tsx` giữ toàn bộ filter + results trong React state, không có trong URL — Back làm component mount lại với state rỗng.
