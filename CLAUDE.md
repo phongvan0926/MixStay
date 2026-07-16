@@ -89,6 +89,14 @@ middleware.ts       → Route protection theo role (+ chặn /admin/{companies,u
 - Toast: dùng react-hot-toast (toast.success, toast.error)
 - Mỗi lần thay đổi tính năng → cập nhật file README.md cho đồng bộ
 
+## Cộng tác nhiều AI agent (Claude Code + Antigravity/Codex...)
+Repo này có NHIỀU AI agent cùng làm việc trên cùng thư mục, cùng commit lên `main`. Quy tắc bắt buộc:
+- **Trước khi bắt đầu việc mới:** `git pull` + xem `git log` các commit mình không tạo — file định sửa có thể vừa bị agent khác đổi. KHÔNG revert/ghi đè thay đổi của agent khác trừ khi chủ dự án yêu cầu.
+- **Changelog dùng chung:** đánh số version nối tiếp trong README.md (dòng mới nhất trên cùng), dù là agent nào làm. Xem version mới nhất trong Changelog trước khi thêm.
+- **AGENTS.md là bản sao của CLAUDE.md** (chỉ khác dòng tiêu đề): sửa 1 trong 2 file thì PHẢI đồng bộ file kia — 2 file lệch nhau từng làm agent dùng lại field đã xoá (`isAvailable`).
+- **Commit ngay sau khi xong việc** (working tree sạch) để agent khác không dính conflict với thay đổi dở dang.
+- KHÔNG commit `.env` / `.env.local`; `npx prisma db push` đụng DB PRODUCTION dùng chung — chỉ thêm cột nullable/có default, không xoá/đổi kiểu cột.
+
 ## Excel Import/Export (Admin > Quản lý phòng)
 - Thư viện: xlsx (SheetJS)
 - Tải form mẫu: client-side, tạo file .xlsx 2 sheet (dữ liệu mẫu + hướng dẫn)
