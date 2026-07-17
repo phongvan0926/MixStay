@@ -234,6 +234,11 @@ mixstay/
 
 ## Changelog
 
+### v9.5.1 — 2026-07-17 (sửa bản đồ Google trang tin bị chặn + lối vào bản đồ dễ thấy hơn)
+- **Sửa "This content is blocked" ở bản đồ trang tin đăng:** iframe Google Maps (`maps.google.com/...&output=embed`) bị CHÍNH CSP `frame-src` của app chặn từ đợt siết bảo mật (chỉ cho YouTube/TikTok/Facebook). Thêm `https://maps.google.com https://www.google.com` vào `frame-src` (next.config.js) → bản đồ chỉ đường trên trang tin hoạt động lại như cũ.
+- **Nút bản đồ trên nav:** desktop đổi thành "🗺️ Tìm phòng theo bản đồ"; mobile hiện "🗺️ Bản đồ" (có chữ, không còn mỗi icon).
+- **Mobile dễ thấy lối vào bản đồ:** thay link chữ nhỏ trong form tìm kiếm bằng nút to "🗺️ Tìm theo bản đồ" đứng cạnh nút "Tìm phòng" (mobile 2 nút chia đôi hàng, desktop nằm giữa).
+
 ### v9.5 — 2026-07-17 (Tạo tin nhanh bằng AI + Bản đồ tìm phòng)
 - **⚡ Tạo tin nhanh bằng AI** (admin + chủ nhà): nút mới ở Quản lý phòng (admin) và Tòa nhà (chủ nhà) — dán nguyên tin đăng copy từ Facebook/Zalo → Gemini structured output (`POST /api/ai/parse-listing`, helper chung `lib/gemini.ts` xoay key) bóc tách vào đúng trường: tòa nhà (tên/quận/đường/số nhà/SĐT/flags đỗ xe-pet...), tin đăng (tiêu đề, kiểu phòng đúng 6 enum, m², giá "5tr5"→5500000, cọc, tiện ích khớp `lib/listing-options.ts`, phòng trống, mô tả đã dọn — TỰ LOẠI SĐT/địa chỉ khỏi mô tả). Tự match tòa CÓ SẴN theo tên+quận (landlord chỉ match tòa mình) hoặc tạo tòa mới ngay trong modal → đổ vào `RoomTypeForm` điền sẵn, người dùng bổ sung trường thiếu rồi Lưu như luồng thường (không auto-đăng; vẫn qua duyệt + `createdById`).
 - **🗺️ Bản đồ tìm phòng `/ban-do`** (public): Leaflet + OpenStreetMap (miễn phí, không cần key). Zoom xa gom bong bóng theo QUẬN (bấm phóng tới), zoom gần pin từng tòa hiện "giá từ" → popup danh sách tin còn hàng link sang `/tin/[id]`. Pin đặt đúng vị trí nhưng KHÔNG kèm số nhà — tên tòa/tên đường qua `redactName`/`redactHouseNumber` như API public. `GET /api/rooms/map` (cache 5 phút) chỉ trả tòa APPROVED còn tin hiệu lực. Link vào từ PublicNav ("🗺️ Bản đồ") + PublicSearch ("Tìm trên bản đồ →").

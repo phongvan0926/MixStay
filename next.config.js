@@ -14,7 +14,8 @@ const CSP = [
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
   "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com",
   "media-src 'self' https://*.supabase.co blob:",
-  "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.tiktok.com https://www.facebook.com https://web.facebook.com",
+  // maps.google.com + www.google.com: iframe Google Maps (output=embed) ở trang tin đăng — thiếu là "This content is blocked"
+  "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.tiktok.com https://www.facebook.com https://web.facebook.com https://maps.google.com https://www.google.com",
   'upgrade-insecure-requests',
 ].join('; ');
 

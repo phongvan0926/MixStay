@@ -315,12 +315,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
 
           {/* District pills (hybrid 7 + dropdown) */}
           <div className="mb-3">
-            <div className="flex items-center justify-between mb-1.5 gap-2">
-              <label className="block text-xs font-medium text-stone-500">Khu vực</label>
-              <Link href="/ban-do" className="text-xs font-medium text-brand-600 hover:text-brand-700 hover:underline whitespace-nowrap">
-                🗺️ Tìm trên bản đồ →
-              </Link>
-            </div>
+            <label className="block text-xs font-medium text-stone-500 mb-1.5">Khu vực</label>
             <DistrictPills value={district} onChange={setDistrict} />
           </div>
 
@@ -382,15 +377,22 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
             </div>
           </div>
 
-          {/* Submit ở cuối form — CĂN GIỮA (tránh bị FAB hotline góc phải che) */}
-          <div className="mt-3 flex justify-center">
+          {/* Submit ở cuối form — CĂN GIỮA (tránh bị FAB hotline góc phải che).
+              Kèm nút "Tìm theo bản đồ" to ngang nút Tìm phòng để mobile dễ thấy lối vào bản đồ. */}
+          <div className="mt-3 grid grid-cols-2 sm:flex sm:justify-center gap-2">
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full sm:w-auto px-10 py-2.5 text-sm font-medium"
+              className="btn-primary sm:w-auto px-4 sm:px-10 py-2.5 text-sm font-medium"
             >
               {loading ? 'Đang tìm...' : 'Tìm phòng'}
             </button>
+            <Link
+              href="/ban-do"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-brand-300 bg-white/80 px-4 sm:px-6 py-2.5 text-sm font-medium text-brand-700 hover:bg-brand-50 hover:border-brand-400 transition-colors whitespace-nowrap"
+            >
+              🗺️ Tìm theo bản đồ
+            </Link>
           </div>
         </form>
 

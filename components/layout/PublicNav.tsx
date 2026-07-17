@@ -31,7 +31,7 @@ export default function PublicNav() {
           </Link>
           <Link href="/ban-do"
             className="text-sm px-2.5 sm:px-3 py-2 rounded-xl font-medium text-white/90 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap">
-            🗺️ <span className="hidden sm:inline">Bản đồ</span>
+            🗺️ <span className="sm:hidden">Bản đồ</span><span className="hidden sm:inline">Tìm phòng theo bản đồ</span>
           </Link>
         </div>
 
