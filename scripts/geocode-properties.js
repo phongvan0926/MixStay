@@ -63,7 +63,8 @@ async function geocode(q) {
     let geo = null, level = '';
 
     if (p.fullAddress?.trim()) {
-      geo = await geocode(`${p.fullAddress}, ${city}, Việt Nam`);
+      // LUÔN kèm quận: "99 Trương Định, Hà Nội" từng match nhầm POI "99" bên Ba Đình
+      geo = await geocode(`${p.fullAddress}, ${p.district ? p.district + ', ' : ''}${city}, Việt Nam`);
       level = 'address';
       await sleep(1100);
     }

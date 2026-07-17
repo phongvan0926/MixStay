@@ -30,7 +30,8 @@ export async function geocodeAddress(input: {
 }): Promise<{ lat: number; lng: number } | null> {
   const city = input.city || 'Hà Nội';
   if (input.fullAddress?.trim()) {
-    const geo = await query(`${input.fullAddress}, ${city}, Việt Nam`);
+    // LUÔN kèm quận: "99 Trương Định, Hà Nội" (thiếu quận) từng match nhầm POI "99" bên Ba Đình
+    const geo = await query(`${input.fullAddress}, ${input.district ? input.district + ', ' : ''}${city}, Việt Nam`);
     if (geo) return geo;
   }
   if (input.streetName?.trim() && input.district) {
