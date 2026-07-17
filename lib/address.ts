@@ -57,7 +57,12 @@ export function redactName(input?: string | null): string {
   if (!/^\s*(?:ngõ|ngách|hẻm|ngo|ngach|phố|đường)\b/i.test(s)) {
     s = s.replace(/^\s*\d+[a-zA-Z]?(?:\s*\/\s*\d+[a-zA-Z]?)*\b[\s,.\-]*/i, '');
   }
-  // số nhà kèm tên đường viết liền kiểu "69A NGUYỄN", "26A NGÁCH" -> đã xử lý ở trên/мид
+  // số nhà đứng GIỮA tên ngay trước "ngách/ngõ/hẻm" ("CCMN 26A NGÁCH 52 NGÕ 91" → bỏ "26A"):
+  // số của ngõ/ngách nằm SAU từ khóa nên không bị đụng ("Ngõ 91" giữ nguyên)
+  s = s.replace(/\b\d+[a-zA-Z]?(?:\s*\/\s*\d+[a-zA-Z]?)*\s+(?=(?:ngách|ngach|ngõ|ngo|hẻm|hem)\b)/gi, '');
+  // số nhà ngay SAU từ loại hình nhà ("CCMN 69A NGUYỄN TRÃI", "TRỌ 68/53 CẦU GIẤY") — giữ từ loại hình.
+  // KHÔNG đụng số-đếm mô tả: "CCMN 5 tầng", "trọ 10 phòng"...
+  s = s.replace(/\b(ccmn|trọ|tro|nhà\s*trọ|chung\s*cư(?:\s*mini)?|toà|tòa|toa)\s+\d+[a-zA-Z]?(?:\s*\/\s*\d+[a-zA-Z]?)*(?!\s*(?:tầng|tang|phòng|phong|tháng|thang|m2|m²|triệu|tr\b|k\b|người|nguoi))\b\s*/gi, '$1 ');
   const out = clean(s);
   return out || (input || '').trim(); // nếu lỡ rỗng hết thì trả tên gốc (an toàn UX hơn là trống)
 }

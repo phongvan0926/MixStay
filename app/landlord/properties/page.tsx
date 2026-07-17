@@ -5,6 +5,7 @@ import { formatCurrency, formatDateTime, getStatusColor, getStatusLabel } from '
 import PropertyForm from '@/components/forms/PropertyForm';
 import QuickRoomTypeForm, { QuickRoomTypeData } from '@/components/forms/QuickRoomTypeForm';
 import RoomTypeForm from '@/components/forms/RoomTypeForm';
+import AIQuickCreate from '@/components/ai/AIQuickCreate';
 import Pagination from '@/components/ui/Pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import { useProperties, useRoomTypes, useInquiries, useDashboardStats, useActiveCompanies } from '@/hooks/useData';
@@ -74,6 +75,8 @@ export default function LandlordPropertiesPage() {
   const [showRTModal, setShowRTModal] = useState(false);
   const [editingRT, setEditingRT] = useState<any>(null);
   const [preFilledPropId, setPreFilledPropId] = useState<string>('');
+  // Prefill từ luồng "Tạo tin nhanh AI" — chỉ dùng khi tạo tin mới
+  const [aiPrefill, setAiPrefill] = useState<any>(null);
 
   // Inline edit states
   const [editingAvailable, setEditingAvailable] = useState<string | null>(null);
@@ -226,17 +229,28 @@ export default function LandlordPropertiesPage() {
   // === RoomType handlers ===
   const openCreateRT = (propertyId: string) => {
     setEditingRT(null);
+    setAiPrefill(null);
     setPreFilledPropId(propertyId);
+    setShowRTModal(true);
+  };
+  // AI đã bóc tách xong (tòa có thể vừa tạo mới) → mở form tạo tin điền sẵn
+  const openFromAI = (prefill: any) => {
+    setEditingRT(null);
+    setPreFilledPropId('');
+    setAiPrefill(prefill);
+    mutateProps(); // nạp tòa mới (nếu AI vừa tạo) vào dropdown chọn tòa
     setShowRTModal(true);
   };
   const openEditRT = (rt: any) => {
     setEditingRT(rt);
+    setAiPrefill(null);
     setPreFilledPropId('');
     setShowRTModal(true);
   };
   const closeRTModal = () => {
     setShowRTModal(false);
     setEditingRT(null);
+    setAiPrefill(null);
     setPreFilledPropId('');
   };
 
@@ -417,6 +431,7 @@ export default function LandlordPropertiesPage() {
             </svg>
             {sharingSystem ? 'Đang tạo...' : 'Share kho hàng'}
           </button>
+          <AIQuickCreate properties={properties.map((p: any) => ({ id: p.id, name: p.name, district: p.district }))} onReady={openFromAI} />
           <button onClick={openCreateProperty} className="btn-primary">+ Thêm tòa nhà</button>
         </div>
       </div>
@@ -715,7 +730,7 @@ export default function LandlordPropertiesPage() {
             </div>
             <div className="p-6">
               <RoomTypeForm
-                initialData={editingRT || (preFilledPropId ? { propertyId: preFilledPropId } : undefined)}
+                initialData={editingRT || aiPrefill || (preFilledPropId ? { propertyId: preFilledPropId } : undefined)}
                 properties={properties.map((p: any) => ({ id: p.id, name: p.name, district: p.district, companyId: p.company?.id ?? p.companyId, companyName: p.company?.name }))}
                 onSubmit={handleRTSubmit}
                 isAdmin={false}

@@ -25,9 +25,15 @@ export default function PublicNav() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-brand-800/95 supports-[backdrop-filter]:bg-brand-800/85 backdrop-blur-xl border-b border-brand-700/50 shadow-sm">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center" aria-label="MixStay - Trang chủ">
-          <Logo variant="light" className="h-9 w-auto" />
-        </Link>
+        <div className="flex items-center gap-1 sm:gap-3">
+          <Link href="/" className="flex items-center" aria-label="MixStay - Trang chủ">
+            <Logo variant="light" className="h-9 w-auto" />
+          </Link>
+          <Link href="/ban-do"
+            className="text-sm px-2.5 sm:px-3 py-2 rounded-xl font-medium text-white/90 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap">
+            🗺️ <span className="hidden sm:inline">Bản đồ</span>
+          </Link>
+        </div>
 
         {status === 'loading' ? (
           // Chỗ giữ chỗ tránh nháy nút "Đăng nhập" rồi mới đổi sang phiên đã đăng nhập

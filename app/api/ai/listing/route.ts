@@ -4,20 +4,7 @@ import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { AI_LISTING_STYLES } from '@/lib/ai-listing-styles';
-
-// Gọi Gemini SERVER-SIDE (key không bao giờ ra client). Model có thể đổi qua env GEMINI_MODEL.
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-
-// Nhiều API key (nhiều tài khoản Google) để TỰ XOAY khi 1 key hết quota free.
-// Hỗ trợ: GEMINI_API_KEY, GEMINI_API_KEY_2..10, và GEMINI_API_KEYS (danh sách ngăn cách bởi dấu phẩy).
-function getGeminiKeys(): string[] {
-  const set = new Set<string>();
-  const add = (v?: string) => v?.split(',').forEach(k => { const t = k.trim(); if (t) set.add(t); });
-  add(process.env.GEMINI_API_KEYS);
-  add(process.env.GEMINI_API_KEY);
-  for (let i = 2; i <= 10; i++) add(process.env[`GEMINI_API_KEY_${i}`]);
-  return Array.from(set);
-}
+import { getGeminiKeys, callGemini } from '@/lib/gemini';
 
 const TYPE_LABELS: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1 ngủ 1 khách',
@@ -115,7 +102,7 @@ export async function POST(req: NextRequest) {
       raw: typeof body.description === 'string' ? body.description : '',
     });
 
-    const payload = JSON.stringify({
+    const result = await callGemini({
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: 0.8,
@@ -124,32 +111,14 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Thử lần lượt từng key; key nào hết quota/bị giới hạn (429) thì XOAY sang key kế tiếp.
-    let data: any = null;
-    let lastStatus = 0;
-    let quotaHit = false;
-    for (const key of apiKeys) {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload }
-      );
-      if (res.ok) { data = await res.json(); break; }
-      lastStatus = res.status;
-      if (res.status === 429) { quotaHit = true; continue; } // hết lượt key này → thử key khác
-      // Lỗi khác (400/500...) không phải do quota → không xoay tiếp
-      console.error('Gemini error', res.status, (await res.text()).slice(0, 300));
-      break;
-    }
-
-    if (!data) {
-      if (quotaHit && lastStatus === 429) {
+    if (!result.ok) {
+      if (result.quotaHit && result.status === 429) {
         return NextResponse.json({ error: 'AI đã hết lượt miễn phí hôm nay trên tất cả key, thử lại sau hoặc thêm key mới.' }, { status: 429 });
       }
       return NextResponse.json({ error: 'Không gọi được AI. Vui lòng thử lại.' }, { status: 502 });
     }
 
-    const cand = data?.candidates?.[0];
-    const text: string = (cand?.content?.parts || []).map((p: any) => p?.text || '').join('').trim();
+    const text = result.text;
 
     if (!text) {
       return NextResponse.json({ error: 'AI chưa trả về nội dung, thử lại nhé.' }, { status: 502 });

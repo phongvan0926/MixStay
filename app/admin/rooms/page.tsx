@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { formatCurrency, formatDate, formatDateTime, getRoleLabel } from '@/lib/utils';
 import { hasPermission } from '@/lib/permissions';
 import RoomTypeForm from '@/components/forms/RoomTypeForm';
+import AIQuickCreate from '@/components/ai/AIQuickCreate';
 import Pagination from '@/components/ui/Pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import SearchableSelect from '@/components/ui/SearchableSelect';
@@ -148,11 +149,13 @@ export default function AdminRoomsPage() {
   const [search, setSearch] = useState('');
 
   const { roomTypes: rooms, pagination, isLoading: loading, mutate } = useRoomTypes({ page: String(page), limit: '20', ...(search ? { search } : {}) });
-  const { properties } = useProperties({ status: 'APPROVED', limit: '200' });
+  const { properties, mutate: mutateProperties } = useProperties({ status: 'APPROVED', limit: '200' });
   const { companies } = useCompanies();
 
   const [showModal, setShowModal] = useState(false);
   const [editingRoom, setEditingRoom] = useState<any>(null);
+  // Prefill từ luồng "Tạo tin nhanh AI" — chỉ dùng khi tạo mới (editingRoom null)
+  const [aiPrefill, setAiPrefill] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
 
   // Import state
@@ -196,8 +199,15 @@ export default function AdminRoomsPage() {
     });
   }, [rooms, properties, filterCompany, filterProperty, filterRoomType, filterStatus]);
 
-  const openCreate = () => { setEditingRoom(null); setShowModal(true); };
-  const openEdit = (room: any) => { setEditingRoom(room); setShowModal(true); };
+  const openCreate = () => { setEditingRoom(null); setAiPrefill(null); setShowModal(true); };
+  const openEdit = (room: any) => { setEditingRoom(room); setAiPrefill(null); setShowModal(true); };
+  // AI đã bóc tách xong (tòa nhà có thể vừa tạo mới) → mở form tạo tin điền sẵn
+  const openFromAI = (prefill: any) => {
+    setEditingRoom(null);
+    setAiPrefill(prefill);
+    mutateProperties(); // nạp tòa mới (nếu AI vừa tạo) vào dropdown chọn tòa
+    setShowModal(true);
+  };
 
   const handleFormSubmit = async (data: any) => {
     setSubmitting(true);
@@ -408,6 +418,7 @@ export default function AdminRoomsPage() {
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors border border-orange-200 disabled:opacity-40 disabled:cursor-not-allowed">
             📤 Xuất Excel {hasFilters ? '(lọc)' : ''}
           </button>
+          <AIQuickCreate properties={properties.map((p: any) => ({ id: p.id, name: p.name, district: p.district }))} onReady={openFromAI} />
           <button onClick={openCreate} className="btn-primary">+ Thêm tin đăng</button>
         </div>
       </div>
@@ -681,7 +692,7 @@ export default function AdminRoomsPage() {
                 </div>
               )}
               <RoomTypeForm
-                initialData={editingRoom || undefined}
+                initialData={editingRoom || aiPrefill || undefined}
                 properties={properties.map((p: any) => ({ id: p.id, name: p.name, district: p.district, companyId: p.company?.id ?? p.companyId, companyName: p.company?.name }))}
                 onSubmit={handleFormSubmit}
                 isAdmin={true}

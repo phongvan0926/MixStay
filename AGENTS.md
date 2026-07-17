@@ -20,9 +20,17 @@ app/broker/         → Trang môi giới (inventory, deals, share-links)
 app/landlord/       → Trang chủ nhà (properties — đã gộp quản lý phòng vào trang tòa nhà — + share-links)
 app/share/[token]/  → Trang tin đăng loại phòng (public, ẩn địa chỉ + SĐT, có video + tin đăng liên quan)
 app/share/system/[token]/ → Trang kho phòng hệ thống (public, có toggle grid/list view)
+app/ban-do/         → Bản đồ tìm phòng public (Leaflet + OSM; zoom xa gom theo quận, zoom gần pin từng tòa "giá từ"; KHÔNG hiện số nhà — redact như API public)
 app/auth/callback/  → Trang chọn vai trò sau OAuth login lần đầu
 app/api/            → API routes (companies, properties, rooms, rooms/public, rooms/related, rooms/import, deals, share-links, share-links/system, inquiries, notifications, users, settings, upload/signed-url)
 app/api/upload/signed-url/ → Tạo Supabase signed upload URL (upload video trực tiếp client → Storage, không qua Vercel serverless)
+app/api/ai/parse-listing/ → "Tạo tin nhanh AI": dán tin FB/Zalo → Gemini structured output bóc property+room+match tòa có sẵn (client đổ vào RoomTypeForm, KHÔNG auto-lưu)
+app/api/rooms/map/  → Dữ liệu bản đồ public (tòa APPROVED có toạ độ + tin hiệu lực; redactName/redactHouseNumber; cache 5 phút)
+components/ai/AIQuickCreate.tsx → Nút + modal "⚡ Tạo tin nhanh AI" (paste → parse → chọn/tạo tòa → mở RoomTypeForm điền sẵn) — dùng ở admin/rooms + landlord/properties
+lib/gemini.ts       → Helper gọi Gemini server-side dùng chung (getGeminiKeys xoay nhiều key khi 429, callGemini)
+lib/geocode.ts      → geocodeAddress() Nominatim/OSM server-only — POST/PUT properties tự geocode khi thiếu toạ độ (fail không chặn lưu)
+lib/listing-options.ts → AMENITY_OPTIONS + ROOM_TYPE_OPTIONS dùng chung form + AI enum (client-safe)
+scripts/geocode-properties.js → Backfill lat/long tòa cũ từ địa chỉ (1 req/s, --force để chạy lại tất cả)
 components/layout/  → DashboardLayout.tsx (sidebar + topbar + notification badge), AuthProvider.tsx
 components/ui/      → Skeleton.tsx, ImageUpload.tsx, VideoUpload.tsx, VideoLinkInput.tsx, VideoPlayer.tsx, VideoGallery.tsx, OptimizedImage.tsx, Pagination.tsx, DistrictPills.tsx, PriceRangeSlider.tsx, ZaloFab.tsx
 components/forms/   → PropertyForm.tsx, RoomTypeForm.tsx, RoomForm.tsx, QuickRoomTypeForm.tsx

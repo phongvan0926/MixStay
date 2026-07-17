@@ -6,6 +6,7 @@ import { getPaginationParams, paginatedResponse } from '@/lib/pagination';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { propertyCreateSchema, propertyUpdateSchema, validateBody } from '@/lib/validations';
 import { requirePermission } from '@/lib/permissions-server';
+import { geocodeAddress } from '@/lib/geocode';
 
 export async function GET(req: NextRequest) {
   const rateLimited = await applyRateLimit(req, 'api');
@@ -112,6 +113,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Tự geocode toạ độ từ địa chỉ khi client không gửi (để pin tự có trên bản đồ /ban-do).
+    // Geocode lỗi → null, KHÔNG chặn tạo tòa (backfill lại bằng scripts/geocode-properties.js).
+    let geo: { lat: number; lng: number } | null = null;
+    if (!body.latitude || !body.longitude) {
+      geo = await geocodeAddress({ fullAddress: body.fullAddress, streetName: body.streetName, district: body.district, city: body.city });
+    }
+
     const property = await prisma.property.create({
       data: {
         landlordId,
@@ -123,8 +131,8 @@ export async function POST(req: NextRequest) {
         district: body.district,
         streetName: body.streetName,
         city: body.city || 'Hà Nội',
-        latitude: body.latitude ? parseFloat(body.latitude) : null,
-        longitude: body.longitude ? parseFloat(body.longitude) : null,
+        latitude: body.latitude ? parseFloat(body.latitude) : (geo?.lat ?? null),
+        longitude: body.longitude ? parseFloat(body.longitude) : (geo?.lng ?? null),
         totalFloors: parseInt(body.totalFloors) || 1,
         zaloPhone: body.zaloPhone || null,
         landlordNotes: body.landlordNotes || null,
@@ -199,6 +207,21 @@ export async function PUT(req: NextRequest) {
       }
     }
 
+    // Địa chỉ đổi mà client không gửi toạ độ mới → re-geocode để pin bản đồ đi theo địa chỉ.
+    let geo: { lat: number; lng: number } | null = null;
+    if ((data.fullAddress || data.streetName || data.district) && !data.latitude && !data.longitude) {
+      const cur = await prisma.property.findUnique({
+        where: { id },
+        select: { fullAddress: true, streetName: true, district: true, city: true },
+      });
+      geo = await geocodeAddress({
+        fullAddress: data.fullAddress ?? cur?.fullAddress,
+        streetName: data.streetName ?? cur?.streetName,
+        district: data.district ?? cur?.district,
+        city: data.city ?? cur?.city,
+      });
+    }
+
     const property = await prisma.property.update({
       where: { id },
       data: {
@@ -224,6 +247,9 @@ export async function PUT(req: NextRequest) {
         ...(data.foreignerOk !== undefined && { foreignerOk: data.foreignerOk }),
         ...(data.status && { status: data.status }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
+        ...(data.latitude && { latitude: parseFloat(data.latitude) }),
+        ...(data.longitude && { longitude: parseFloat(data.longitude) }),
+        ...(geo && { latitude: geo.lat, longitude: geo.lng }),
       },
     });
 

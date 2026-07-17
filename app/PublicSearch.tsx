@@ -315,7 +315,12 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
 
           {/* District pills (hybrid 7 + dropdown) */}
           <div className="mb-3">
-            <label className="block text-xs font-medium text-stone-500 mb-1.5">Khu vực</label>
+            <div className="flex items-center justify-between mb-1.5 gap-2">
+              <label className="block text-xs font-medium text-stone-500">Khu vực</label>
+              <Link href="/ban-do" className="text-xs font-medium text-brand-600 hover:text-brand-700 hover:underline whitespace-nowrap">
+                🗺️ Tìm trên bản đồ →
+              </Link>
+            </div>
             <DistrictPills value={district} onChange={setDistrict} />
           </div>
 

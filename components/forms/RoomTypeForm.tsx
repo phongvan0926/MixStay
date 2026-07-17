@@ -7,6 +7,7 @@ import VideoUpload from '@/components/ui/VideoUpload';
 import AiListingAssistant from '@/components/forms/AiListingAssistant';
 import SearchableSelect from '@/components/ui/SearchableSelect';
 import { formatCurrency } from '@/lib/utils';
+import { AMENITY_OPTIONS, ROOM_TYPE_OPTIONS } from '@/lib/listing-options';
 
 type RoomStatusValue = 'AVAILABLE' | 'UNAVAILABLE' | 'UPCOMING';
 
@@ -60,20 +61,7 @@ interface RoomTypeFormProps {
   loading?: boolean;
 }
 
-const ROOM_TYPES = [
-  { value: 'studio', label: 'Studio' },
-  { value: 'gac_xep', label: 'Gác xép' },
-  { value: 'don', label: 'Phòng đơn' },
-  { value: '1k1n', label: '1 ngủ 1 khách' },
-  { value: '2k1n', label: '2 ngủ 1 khách' },
-  { value: 'duplex', label: 'Duplex' },
-];
-
-const AMENITY_OPTIONS = [
-  'Điều hoà', 'Nóng lạnh', 'WC riêng', 'Bếp riêng', 'Ban công',
-  'Giường', 'Tủ quần áo', 'Máy giặt riêng', 'Tủ lạnh', 'Bàn làm việc',
-  'Kệ bếp', 'Bình nóng lạnh', 'Rèm cửa', 'Quạt trần', 'Smart TV',
-];
+const ROOM_TYPES = [...ROOM_TYPE_OPTIONS];
 // Tin ĐĂNG MỚI: tích sẵn tất cả nội thất TRỪ "Quạt trần" và "Smart TV".
 const DEFAULT_AMENITIES = AMENITY_OPTIONS.filter(a => a !== 'Quạt trần' && a !== 'Smart TV');
 

@@ -234,6 +234,12 @@ mixstay/
 
 ## Changelog
 
+### v9.5 — 2026-07-17 (Tạo tin nhanh bằng AI + Bản đồ tìm phòng)
+- **⚡ Tạo tin nhanh bằng AI** (admin + chủ nhà): nút mới ở Quản lý phòng (admin) và Tòa nhà (chủ nhà) — dán nguyên tin đăng copy từ Facebook/Zalo → Gemini structured output (`POST /api/ai/parse-listing`, helper chung `lib/gemini.ts` xoay key) bóc tách vào đúng trường: tòa nhà (tên/quận/đường/số nhà/SĐT/flags đỗ xe-pet...), tin đăng (tiêu đề, kiểu phòng đúng 6 enum, m², giá "5tr5"→5500000, cọc, tiện ích khớp `lib/listing-options.ts`, phòng trống, mô tả đã dọn — TỰ LOẠI SĐT/địa chỉ khỏi mô tả). Tự match tòa CÓ SẴN theo tên+quận (landlord chỉ match tòa mình) hoặc tạo tòa mới ngay trong modal → đổ vào `RoomTypeForm` điền sẵn, người dùng bổ sung trường thiếu rồi Lưu như luồng thường (không auto-đăng; vẫn qua duyệt + `createdById`).
+- **🗺️ Bản đồ tìm phòng `/ban-do`** (public): Leaflet + OpenStreetMap (miễn phí, không cần key). Zoom xa gom bong bóng theo QUẬN (bấm phóng tới), zoom gần pin từng tòa hiện "giá từ" → popup danh sách tin còn hàng link sang `/tin/[id]`. Pin đặt đúng vị trí nhưng KHÔNG kèm số nhà — tên tòa/tên đường qua `redactName`/`redactHouseNumber` như API public. `GET /api/rooms/map` (cache 5 phút) chỉ trả tòa APPROVED còn tin hiệu lực. Link vào từ PublicNav ("🗺️ Bản đồ") + PublicSearch ("Tìm trên bản đồ →").
+- **Toạ độ tòa nhà:** backfill bằng `scripts/geocode-properties.js` + `geocode-properties-pass2.js` (vòng 2 làm sạch địa chỉ bẩn: bỏ số nhà/ngoặc, rút về tên ngõ/phố) — Nominatim/OSM 1 req/s, chặn toạ độ ngoài Hà Nội, KHÔNG rơi về tâm quận. Kết quả: **280/429 tòa có toạ độ, 272 tòa lên bản đồ**; 149 tòa địa chỉ quá bẩn cần admin sửa địa chỉ (lưu lại sẽ tự geocode). Tòa tạo/sửa từ nay TỰ geocode server-side (`lib/geocode.ts`, fail không chặn luồng lưu).
+- **Vá redact tên tòa (`lib/address.ts`):** bắt thêm số nhà đứng giữa tên ("CCMN **26A** NGÁCH 52…", "TRỌ **68/53** CẦU GIẤY", "CCMN **69A** NGUYỄN TRÃI") mà không đụng số ngõ/ngách hợp lệ ("Ngõ 165/30…") hay số-đếm ("CCMN 5 tầng") — áp dụng cho cả API public lẫn bản đồ.
+
 ### v9.4.1 — 2026-07-16 (hotfix sửa lỗi refresh trang ở tìm kiếm CTV)
 - **Sửa lỗi:** CTV gõ vào ô "Tìm kiếm thông minh" bị refresh/giật trang và mất focus. Nguyên nhân do `if (loading) return Skeleton` unmount toàn bộ component (bao gồm cả ô input).
 - **Giải pháp:**
