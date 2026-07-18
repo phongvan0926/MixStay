@@ -7,6 +7,8 @@ import { hasPermission } from '@/lib/permissions';
 import PropertyForm from '@/components/forms/PropertyForm';
 import Pagination from '@/components/ui/Pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage';
+import useSWR from 'swr';
+import { fetcher } from '@/lib/fetcher';
 import { useProperties, useCompanies, useDashboardStats, useUsers } from '@/hooks/useData';
 import { SkeletonStats, SkeletonTable } from '@/components/ui/Skeleton';
 
@@ -61,6 +63,10 @@ export default function AdminPropertiesPage() {
   // Server đã lọc + phân trang → render thẳng
   const filtered = properties;
 
+  // Cảnh báo nghi trùng cho các tòa CHỜ DUYỆT (mất sau khi duyệt vì không còn PENDING)
+  const { data: dupData, mutate: mutateDup } = useSWR('/api/properties/duplicate-check', fetcher, { revalidateOnFocus: false });
+  const dupMap: Record<string, any[]> = dupData?.duplicates || {};
+
   const resetFilters = () => {
     setSearchInput(''); setSearch(''); setFilterCompany(''); setFilterLandlord(''); setFilterStatus(''); setPage(1);
   };
@@ -73,6 +79,7 @@ export default function AdminPropertiesPage() {
     });
     toast.success(status === 'APPROVED' ? 'Đã duyệt!' : 'Đã từ chối');
     mutate();
+    mutateDup(); // tòa vừa duyệt rời PENDING → cảnh báo trùng tự mất
   };
 
   const openCreate = () => { setEditingProperty(null); setShowModal(true); };
@@ -220,6 +227,17 @@ export default function AdminPropertiesPage() {
                     <td className="table-cell">
                       <p className="font-semibold text-stone-900">{p.name}</p>
                       <p className="text-xs text-stone-500 mt-0.5 max-w-[200px] truncate">{p.fullAddress}</p>
+                      {/* Cảnh báo nghi trùng (chỉ tòa chờ duyệt) — tự mất sau khi duyệt */}
+                      {p.status === 'PENDING' && dupMap[p.id]?.length > 0 && (
+                        <div className="mt-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 max-w-[240px]">
+                          <p className="text-[11px] font-semibold text-amber-800">⚠️ Có thể trùng {dupMap[p.id].length} tòa đã có</p>
+                          <ul className="mt-0.5 space-y-0.5">
+                            {dupMap[p.id].slice(0, 3).map((m: any) => (
+                              <li key={m.id} className="text-[10px] text-amber-700 truncate">• {m.name} <span className="text-amber-500">({m.reason})</span></li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </td>
                     <td className="table-cell">
                       {(() => {
