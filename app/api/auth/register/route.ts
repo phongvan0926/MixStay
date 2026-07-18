@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: validated.error }, { status: 400 });
     }
 
-    const { name, email, phone, password, role } = validated.data;
+    const { name, email, phone, password, role, companyName } = validated.data;
 
     // Email không bắt buộc — chỉ chống trùng khi có nhập email
     if (email) {
@@ -37,6 +37,28 @@ export async function POST(req: NextRequest) {
       data: { name, email: email || null, phone: phone || null, password: hashedPassword, role },
       select: { id: true, name: true, email: true, role: true },
     });
+
+    // Chủ nhà đăng ký kèm tên công ty → tạo công ty CHỜ DUYỆT (createdById = chính họ) +
+    // nhắc admin duyệt. Duyệt công ty sẽ tự duyệt các tòa của công ty (xem PUT /api/companies).
+    if (role === 'LANDLORD' && companyName && companyName.trim()) {
+      try {
+        const company = await prisma.company.create({
+          data: { name: companyName.trim(), isApproved: false, isActive: true, createdById: user.id },
+        });
+        const admins = await prisma.user.findMany({ where: { role: { in: ['ADMIN', 'ADMIN_STAFF'] }, isActive: true }, select: { id: true } });
+        if (admins.length) {
+          await prisma.notification.createMany({
+            data: admins.map(a => ({
+              userId: a.id,
+              type: 'company_pending',
+              title: 'Công ty mới chờ duyệt',
+              message: `${name} vừa đăng ký chủ nhà và tạo công ty "${company.name}" — cần duyệt.`,
+              link: `/admin/companies`,
+            })),
+          });
+        }
+      } catch { /* lỗi tạo công ty không được chặn việc đăng ký tài khoản */ }
+    }
 
     return NextResponse.json(user, { status: 201 });
   } catch (error) {

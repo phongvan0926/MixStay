@@ -196,6 +196,14 @@ export async function PUT(req: NextRequest) {
       },
     });
 
+    // DUYỆT công ty → tự DUYỆT các TÒA NHÀ chờ duyệt của công ty (tin đăng vẫn để admin duyệt riêng).
+    if (data.isApproved === true) {
+      await prisma.property.updateMany({
+        where: { companyId: id, status: 'PENDING' },
+        data: { status: 'APPROVED' },
+      });
+    }
+
     return NextResponse.json(company);
   } catch {
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });

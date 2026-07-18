@@ -15,6 +15,8 @@ export const registerSchema = z.object({
   phone: z.string().min(8, 'Số điện thoại không hợp lệ').max(20).optional().or(z.literal('')),
   password: z.string().min(8, 'Mật khẩu tối thiểu 8 ký tự'),
   role: z.enum(['BROKER', 'LANDLORD', 'CUSTOMER'], { message: 'Vai trò không hợp lệ' }),
+  // Chủ nhà có thể kèm tên công ty/đơn vị → tự tạo công ty (chờ admin duyệt)
+  companyName: z.string().max(200).optional().or(z.literal('')),
 }).refine(d => !!(d.email && d.email.trim()) || !!(d.phone && d.phone.trim()), {
   message: 'Vui lòng nhập Email hoặc Số điện thoại',
   path: ['phone'],

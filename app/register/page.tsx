@@ -17,7 +17,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', role: 'BROKER' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', role: 'BROKER', companyName: '' });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,8 +120,8 @@ export default function RegisterPage() {
               <label className="block text-sm font-medium text-stone-700 mb-1.5">Bạn là</label>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { value: 'BROKER', label: '🤝 Cộng tác viên' },
                   { value: 'LANDLORD', label: '🏠 Chủ nhà' },
+                  { value: 'BROKER', label: '🤝 Cộng tác viên' },
                   { value: 'CUSTOMER', label: '👤 Khách thuê' },
                 ].map(r => (
                   <button key={r.value} type="button" onClick={() => set('role', r.value)}
@@ -135,6 +135,14 @@ export default function RegisterPage() {
                 ))}
               </div>
             </div>
+            {form.role === 'LANDLORD' && (
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1.5">Tên công ty / đơn vị <span className="text-stone-400 font-normal">(không bắt buộc)</span></label>
+                <input type="text" className="input-field" placeholder="VD: Nhà trọ An Cư — tạo công ty của bạn"
+                  value={form.companyName} onChange={e => set('companyName', e.target.value)} />
+                <p className="text-[11px] text-stone-400 mt-1">Sẽ tạo công ty của bạn (chờ admin duyệt). Duyệt xong các tòa nhà của bạn được duyệt theo.</p>
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1.5">Họ tên</label>
               <input type="text" className="input-field" placeholder="Nguyễn Văn A" required

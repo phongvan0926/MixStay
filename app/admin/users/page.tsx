@@ -16,7 +16,8 @@ const ROLE_AVATAR_COLORS: Record<string, string> = {
   CUSTOMER: 'bg-blue-500',
 };
 
-const ROLES = ['ADMIN', 'ADMIN_STAFF', 'BROKER', 'LANDLORD', 'CUSTOMER'];
+// Chủ nhà (LANDLORD) đứng trước Cộng tác viên (BROKER) — áp dụng cho cả thẻ thống kê lẫn dropdown tạo user
+const ROLES = ['ADMIN', 'ADMIN_STAFF', 'LANDLORD', 'BROKER', 'CUSTOMER'];
 
 const EMPTY_FORM = {
   name: '', email: '', phone: '', password: '', role: 'BROKER' as string, isActive: true,
