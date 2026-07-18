@@ -5,7 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/lib/utils';
-import { HANOI_UNIVERSITIES } from '@/lib/hanoi-locations';
+import { HANOI_UNIVERSITIES, COMMON_STREETS } from '@/lib/hanoi-locations';
 
 /**
  * Bản đồ tìm phòng (public). Pin đặt ĐÚNG vị trí tòa nhà nhưng thông tin chỉ tới
@@ -34,6 +34,19 @@ type CustomPin = {
 
 const HANOI_CENTER: [number, number] = [21.0285, 105.8048];
 const CLUSTER_ZOOM = 14; // dưới mức này gom theo quận
+
+// Chuẩn hóa tiếng Việt & viết tắt (đổi "đại học" / "trường đại học" -> "dh", bỏ dấu)
+function normalizeVi(str: string): string {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/truong dai hoc|trương dai hoc|truong dh|trương dh|dai hoc/g, 'dh')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 // Khoảng cách 2 điểm (km) — haversine
 function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number): number {
@@ -174,12 +187,14 @@ export default function MapClient() {
 
     setIsSearching(true);
     try {
-      const qLower = q.toLowerCase();
+      const qNorm = normalizeVi(q);
 
-      // 1. Khảo sát Local: các trường đại học Hà Nội
-      const foundUni = HANOI_UNIVERSITIES.find(
-        u => u.name.toLowerCase().includes(qLower) || u.short.toLowerCase().includes(qLower)
-      );
+      // 1. So khớp Local cực nhanh: Các trường đại học Hà Nội
+      const foundUni = HANOI_UNIVERSITIES.find(u => {
+        const uNormName = normalizeVi(u.name);
+        const uNormShort = normalizeVi(u.short);
+        return uNormName.includes(qNorm) || uNormShort.includes(qNorm) || qNorm.includes(uNormShort);
+      });
 
       if (foundUni) {
         setCustomPin({ label: foundUni.name, lat: foundUni.lat, lng: foundUni.lng });
@@ -190,10 +205,11 @@ export default function MapClient() {
         return;
       }
 
-      // 2. Khảo sát Local: các quận Hà Nội
-      const foundDistrict = districts.find(
-        d => d.district.toLowerCase().includes(qLower)
-      );
+      // 2. So khớp Local: Các quận Hà Nội
+      const foundDistrict = districts.find(d => {
+        const dNorm = normalizeVi(d.district);
+        return dNorm.includes(qNorm) || qNorm.includes(dNorm);
+      });
       if (foundDistrict) {
         setCustomPin({ label: `Quận ${foundDistrict.district}`, lat: foundDistrict.lat, lng: foundDistrict.lng });
         setSelectedDistrict(null);
@@ -203,16 +219,27 @@ export default function MapClient() {
         return;
       }
 
-      // 3. Gọi Nominatim OpenStreetMap API tìm địa chỉ bất kỳ ở Hà Nội
-      const queryTerm = qLower.includes('hà nội') ? q : `${q}, Hà Nội`;
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queryTerm)}&limit=1&countrycodes=vn`,
-        { headers: { 'Accept-Language': 'vi' } }
-      );
-      const data = await res.json();
+      // 3. So khớp Local: Các tên đường/phố phổ biến Hà Nội (nếu có tòa nhà thuộc đường đó)
+      const foundStreetProp = props.find(p => {
+        if (!p.streetName) return false;
+        const sNorm = normalizeVi(p.streetName);
+        return sNorm.includes(qNorm) || qNorm.includes(sNorm);
+      });
+      if (foundStreetProp) {
+        setCustomPin({ label: `Đường ${foundStreetProp.streetName}`, lat: foundStreetProp.lat, lng: foundStreetProp.lng });
+        setSelectedDistrict(null);
+        setFlyTarget({ center: [foundStreetProp.lat, foundStreetProp.lng], zoom: 15 });
+        toast.success(`Đã định vị tại khu vực đường ${foundStreetProp.streetName}`);
+        setIsSearching(false);
+        return;
+      }
 
-      if (Array.isArray(data) && data.length > 0) {
-        const item = data[0];
+      // 4. Gọi API Server-side Proxy Geocode (/api/geocode) cho các địa chỉ khác
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`);
+      const json = await res.json();
+
+      if (res.ok && Array.isArray(json.data) && json.data.length > 0) {
+        const item = json.data[0];
         const cleanLabel = item.display_name.split(',')[0] || q;
         const lat = parseFloat(item.lat);
         const lng = parseFloat(item.lon);
@@ -277,7 +304,7 @@ export default function MapClient() {
       <div className="absolute bottom-4 left-3 right-3 z-[1000] flex justify-center pointer-events-none">
         <div className="pointer-events-auto w-full max-w-lg rounded-2xl bg-white/95 backdrop-blur border border-stone-200 shadow-xl p-3">
           
-          {/* Ô nhập địa điểm + Nút 定位 "Định vị" */}
+          {/* Ô nhập địa điểm + Nút 🎯 Định vị */}
           <div className="flex items-center gap-2">
             <div className="flex-1 flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-100 transition-all">
               <span className="text-base shrink-0">📍</span>
