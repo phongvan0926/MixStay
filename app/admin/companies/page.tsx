@@ -5,7 +5,7 @@ import { formatDate } from '@/lib/utils';
 import { useCompanies } from '@/hooks/useData';
 import { SkeletonCardGrid } from '@/components/ui/Skeleton';
 
-const EMPTY_FORM = { name: '', description: '', phone: '', email: '', address: '', zaloGroupLink: '', isActive: true };
+const EMPTY_FORM = { name: '', description: '', phone: '', email: '', address: '', zaloGroupLink: '', code: '', isActive: true };
 
 export default function AdminCompaniesPage() {
   const { companies, isLoading: loading, mutate } = useCompanies();
@@ -30,7 +30,7 @@ export default function AdminCompaniesPage() {
   const openAdd = () => { setEditItem(null); setForm({ ...EMPTY_FORM }); setShowModal(true); };
   const openEdit = (c: any) => {
     setEditItem(c);
-    setForm({ name: c.name, description: c.description || '', phone: c.phone || '', email: c.email || '', address: c.address || '', zaloGroupLink: c.zaloGroupLink || '', isActive: c.isActive });
+    setForm({ name: c.name, description: c.description || '', phone: c.phone || '', email: c.email || '', address: c.address || '', zaloGroupLink: c.zaloGroupLink || '', code: c.code || '', isActive: c.isActive });
     setShowModal(true);
   };
 
@@ -165,6 +165,7 @@ export default function AdminCompaniesPage() {
 
                 {/* Stats row */}
                 <div className="flex items-center gap-3 mt-4 pt-3 border-t border-stone-100">
+                  {c.code && <span className="badge bg-stone-800 text-white text-[10px] font-mono" title="Mã công ty chèn vào mã tin">#{c.code}</span>}
                   <span className="badge bg-brand-50 text-brand-700 text-[10px]">{c._count?.properties || 0} tòa nhà</span>
                   <span className="badge bg-purple-50 text-purple-700 text-[10px]">{getRoomTypeCount(c)} tin đăng</span>
                   <span className="text-xs text-stone-400 ml-auto">{formatDate(c.createdAt)}</span>
@@ -244,6 +245,15 @@ export default function AdminCompaniesPage() {
                 <label className="block text-sm font-medium text-stone-700 mb-1">Tên công ty / hệ thống <span className="text-red-500">*</span></label>
                 <input type="text" required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   className="input-field w-full" placeholder="VD: Công ty ABC" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">
+                  Mã công ty <span className="text-stone-400 font-normal">(chèn vào mã tin, VD 066 → MS-066-XXXXXX)</span>
+                </label>
+                <input type="text" value={form.code}
+                  onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8) }))}
+                  className="input-field w-full font-mono" placeholder="VD: 066" maxLength={8} />
+                <p className="text-[11px] text-stone-400 mt-1">Chữ/số, tối đa 8 ký tự, không trùng công ty khác. Để trống nếu chưa cần.</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>

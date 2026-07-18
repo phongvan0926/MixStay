@@ -134,12 +134,14 @@ model Company {
   // (chờ admin duyệt). Chỉ công ty isApproved=true + isActive=true mới vào danh sách chọn/công khai.
   isApproved    Boolean    @default(true)
   createdById   String?    // user đã tạo (chủ nhà tự tạo) — để lọc/hiển thị nếu cần
+  code          String?    // mã công ty admin tự đặt (vd "066") — chèn vào mã tin hiển thị: MS-066-XXXXXX
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
   properties    Property[]
 
   @@index([isApproved])
+  @@index([code])
   @@map("companies")
 }
 

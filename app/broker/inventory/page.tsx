@@ -7,6 +7,7 @@ import PhoneRequiredNotice from '@/components/ui/PhoneRequiredNotice';
 import { formatCurrency } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage';
+import { formatListingCode } from '@/lib/listing-code';
 import VideoGallery from '@/components/ui/VideoGallery';
 import ListingActionBar from '@/components/ui/ListingActionBar';
 import { buildListingText } from '@/lib/listing-text';
@@ -221,7 +222,7 @@ function RoomDetailModal({
               <h2 className="font-display text-2xl font-bold text-stone-900">{room.name}</h2>
               <p className="text-sm text-stone-500 mt-0.5">{room.property?.name} • {room.areaSqm}m²</p>
               {room.listingCode && (
-                <p className="text-[11px] font-mono font-semibold text-stone-400 mt-1">Mã: {room.listingCode}</p>
+                <p className="text-[11px] font-mono font-semibold text-stone-400 mt-1">Mã: {formatListingCode(room.listingCode, room.property?.company?.code)}</p>
               )}
             </div>
             {room.typeName && (
@@ -723,7 +724,7 @@ export default function BrokerInventoryPage() {
                       {room.property?.name} • {room.areaSqm}m²
                     </p>
                     {room.listingCode && (
-                      <p className="text-[10px] font-mono font-semibold text-stone-400 mt-0.5">Mã: {room.listingCode}</p>
+                      <p className="text-[10px] font-mono font-semibold text-stone-400 mt-0.5">Mã: {formatListingCode(room.listingCode, room.property?.company?.code)}</p>
                     )}
                   </div>
 

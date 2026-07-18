@@ -10,7 +10,7 @@ import Pagination from '@/components/ui/Pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import { useProperties, useRoomTypes, useInquiries, useDashboardStats, useActiveCompanies } from '@/hooks/useData';
 import { SkeletonStats, SkeletonCardGrid } from '@/components/ui/Skeleton';
-import { normalizeListingCode } from '@/lib/listing-code';
+import { normalizeListingCode, formatListingCode } from '@/lib/listing-code';
 
 const ROOM_TYPE_LABELS: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1N1K',
@@ -813,7 +813,7 @@ function RoomTypeCard({
         </div>
         <p className="text-xs text-stone-400 mb-1.5">
           {rt.areaSqm}m²
-          {rt.listingCode && <span className="ml-1.5 font-mono font-semibold text-stone-400">• Mã: {rt.listingCode}</span>}
+          {rt.listingCode && <span className="ml-1.5 font-mono font-semibold text-stone-400">• Mã: {formatListingCode(rt.listingCode, rt.property?.company?.code)}</span>}
         </p>
         <p className="text-base font-bold text-brand-600 mb-2">
           {formatCurrency(rt.priceMonthly)}<span className="text-xs font-normal text-stone-400">/tháng</span>
@@ -972,7 +972,7 @@ function RoomTypeListView({
                   <p className="font-medium text-stone-900 text-sm">{rt.name}</p>
                   <p className="text-xs text-stone-400">
                     {rt.areaSqm}m²
-                    {rt.listingCode && <span className="font-mono font-semibold"> • {rt.listingCode}</span>}
+                    {rt.listingCode && <span className="font-mono font-semibold"> • {formatListingCode(rt.listingCode, rt.property?.company?.code)}</span>}
                     {!rt.isApproved && ' • Chờ duyệt'}
                   </p>
                 </td>

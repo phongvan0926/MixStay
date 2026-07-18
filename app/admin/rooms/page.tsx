@@ -11,6 +11,7 @@ import OptimizedImage from '@/components/ui/OptimizedImage';
 import SearchableSelect from '@/components/ui/SearchableSelect';
 import { useRoomTypes, useProperties, useCompanies } from '@/hooks/useData';
 import { SkeletonTable } from '@/components/ui/Skeleton';
+import { formatListingCode } from '@/lib/listing-code';
 
 const ROOM_TYPE_LABELS: Record<string, string> = {
   studio: 'Studio', gac_xep: 'Gác xép', don: 'Phòng đơn',
@@ -517,7 +518,7 @@ export default function AdminRoomsPage() {
                     <td className="table-cell">
                       <p className="font-semibold text-stone-900">{r.name}</p>
                       {r.listingCode && (
-                        <p className="text-[10px] font-mono font-semibold text-stone-400 mt-0.5">Mã: {r.listingCode}</p>
+                        <p className="text-[10px] font-mono font-semibold text-stone-400 mt-0.5">Mã: {formatListingCode(r.listingCode, r.property?.company?.code)}</p>
                       )}
                       {/* Đăng bởi ai + khi nào — liếc nhanh, chi tiết (SĐT/email/cập nhật) xem trong modal Sửa */}
                       {(r.property?.landlord?.name || r.createdAt) && (
@@ -626,7 +627,7 @@ export default function AdminRoomsPage() {
                   {editingRoom ? 'Sửa tin đăng' : 'Thêm tin đăng mới'}
                 </h2>
                 {editingRoom?.listingCode && (
-                  <p className="text-[11px] font-mono font-semibold text-stone-400 mt-0.5">Mã: {editingRoom.listingCode}</p>
+                  <p className="text-[11px] font-mono font-semibold text-stone-400 mt-0.5">Mã: {formatListingCode(editingRoom.listingCode, editingRoom.property?.company?.code)}</p>
                 )}
               </div>
               <button onClick={() => setShowModal(false)}

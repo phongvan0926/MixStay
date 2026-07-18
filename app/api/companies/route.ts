@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { requirePermission } from '@/lib/permissions-server';
 import { normalizeZaloInput } from '@/lib/zalo';
+import { normalizeCompanyCode } from '@/lib/listing-code';
 
 export async function GET(req: NextRequest) {
   const rateLimited = await applyRateLimit(req, 'api');
@@ -46,6 +47,7 @@ export async function GET(req: NextRequest) {
         { name: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
         { phone: { contains: search } },
+        { code: { contains: search.trim().toUpperCase(), mode: 'insensitive' } },
       ];
     }
 
@@ -95,6 +97,19 @@ export async function POST(req: NextRequest) {
 
     const isApproved = isManager ? (body.isApproved ?? true) : false;
 
+    // Mã công ty (chỉ admin đặt lúc tạo) — chuẩn hoá + không trùng.
+    let code: string | null = null;
+    if (isManager && body.code) {
+      code = normalizeCompanyCode(body.code);
+      if (code && !/^[A-Z0-9]{1,8}$/.test(code)) {
+        return NextResponse.json({ error: 'Mã công ty chỉ gồm chữ/số, tối đa 8 ký tự (VD 066)' }, { status: 400 });
+      }
+      if (code) {
+        const dup = await prisma.company.findFirst({ where: { code }, select: { name: true } });
+        if (dup) return NextResponse.json({ error: `Mã "${code}" đã dùng cho công ty "${dup.name}"` }, { status: 409 });
+      } else code = null;
+    }
+
     const company = await prisma.company.create({
       data: {
         name: body.name.trim(),
@@ -104,6 +119,7 @@ export async function POST(req: NextRequest) {
         address: body.address || null,
         logo: body.logo || null,
         zaloGroupLink: normalizeZaloInput(body.zaloGroupLink),
+        code,
         isActive: isManager ? (body.isActive ?? true) : true,
         isApproved,
         createdById: (session.user as any).id || null,
@@ -147,6 +163,22 @@ export async function PUT(req: NextRequest) {
     const { id, ...data } = body;
     if (!id) return NextResponse.json({ error: 'Thiếu id' }, { status: 400 });
 
+    // Mã công ty: chuẩn hoá + KHÔNG cho trùng công ty khác (mã là để nhận diện duy nhất).
+    let codeUpdate: { code: string | null } | undefined;
+    if (data.code !== undefined) {
+      const norm = normalizeCompanyCode(data.code);
+      if (norm) {
+        if (!/^[A-Z0-9]{1,8}$/.test(norm)) {
+          return NextResponse.json({ error: 'Mã công ty chỉ gồm chữ/số, tối đa 8 ký tự (VD 066)' }, { status: 400 });
+        }
+        const dup = await prisma.company.findFirst({ where: { code: norm, id: { not: id } }, select: { id: true, name: true } });
+        if (dup) return NextResponse.json({ error: `Mã "${norm}" đã dùng cho công ty "${dup.name}"` }, { status: 409 });
+        codeUpdate = { code: norm };
+      } else {
+        codeUpdate = { code: null }; // xoá mã
+      }
+    }
+
     const company = await prisma.company.update({
       where: { id },
       data: {
@@ -160,6 +192,7 @@ export async function PUT(req: NextRequest) {
         ...(data.isActive !== undefined && { isActive: data.isActive }),
         // Duyệt công ty (admin bấm "Duyệt") — duyệt thì đồng thời bật hoạt động.
         ...(data.isApproved !== undefined && { isApproved: data.isApproved, ...(data.isApproved ? { isActive: true } : {}) }),
+        ...(codeUpdate || {}),
       },
     });
 

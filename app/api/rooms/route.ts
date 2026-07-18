@@ -6,7 +6,7 @@ import { getPaginationParams, paginatedResponse } from '@/lib/pagination';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { roomTypeCreateSchema, roomTypeUpdateSchema, validateBody } from '@/lib/validations';
 import { requirePermission } from '@/lib/permissions-server';
-import { normalizeListingCode, LISTING_CODE_REGEX } from '@/lib/listing-code';
+import { normalizeListingCode, LISTING_CODE_REGEX, parseComposedListingCode } from '@/lib/listing-code';
 import { generateUniqueListingCode } from '@/lib/listing-code-server';
 
 export async function GET(req: NextRequest) {
@@ -71,22 +71,31 @@ export async function GET(req: NextRequest) {
       where.property = { ...where.property, ...propertyWhere };
     }
     if (search) {
-      const code = normalizeListingCode(search);
-      if (LISTING_CODE_REGEX.test(code)) {
-        // Nhập đúng mã đầy đủ → tra cứu chính xác theo listingCode
-        where.listingCode = code;
+      const composed = parseComposedListingCode(search);
+      if (composed.companyCode && LISTING_CODE_REGEX.test(composed.baseCode)) {
+        // Nhập "MS-066-F76EAW" → khớp đúng mã tin + đúng công ty có mã 066
+        where.listingCode = composed.baseCode;
+        where.property = { ...(where.property || {}), company: { is: { code: { equals: composed.companyCode, mode: 'insensitive' } } } };
       } else {
-        where.OR = [
-          { name: { contains: search, mode: 'insensitive' } },
-          { listingCode: { contains: search.trim().toUpperCase(), mode: 'insensitive' } },
-          { description: { contains: search, mode: 'insensitive' } },
-          { property: { name: { contains: search, mode: 'insensitive' } } },
-          { property: { district: { contains: search, mode: 'insensitive' } } },
-          { property: { streetName: { contains: search, mode: 'insensitive' } } },
-          { property: { fullAddress: { contains: search, mode: 'insensitive' } } },
-          { property: { zaloPhone: { contains: search, mode: 'insensitive' } } },
-          { property: { landlord: { phone: { contains: search, mode: 'insensitive' } } } },
-        ];
+        const code = normalizeListingCode(search);
+        if (LISTING_CODE_REGEX.test(code)) {
+          // Nhập đúng mã đầy đủ → tra cứu chính xác theo listingCode
+          where.listingCode = code;
+        } else {
+          where.OR = [
+            { name: { contains: search, mode: 'insensitive' } },
+            { listingCode: { contains: search.trim().toUpperCase(), mode: 'insensitive' } },
+            { description: { contains: search, mode: 'insensitive' } },
+            // gõ mã công ty (vd "066") → ra mọi tin của công ty đó
+            { property: { company: { is: { code: { equals: search.trim().toUpperCase(), mode: 'insensitive' } } } } },
+            { property: { name: { contains: search, mode: 'insensitive' } } },
+            { property: { district: { contains: search, mode: 'insensitive' } } },
+            { property: { streetName: { contains: search, mode: 'insensitive' } } },
+            { property: { fullAddress: { contains: search, mode: 'insensitive' } } },
+            { property: { zaloPhone: { contains: search, mode: 'insensitive' } } },
+            { property: { landlord: { phone: { contains: search, mode: 'insensitive' } } } },
+          ];
+        }
       }
     }
 
@@ -172,7 +181,8 @@ export async function GET(req: NextRequest) {
               } : {}),
               company: {
                 // zaloGroupLink của công ty cũng là liên hệ → chỉ trả khi có quyền.
-                select: { id: true, name: true, zaloGroupLink: canContact },
+                // code: mã công ty để ghép vào mã tin hiển thị (MS-066-XXXXXX).
+                select: { id: true, name: true, code: true, zaloGroupLink: canContact },
               },
               landlord: {
                 select: {
