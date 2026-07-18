@@ -1,11 +1,11 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/lib/utils';
-import { HANOI_UNIVERSITIES, COMMON_STREETS } from '@/lib/hanoi-locations';
+import { HANOI_UNIVERSITIES } from '@/lib/hanoi-locations';
 
 /**
  * Bản đồ tìm phòng (public). Pin đặt ĐÚNG vị trí tòa nhà nhưng thông tin chỉ tới
@@ -13,8 +13,8 @@ import { HANOI_UNIVERSITIES, COMMON_STREETS } from '@/lib/hanoi-locations';
  * - Zoom xa (< CLUSTER_ZOOM): gom theo QUẬN thành bong bóng "Cầu Giấy · N tin" → bấm để phóng tới.
  * - Zoom gần: pin từng tòa hiện GIÁ TỪ → bấm mở popup danh sách tin, link sang /tin/[id].
  * - Chọn quận (chip trên cùng) → phóng tới + TÔ NỔI BẬT các tòa trong quận, mờ các tòa khác.
- * - Ghim vị trí bất kỳ (Gõ địa điểm + Bấm nút 🎯 Định vị / Click trực tiếp trên bản đồ) + bán kính nấc 500m
- *   → vẽ vòng tròn quanh điểm ghim, lọc/tô nổi bật tòa trong bán kính.
+ * - Ghim vị trí bất kỳ (Gõ tên địa điểm + Gợi ý Autocomplete + Bấm 🎯 Định vị / Click trên map)
+ *   + bán kính nấc 500m → vẽ vòng tròn quanh điểm ghim, lọc/tô nổi bật tòa trong bán kính.
  */
 
 type MapListing = {
@@ -32,10 +32,17 @@ type CustomPin = {
   lng: number;
 };
 
+type SuggestionLocation = {
+  label: string;
+  sublabel: string;
+  lat: number;
+  lng: number;
+};
+
 const HANOI_CENTER: [number, number] = [21.0285, 105.8048];
 const CLUSTER_ZOOM = 14; // dưới mức này gom theo quận
 
-// Chuẩn hóa tiếng Việt & viết tắt (đổi "đại học" / "trường đại học" -> "dh", bỏ dấu)
+// Chuẩn hóa tiếng Việt để so sánh chuỗi chính xác
 function normalizeVi(str: string): string {
   if (!str) return '';
   return str
@@ -43,7 +50,6 @@ function normalizeVi(str: string): string {
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .replace(/đ/g, 'd')
-    .replace(/truong dai hoc|trương dai hoc|truong dh|trương dh|dai hoc/g, 'dh')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -138,7 +144,10 @@ export default function MapClient() {
 
   // Ô tìm kiếm địa điểm / địa chỉ
   const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<SuggestionLocation[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     fetch('/api/rooms/map')
@@ -147,6 +156,59 @@ export default function MapClient() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  // Gọi Autocomplete gợi ý vị trí khi gõ vào ô tìm kiếm
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q || q.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const qNorm = normalizeVi(q);
+        
+        // 1. Gợi ý từ danh sách trường ĐH local
+        const localMatches = HANOI_UNIVERSITIES.filter(u => {
+          const nameNorm = normalizeVi(u.name);
+          const shortNorm = normalizeVi(u.short);
+          return nameNorm.includes(qNorm) || shortNorm.includes(qNorm);
+        }).map(u => ({
+          label: u.name,
+          sublabel: `Trường đại học (${u.short})`,
+          lat: u.lat,
+          lng: u.lng,
+        }));
+
+        // 2. Fetch gợi ý địa điểm từ Server Geocode API Proxy
+        const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`);
+        const json = await res.json();
+        const remoteList: SuggestionLocation[] = (json.data || []).map((item: any) => ({
+          label: item.display_name.split(',')[0] || item.display_name,
+          sublabel: item.display_name,
+          lat: parseFloat(item.lat),
+          lng: parseFloat(item.lon),
+        }));
+
+        // Gộp kết quả, lọc trùng
+        const combined = [...localMatches];
+        const existingLabels = new Set(localMatches.map(m => normalizeVi(m.label)));
+        for (const r of remoteList) {
+          if (!existingLabels.has(normalizeVi(r.label))) {
+            combined.push(r);
+          }
+        }
+
+        setSuggestions(combined.slice(0, 6));
+        setShowSuggestions(combined.length > 0);
+      } catch {
+        // Ignored
+      }
+    }, 300);
+  }, [searchQuery]);
 
   // Gom theo quận: tâm = trung bình toạ độ các tòa, đếm tổng số tin
   const districts = useMemo(() => {
@@ -177,7 +239,17 @@ export default function MapClient() {
     setFlyTarget({ center: [d.lat, d.lng], zoom: CLUSTER_ZOOM });
   };
 
-  // Xử lý Định vị khi bấm nút Định vị hoặc Enter
+  // Chọn 1 gợi ý địa điểm từ menu thả xuống
+  const handleSelectSuggestion = (s: SuggestionLocation) => {
+    setCustomPin({ label: s.label, lat: s.lat, lng: s.lng });
+    setSearchQuery(s.label);
+    setShowSuggestions(false);
+    setSelectedDistrict(null);
+    setFlyTarget({ center: [s.lat, s.lng], zoom: 15 });
+    toast.success(`Đã ghim vị trí: ${s.label}`);
+  };
+
+  // Xử lý Định vị khi bấm nút 🎯 Định vị hoặc phím Enter
   const handleGeocodeSubmit = async () => {
     const q = searchQuery.trim();
     if (!q) {
@@ -185,56 +257,16 @@ export default function MapClient() {
       return;
     }
 
+    // Nếu đang có danh sách gợi ý -> chọn luôn gợi ý đầu tiên
+    if (suggestions.length > 0) {
+      handleSelectSuggestion(suggestions[0]);
+      return;
+    }
+
     setIsSearching(true);
+    setShowSuggestions(false);
     try {
-      const qNorm = normalizeVi(q);
-
-      // 1. So khớp Local cực nhanh: Các trường đại học Hà Nội
-      const foundUni = HANOI_UNIVERSITIES.find(u => {
-        const uNormName = normalizeVi(u.name);
-        const uNormShort = normalizeVi(u.short);
-        return uNormName.includes(qNorm) || uNormShort.includes(qNorm) || qNorm.includes(uNormShort);
-      });
-
-      if (foundUni) {
-        setCustomPin({ label: foundUni.name, lat: foundUni.lat, lng: foundUni.lng });
-        setSelectedDistrict(null);
-        setFlyTarget({ center: [foundUni.lat, foundUni.lng], zoom: 15 });
-        toast.success(`Đã định vị tại ${foundUni.name}`);
-        setIsSearching(false);
-        return;
-      }
-
-      // 2. So khớp Local: Các quận Hà Nội
-      const foundDistrict = districts.find(d => {
-        const dNorm = normalizeVi(d.district);
-        return dNorm.includes(qNorm) || qNorm.includes(dNorm);
-      });
-      if (foundDistrict) {
-        setCustomPin({ label: `Quận ${foundDistrict.district}`, lat: foundDistrict.lat, lng: foundDistrict.lng });
-        setSelectedDistrict(null);
-        setFlyTarget({ center: [foundDistrict.lat, foundDistrict.lng], zoom: 14 });
-        toast.success(`Đã định vị tại khu vực ${foundDistrict.district}`);
-        setIsSearching(false);
-        return;
-      }
-
-      // 3. So khớp Local: Các tên đường/phố phổ biến Hà Nội (nếu có tòa nhà thuộc đường đó)
-      const foundStreetProp = props.find(p => {
-        if (!p.streetName) return false;
-        const sNorm = normalizeVi(p.streetName);
-        return sNorm.includes(qNorm) || qNorm.includes(sNorm);
-      });
-      if (foundStreetProp) {
-        setCustomPin({ label: `Đường ${foundStreetProp.streetName}`, lat: foundStreetProp.lat, lng: foundStreetProp.lng });
-        setSelectedDistrict(null);
-        setFlyTarget({ center: [foundStreetProp.lat, foundStreetProp.lng], zoom: 15 });
-        toast.success(`Đã định vị tại khu vực đường ${foundStreetProp.streetName}`);
-        setIsSearching(false);
-        return;
-      }
-
-      // 4. Gọi API Server-side Proxy Geocode (/api/geocode) cho các địa chỉ khác
+      // Gọi Server Geocode API Proxy
       const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`);
       const json = await res.json();
 
@@ -249,25 +281,28 @@ export default function MapClient() {
         setFlyTarget({ center: [lat, lng], zoom: 15 });
         toast.success(`Đã định vị tại ${cleanLabel}`);
       } else {
-        toast.error('Không tìm thấy tọa độ địa điểm này, thử gõ chi tiết hơn nhé!');
+        toast.error(`Không tìm thấy vị trí "${q}", thử nhập lại chi tiết hơn nhé!`);
       }
     } catch {
-      toast.error('Lỗi khi định vị địa điểm, vui lòng thử lại!');
+      toast.error('Lỗi kết nối khi định vị, vui lòng thử lại!');
     } finally {
       setIsSearching(false);
     }
   };
 
   const handleMapClick = (lat: number, lng: number) => {
-    setCustomPin({ label: 'Vị trí đã ghim', lat, lng });
+    setCustomPin({ label: 'Vị trí đã chọn trên bản đồ', lat, lng });
     setSelectedDistrict(null);
+    setShowSuggestions(false);
     setFlyTarget({ center: [lat, lng], zoom: Math.max(zoom, 14) });
-    toast.success('Đã ghim vị trí mới trên bản đồ');
+    toast.success('Đã ghim vị trí chọn trên bản đồ');
   };
 
   const clearCustomPin = () => {
     setCustomPin(null);
     setSearchQuery('');
+    setShowSuggestions(false);
+    setSuggestions([]);
   };
 
   // Khi đang lọc theo bán kính (đã có điểm ghim) → luôn hiện pin từng tòa, không gom cụm.
@@ -300,9 +335,9 @@ export default function MapClient() {
         )}
       </div>
 
-      {/* Panel Tìm kiếm địa điểm + Nút 🎯 Định vị & Thanh kéo bán kính nấc 500m (nằm ở dưới) */}
+      {/* Panel Tìm kiếm địa điểm + Gợi ý Dropdown & Thanh kéo bán kính nấc 500m (nằm ở dưới) */}
       <div className="absolute bottom-4 left-3 right-3 z-[1000] flex justify-center pointer-events-none">
-        <div className="pointer-events-auto w-full max-w-lg rounded-2xl bg-white/95 backdrop-blur border border-stone-200 shadow-xl p-3">
+        <div className="pointer-events-auto w-full max-w-lg rounded-2xl bg-white/95 backdrop-blur border border-stone-200 shadow-xl p-3 relative">
           
           {/* Ô nhập địa điểm + Nút 🎯 Định vị */}
           <div className="flex items-center gap-2">
@@ -312,8 +347,9 @@ export default function MapClient() {
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
+                onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                 onKeyDown={e => e.key === 'Enter' && handleGeocodeSubmit()}
-                placeholder="Ví dụ: Đại học Bách Khoa, Ngã Tư Sở..."
+                placeholder="Gõ tên địa điểm (ĐH Bách Khoa, ĐH Hà Nội, Ngã Tư Sở...)"
                 className="w-full text-sm outline-none bg-transparent placeholder-stone-400 text-stone-800"
               />
               {(searchQuery || customPin) && (
@@ -343,6 +379,23 @@ export default function MapClient() {
               )}
             </button>
           </div>
+
+          {/* Gợi ý địa điểm thả xuống (Suggestions Dropdown) */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="absolute left-3 right-3 bottom-full mb-2 bg-white rounded-xl border border-stone-200 shadow-2xl max-h-56 overflow-y-auto z-[1010] p-1.5">
+              <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider px-2 py-1">Chọn vị trí khớp:</p>
+              {suggestions.map((s, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleSelectSuggestion(s)}
+                  className="w-full text-left px-3 py-2 hover:bg-brand-50 rounded-lg transition-colors flex flex-col group border-b border-stone-50 last:border-0"
+                >
+                  <span className="text-xs font-bold text-stone-800 group-hover:text-brand-700">{s.label}</span>
+                  {s.sublabel && <span className="text-[11px] text-stone-400 truncate">{s.sublabel}</span>}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Thanh kéo bán kính (Slider min=0.5km, max=10km, step=0.5km / 500m) */}
           {customPin && (
@@ -390,7 +443,7 @@ export default function MapClient() {
 
           {!customPin && (
             <p className="mt-2 text-[11px] text-stone-400 text-center">
-              💡 Nhập tên địa điểm ở trên rồi bấm <b>🎯 Định vị</b> hoặc <b>bấm trực tiếp lên bản đồ</b> để ghim vị trí & tìm phòng!
+              💡 Nhập địa điểm ở trên chọn gợi ý / bấm <b>🎯 Định vị</b> hoặc <b>bấm trực tiếp lên bản đồ</b> để ghim vị trí!
             </p>
           )}
         </div>
