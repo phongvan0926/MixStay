@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -12,8 +12,8 @@ import { HANOI_UNIVERSITIES } from '@/lib/hanoi-locations';
  * - Zoom xa (< CLUSTER_ZOOM): gom theo QUẬN thành bong bóng "Cầu Giấy · N tin" → bấm để phóng tới.
  * - Zoom gần: pin từng tòa hiện GIÁ TỪ → bấm mở popup danh sách tin, link sang /tin/[id].
  * - Chọn quận (chip trên cùng) → phóng tới + TÔ NỔI BẬT các tòa trong quận, mờ các tòa khác.
- * - Chọn trường đại học + bán kính → vẽ vòng tròn quanh trường, lọc/hoặc tô nổi bật tòa trong bán kính
- *   (giúp sinh viên tìm phòng gần trường).
+ * - Ghim vị trí bất kỳ (Tìm kiếm theo địa điểm / địa chỉ / click trên bản đồ / trường ĐH) + bán kính nấc 500m
+ *   → vẽ vòng tròn quanh điểm ghim, lọc/tô nổi bật tòa trong bán kính.
  */
 
 type MapListing = {
@@ -23,6 +23,19 @@ type MapListing = {
 type MapProperty = {
   id: string; name: string; district: string; streetName: string;
   lat: number; lng: number; minPrice: number | null; listings: MapListing[];
+};
+
+type CustomPin = {
+  label: string;
+  lat: number;
+  lng: number;
+};
+
+type SuggestionItem = {
+  label: string;
+  sublabel?: string;
+  lat: number;
+  lng: number;
 };
 
 const HANOI_CENTER: [number, number] = [21.0285, 105.8048];
@@ -70,12 +83,11 @@ function clusterIcon(district: string, count: number, active?: boolean) {
   });
 }
 
-function uniIcon(label: string, active?: boolean) {
-  const bg = active ? '#b91c1c' : '#7c3aed';
+function customPinIcon(label: string) {
   return L.divIcon({
     className: '',
-    html: `<div style="transform:translate(-50%,-100%);display:inline-flex;align-items:center;gap:4px;background:${bg};color:#fff;font-weight:700;font-size:11px;padding:4px 8px;border-radius:9999px;box-shadow:0 2px 8px rgba(0,0,0,.35);white-space:nowrap;border:2px solid #fff;">
-      🎓 <span>${label}</span>
+    html: `<div style="transform:translate(-50%,-100%);display:inline-flex;align-items:center;gap:4px;background:#dc2626;color:#fff;font-weight:700;font-size:12px;padding:6px 12px;border-radius:9999px;box-shadow:0 4px 14px rgba(220,38,38,.45);white-space:nowrap;border:2px solid #fff;z-index:1000;">
+      📍 <span>${label}</span>
     </div>`,
     iconSize: [0, 0],
   });
@@ -87,6 +99,15 @@ const TYPE_LABEL: Record<string, string> = {
 
 function ZoomWatcher({ onZoom }: { onZoom: (z: number) => void }) {
   const map = useMapEvents({ zoomend: () => onZoom(map.getZoom()) });
+  return null;
+}
+
+function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click: (e) => {
+      onMapClick(e.latlng.lat, e.latlng.lng);
+    },
+  });
   return null;
 }
 
@@ -103,11 +124,17 @@ export default function MapClient() {
   const [flyTarget, setFlyTarget] = useState<{ center: [number, number]; zoom: number } | null>(null);
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
 
-  // Bộ lọc theo trường đại học
-  const [uniIdx, setUniIdx] = useState<number>(-1); // -1 = chưa chọn trường
-  const [radiusKm, setRadiusKm] = useState(2);
+  // Điểm ghim tuỳ chỉnh & Bán kính (step 0.5km = 500m)
+  const [customPin, setCustomPin] = useState<CustomPin | null>(null);
+  const [radiusKm, setRadiusKm] = useState(2.0); // Mặc định 2km, nấc 0.5km (500m)
   const [filterByRadius, setFilterByRadius] = useState(true);
-  const selectedUni = uniIdx >= 0 ? HANOI_UNIVERSITIES[uniIdx] : null;
+
+  // Ô tìm kiếm địa điểm / địa chỉ
+  const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     fetch('/api/rooms/map')
@@ -116,6 +143,59 @@ export default function MapClient() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  // Xử lý gợi ý tìm kiếm địa điểm (Local Universities + Nominatim OpenStreetMap API)
+  useEffect(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    // 1. Tìm local từ danh sách trường ĐH
+    const localUnis = HANOI_UNIVERSITIES.filter(
+      u => u.name.toLowerCase().includes(q) || u.short.toLowerCase().includes(q)
+    ).map(u => ({
+      label: `🎓 ${u.name}`,
+      sublabel: `Trường đại học (${u.short})`,
+      lat: u.lat,
+      lng: u.lng,
+    }));
+
+    setSuggestions(localUnis);
+    setShowSuggestions(true);
+
+    // 2. Debounce gọi Nominatim OpenStreetMap API cho địa chỉ bất kỳ
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    if (q.length >= 2) {
+      setIsSearching(true);
+      searchTimeoutRef.current = setTimeout(() => {
+        const queryTerm = q.includes('hà nội') ? q : `${q}, Hà Nội`;
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queryTerm)}&limit=5&countrycodes=vn`)
+          .then(r => r.json())
+          .then(data => {
+            if (Array.isArray(data)) {
+              const remoteList: SuggestionItem[] = data.map((item: any) => ({
+                label: item.display_name.split(',')[0] || item.display_name,
+                sublabel: item.display_name,
+                lat: parseFloat(item.lat),
+                lng: parseFloat(item.lon),
+              }));
+
+              // Gộp kết quả local ĐH + Nominatim (lọc trùng)
+              setSuggestions(prev => {
+                const existingLabels = new Set(prev.map(p => p.label));
+                const filteredRemote = remoteList.filter(r => !existingLabels.has(r.label));
+                return [...prev, ...filteredRemote];
+              });
+            }
+          })
+          .catch(() => {})
+          .finally(() => setIsSearching(false));
+      }, 400);
+    }
+  }, [searchQuery]);
 
   // Gom theo quận: tâm = trung bình toạ độ các tòa, đếm tổng số tin
   const districts = useMemo(() => {
@@ -129,39 +209,54 @@ export default function MapClient() {
     })).sort((a, b) => b.listings - a.listings);
   }, [props]);
 
-  // Gắn khoảng cách tới trường đang chọn cho từng tòa
+  // Gắn khoảng cách tới điểm ghim cho từng tòa
   const propsWithDist = useMemo(() => {
-    if (!selectedUni) return props.map(p => ({ ...p, dist: null as number | null }));
-    return props.map(p => ({ ...p, dist: distanceKm(p.lat, p.lng, selectedUni.lat, selectedUni.lng) }));
-  }, [props, selectedUni]);
+    if (!customPin) return props.map(p => ({ ...p, dist: null as number | null }));
+    return props.map(p => ({ ...p, dist: distanceKm(p.lat, p.lng, customPin.lat, customPin.lng) }));
+  }, [props, customPin]);
 
   // Danh sách tòa để vẽ pin: nếu đang lọc theo bán kính thì chỉ giữ tòa trong vòng
   const visibleProps = useMemo(() => {
-    if (selectedUni && filterByRadius) return propsWithDist.filter(p => p.dist != null && p.dist <= radiusKm);
+    if (customPin && filterByRadius) return propsWithDist.filter(p => p.dist != null && p.dist <= radiusKm);
     return propsWithDist;
-  }, [propsWithDist, selectedUni, filterByRadius, radiusKm]);
+  }, [propsWithDist, customPin, filterByRadius, radiusKm]);
 
   const pickDistrict = (d: { district: string; lat: number; lng: number }) => {
     setSelectedDistrict(d.district);
     setFlyTarget({ center: [d.lat, d.lng], zoom: CLUSTER_ZOOM });
   };
 
-  const pickUni = (idx: number) => {
-    setUniIdx(idx);
-    if (idx >= 0) {
-      const u = HANOI_UNIVERSITIES[idx];
-      setSelectedDistrict(null);
-      setFlyTarget({ center: [u.lat, u.lng], zoom: 15 }); // zoom gần để hiện pin từng tòa
-    }
+  const selectSuggestion = (item: SuggestionItem) => {
+    const cleanLabel = item.label.replace(/^🎓\s*/, '');
+    setCustomPin({ label: cleanLabel, lat: item.lat, lng: item.lng });
+    setSelectedDistrict(null);
+    setShowSuggestions(false);
+    setSearchQuery(cleanLabel);
+    setFlyTarget({ center: [item.lat, item.lng], zoom: 15 });
   };
 
-  // Khi đang lọc theo bán kính (đã chọn trường) → luôn hiện pin từng tòa, không gom cụm.
-  const clustered = zoom < CLUSTER_ZOOM && !(selectedUni && filterByRadius);
-  const inRadiusCount = selectedUni ? propsWithDist.filter(p => p.dist != null && p.dist <= radiusKm).length : 0;
+  const handleMapClick = (lat: number, lng: number) => {
+    setCustomPin({ label: 'Vị trí đã ghim', lat, lng });
+    setSelectedDistrict(null);
+    setFlyTarget({ center: [lat, lng], zoom: Math.max(zoom, 14) });
+  };
+
+  const clearCustomPin = () => {
+    setCustomPin(null);
+    setSearchQuery('');
+    setShowSuggestions(false);
+  };
+
+  // Khi đang lọc theo bán kính (đã có điểm ghim) → luôn hiện pin từng tòa, không gom cụm.
+  const clustered = zoom < CLUSTER_ZOOM && !(customPin && filterByRadius);
+  const inRadiusCount = customPin ? propsWithDist.filter(p => p.dist != null && p.dist <= radiusKm).length : 0;
+  const inRadiusListingsCount = customPin
+    ? propsWithDist.filter(p => p.dist != null && p.dist <= radiusKm).reduce((acc, p) => acc + p.listings.length, 0)
+    : 0;
 
   return (
-    <div className="relative h-full w-full">
-      {/* Thanh chọn nhanh quận */}
+    <div className="relative h-full w-full font-sans">
+      {/* Thanh chọn nhanh quận (nằm sát trên cùng) */}
       <div className="absolute top-3 left-3 right-3 z-[1000] flex gap-1.5 overflow-x-auto pb-1 pointer-events-none">
         {districts.slice(0, 12).map(d => (
           <button key={d.district}
@@ -182,41 +277,100 @@ export default function MapClient() {
         )}
       </div>
 
-      {/* Panel tìm quanh trường đại học */}
+      {/* Panel Tìm kiếm địa điểm & Thanh kéo bán kính nấc 500m (nằm ở dưới) */}
       <div className="absolute bottom-4 left-3 right-3 z-[1000] flex justify-center pointer-events-none">
-        <div className="pointer-events-auto w-full max-w-lg rounded-2xl bg-white/95 backdrop-blur border border-stone-200 shadow-lg p-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm shrink-0">🎓</span>
-            <select
-              value={uniIdx}
-              onChange={e => pickUni(Number(e.target.value))}
-              className="flex-1 min-w-0 text-sm rounded-lg border border-stone-200 px-2 py-1.5 bg-white"
-            >
-              <option value={-1}>Tìm phòng gần trường đại học…</option>
-              {HANOI_UNIVERSITIES.map((u, i) => <option key={u.name} value={i}>{u.name}</option>)}
-            </select>
-            {selectedUni && (
-              <button onClick={() => setUniIdx(-1)} className="shrink-0 text-xs text-stone-500 hover:text-stone-700 px-1">✕</button>
+        <div className="pointer-events-auto w-full max-w-lg rounded-2xl bg-white/95 backdrop-blur border border-stone-200 shadow-xl p-3">
+          
+          {/* Ô nhập tìm địa điểm bất kỳ + Dropdown gợi ý */}
+          <div className="relative">
+            <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-100 transition-all">
+              <span className="text-base shrink-0">📍</span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onFocus={() => searchQuery.trim() && setShowSuggestions(true)}
+                placeholder="Gõ địa điểm (ĐH Bách Khoa, Ngã Tư Sở, 88 Láng Hạ...)"
+                className="w-full text-sm outline-none bg-transparent placeholder-stone-400 text-stone-800"
+              />
+              {isSearching && (
+                <span className="w-3.5 h-3.5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin shrink-0" />
+              )}
+              {(searchQuery || customPin) && (
+                <button
+                  onClick={clearCustomPin}
+                  className="shrink-0 text-xs text-stone-400 hover:text-stone-700 font-bold p-1"
+                  title="Xóa điểm ghim"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Menu danh sách gợi ý địa điểm / địa chỉ */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute left-0 right-0 bottom-full mb-2 bg-white rounded-xl border border-stone-200 shadow-xl max-h-56 overflow-y-auto z-[1010] p-1">
+                {suggestions.map((item, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => selectSuggestion(item)}
+                    className="w-full text-left px-3 py-2 hover:bg-stone-50 rounded-lg transition-colors flex flex-col"
+                  >
+                    <span className="text-xs font-semibold text-stone-800">{item.label}</span>
+                    {item.sublabel && <span className="text-[11px] text-stone-400 truncate">{item.sublabel}</span>}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
-          {selectedUni && (
-            <div className="mt-2.5 flex items-center gap-3">
-              <input
-                type="range" min={0.5} max={5} step={0.5} value={radiusKm}
-                onChange={e => setRadiusKm(Number(e.target.value))}
-                className="flex-1 accent-brand-600"
-              />
-              <span className="text-xs font-semibold text-stone-700 shrink-0 w-16 text-right">{radiusKm} km</span>
-              <label className="flex items-center gap-1.5 text-xs text-stone-600 shrink-0 cursor-pointer">
-                <input type="checkbox" checked={filterByRadius} onChange={e => setFilterByRadius(e.target.checked)} className="accent-brand-600" />
-                Chỉ trong bán kính
-              </label>
+
+          {/* Thanh kéo bán kính (Slider min=0.5km, max=10km, step=0.5km / 500m) */}
+          {customPin && (
+            <div className="mt-3 pt-2.5 border-t border-stone-100">
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="text-xs font-medium text-stone-600 flex items-center gap-1">
+                  📏 Bán kính tìm kiếm:
+                </span>
+                <span className="text-xs font-bold text-brand-600 bg-brand-50 border border-brand-200 px-2 py-0.5 rounded-full">
+                  {radiusKm < 1 ? `${radiusKm * 1000}m (0.5km)` : `${radiusKm} km`}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min={0.5}
+                  max={10}
+                  step={0.5}
+                  value={radiusKm}
+                  onChange={e => setRadiusKm(Number(e.target.value))}
+                  className="flex-1 accent-brand-600 cursor-pointer h-2 bg-stone-200 rounded-lg"
+                />
+                <label className="flex items-center gap-1.5 text-xs text-stone-700 shrink-0 cursor-pointer font-medium">
+                  <input
+                    type="checkbox"
+                    checked={filterByRadius}
+                    onChange={e => setFilterByRadius(e.target.checked)}
+                    className="accent-brand-600 rounded"
+                  />
+                  Chỉ hiện trong bán kính
+                </label>
+              </div>
+
+              <div className="mt-2 flex items-center justify-between text-[11px] text-stone-500">
+                <p className="truncate">
+                  📍 Đang ghim: <b className="text-stone-800">{customPin.label}</b>
+                </p>
+                <p className="shrink-0 font-medium">
+                  <b className="text-emerald-600">{inRadiusCount}</b> tòa (<b className="text-brand-600">{inRadiusListingsCount}</b> tin)
+                </p>
+              </div>
             </div>
           )}
-          {selectedUni && (
-            <p className="mt-1.5 text-[11px] text-stone-500">
-              <b className="text-emerald-700">{inRadiusCount}</b> tòa trong {radiusKm}km quanh {selectedUni.short}
-              {!filterByRadius && ' (các tòa khác vẫn hiện, mờ hơn)'}
+
+          {!customPin && (
+            <p className="mt-2 text-[11px] text-stone-400 text-center">
+              💡 Gõ tên địa điểm ở trên hoặc <b>bấm trực tiếp lên bản đồ</b> để ghim vị trí & kéo bán kính tìm phòng!
             </p>
           )}
         </div>
@@ -234,25 +388,28 @@ export default function MapClient() {
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <ZoomWatcher onZoom={setZoom} />
+        <MapClickHandler onMapClick={handleMapClick} />
         <FlyTo target={flyTarget} />
 
-        {/* Vòng bán kính quanh trường đang chọn */}
-        {selectedUni && (
+        {/* Vòng tròn bán kính bao quanh điểm ghim tùy chỉnh */}
+        {customPin && (
           <Circle
-            center={[selectedUni.lat, selectedUni.lng]}
+            center={[customPin.lat, customPin.lng]}
             radius={radiusKm * 1000}
-            pathOptions={{ color: '#7c3aed', fillColor: '#7c3aed', fillOpacity: 0.08, weight: 1.5 }}
+            pathOptions={{ color: '#dc2626', fillColor: '#ef4444', fillOpacity: 0.12, weight: 2 }}
           />
         )}
 
-        {/* Marker các trường đại học (luôn hiện để sinh viên định vị) */}
-        {HANOI_UNIVERSITIES.map((u, i) => (
-          <Marker key={u.name} position={[u.lat, u.lng]} icon={uniIcon(u.short, i === uniIdx)}
-            eventHandlers={{ click: () => pickUni(i) }}
-            zIndexOffset={500} />
-        ))}
+        {/* Marker cho điểm ghim tùy chỉnh */}
+        {customPin && (
+          <Marker
+            position={[customPin.lat, customPin.lng]}
+            icon={customPinIcon(customPin.label)}
+            zIndexOffset={1000}
+          />
+        )}
 
-        {/* Zoom xa: bong bóng quận (ẩn khi đang lọc theo bán kính) */}
+        {/* Zoom xa: bong bóng quận (ẩn khi đang có điểm ghim + lọc bán kính) */}
         {clustered && districts.map(d => (
           <Marker key={d.district} position={[d.lat, d.lng]} icon={clusterIcon(d.district, d.listings, selectedDistrict === d.district)}
             eventHandlers={{ click: () => pickDistrict(d) }} />
@@ -260,11 +417,11 @@ export default function MapClient() {
 
         {/* Zoom gần: pin từng tòa */}
         {!clustered && visibleProps.map(p => {
-          const inRadius = selectedUni ? (p.dist != null && p.dist <= radiusKm) : true;
+          const inRadius = customPin ? (p.dist != null && p.dist <= radiusKm) : true;
           const inDistrict = selectedDistrict ? p.district === selectedDistrict : true;
-          // Nổi bật khi thuộc quận đang chọn hoặc trong bán kính trường (không lọc cứng)
-          const highlight = (!!selectedDistrict && inDistrict) || (!!selectedUni && !filterByRadius && inRadius);
-          const dim = (!!selectedDistrict && !inDistrict) || (!!selectedUni && !filterByRadius && !inRadius);
+          // Nổi bật khi thuộc quận đang chọn hoặc trong bán kính điểm ghim (khi không lọc cứng)
+          const highlight = (!!selectedDistrict && inDistrict) || (!!customPin && !filterByRadius && inRadius);
+          const dim = (!!selectedDistrict && !inDistrict) || (!!customPin && !filterByRadius && !inRadius);
           return (
             <Marker key={p.id} position={[p.lat, p.lng]} icon={pinIcon(priceShort(p.minPrice), { dim, highlight })}
               zIndexOffset={highlight ? 300 : 0}>
@@ -278,7 +435,7 @@ export default function MapClient() {
                   <p className="font-bold text-sm text-stone-900 mb-0.5">{p.name}</p>
                   <p className="text-xs text-stone-500 mb-2">
                     📍 {p.streetName ? `${p.streetName} • ` : ''}{p.district}
-                    {p.dist != null && <span className="text-violet-600"> • cách {selectedUni?.short} {p.dist.toFixed(1)}km</span>}
+                    {p.dist != null && <span className="text-red-600 font-semibold"> • cách ghim {p.dist < 1 ? `${(p.dist * 1000).toFixed(0)}m` : `${p.dist.toFixed(1)}km`}</span>}
                   </p>
                   <div className="space-y-1.5 max-h-56 overflow-y-auto">
                     {p.listings.map(l => (
