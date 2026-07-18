@@ -81,11 +81,17 @@ export async function GET(req: NextRequest) {
 
     const { page, limit, skip } = getPaginationParams(url);
 
+    const sort = url.searchParams.get('sort');
+    const orderBy =
+      sort === 'name_asc' ? { name: 'asc' as const } :
+      sort === 'role' ? { role: 'asc' as const } :
+      { createdAt: 'desc' as const };
+
     const [users, total] = await Promise.all([
       prisma.user.findMany({
         where,
         select: safeUserSelect,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip,
         take: limit,
       }),

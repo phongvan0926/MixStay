@@ -33,11 +33,14 @@ export async function GET(req: NextRequest) {
         { name: { contains: search, mode: 'insensitive' } },
         { district: { contains: search, mode: 'insensitive' } },
         { streetName: { contains: search, mode: 'insensitive' } },
+        { fullAddress: { contains: search, mode: 'insensitive' } },
+        { landlord: { is: { name: { contains: search, mode: 'insensitive' } } } },
       ];
     }
 
     const companyId = url.searchParams.get('companyId');
-    if (companyId) where.companyId = companyId;
+    if (companyId === '__none__') where.companyId = null;      // tòa chưa thuộc công ty nào
+    else if (companyId) where.companyId = companyId;
 
     const { page, limit, skip } = getPaginationParams(url);
 

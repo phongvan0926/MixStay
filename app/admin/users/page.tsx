@@ -1,10 +1,10 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
 import { formatDate, getRoleLabel, getRoleColor } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
-import { useUsers } from '@/hooks/useData';
+import { useUsers, useUserStats } from '@/hooks/useData';
 import { SkeletonStats, SkeletonCardGrid } from '@/components/ui/Skeleton';
 import { ALL_ADMIN_PERMISSIONS, type AdminPermission } from '@/lib/permissions';
 
@@ -40,14 +40,29 @@ export default function AdminUsersPage() {
 
   const [page, setPage] = useState(1);
 
-  const { users: rawUsers, pagination, isLoading: loading, mutate } = useUsers({ page: String(page), limit: '20' });
-  const users: User[] = rawUsers;
-
-  // Filters & sort
-  const [search, setSearch] = useState('');
+  // Bộ lọc + tìm kiếm chạy SERVER-SIDE (dò toàn nền tảng), không còn lọc client trên 20 dòng của trang.
+  const [searchInput, setSearchInput] = useState(''); // gõ trực tiếp
+  const [search, setSearch] = useState('');           // đã debounce → gửi API
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [sortBy, setSortBy] = useState('createdAt_desc');
+
+  // Debounce ô tìm: mỗi lần đổi từ khoá → dồn kết quả về trang 1
+  useEffect(() => {
+    const t = setTimeout(() => { setSearch(searchInput.trim()); setPage(1); }, 350);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const userParams: Record<string, string> = { page: String(page), limit: '20' };
+  if (search) userParams.search = search;
+  if (roleFilter) userParams.role = roleFilter;
+  if (statusFilter) userParams.status = statusFilter;
+  if (sortBy) userParams.sort = sortBy;
+
+  const { users: rawUsers, pagination, isLoading: loading, mutate } = useUsers(userParams);
+  const users: User[] = rawUsers;
+  // Thẻ thống kê đầu trang = TỔNG toàn nền tảng (không đổi theo trang/bộ lọc)
+  const { stats: platformStats, mutate: mutateStats } = useUserStats();
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -68,35 +83,20 @@ export default function AdminUsersPage() {
 
   const handlePageChange = (newPage: number) => { setPage(newPage); };
 
-  // Client-side filter + sort
-  const filtered = useMemo(() => {
-    let list = [...users];
+  // Đổi bộ lọc → dồn về trang 1 (kết quả lọc server-side đã đúng toàn nền tảng)
+  const changeRole = (r: string) => { setRoleFilter(r); setPage(1); };
+  const changeStatus = (s: string) => { setStatusFilter(s); setPage(1); };
+  const changeSort = (s: string) => { setSortBy(s); setPage(1); };
 
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      list = list.filter(u =>
-        u.name.toLowerCase().includes(q) ||
-        (u.email || '').toLowerCase().includes(q) ||
-        (u.phone || '').includes(q)
-      );
-    }
-    if (roleFilter) list = list.filter(u => u.role === roleFilter);
-    if (statusFilter === 'active') list = list.filter(u => u.isActive);
-    if (statusFilter === 'inactive') list = list.filter(u => !u.isActive);
+  // Server đã lọc + phân trang → render thẳng, không lọc lại client
+  const filtered = users;
 
-    if (sortBy === 'name_asc') list.sort((a, b) => a.name.localeCompare(b.name));
-    else if (sortBy === 'createdAt_desc') list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    else if (sortBy === 'role') list.sort((a, b) => a.role.localeCompare(b.role));
-
-    return list;
-  }, [users, search, roleFilter, statusFilter, sortBy]);
-
-  const stats = useMemo(() => {
-    const active = users.filter(u => u.isActive).length;
-    const byRole: Record<string, number> = {};
-    ROLES.forEach(r => { byRole[r] = users.filter(u => u.role === r).length; });
-    return { total: users.length, active, byRole };
-  }, [users]);
+  // Số liệu TỔNG nền tảng (fallback về trang hiện tại nếu chưa tải xong stats)
+  const stats = platformStats || {
+    total: pagination?.total ?? users.length,
+    active: users.filter(u => u.isActive).length,
+    byRole: ROLES.reduce((m, r) => { m[r] = users.filter(u => u.role === r).length; return m; }, {} as Record<string, number>),
+  };
 
   const getInitials = (name: string) =>
     name?.split(' ').map(w => w[0]).slice(-2).join('').toUpperCase() || '?';
@@ -158,6 +158,7 @@ export default function AdminUsersPage() {
       toast.success(editUser ? 'Đã cập nhật người dùng' : 'Đã thêm người dùng mới');
       closeModal();
       mutate();
+      mutateStats();
     } finally {
       setSubmitting(false);
     }
@@ -174,6 +175,7 @@ export default function AdminUsersPage() {
       toast.success(data.message);
       setDeleteTarget(null);
       mutate();
+      mutateStats();
     } finally {
       setDeleting(false);
     }
@@ -232,7 +234,7 @@ export default function AdminUsersPage() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
         {/* Bấm 1 vai trò → lọc danh sách chỉ hiện tài khoản loại đó (bấm lại để bỏ lọc). */}
         {ROLES.map(r => (
-          <button key={r} type="button" onClick={() => setRoleFilter(roleFilter === r ? '' : r)}
+          <button key={r} type="button" onClick={() => changeRole(roleFilter === r ? '' : r)}
             className={`card p-3 text-center transition-all ${roleFilter === r ? 'ring-2 ring-brand-500 bg-brand-50' : 'hover:border-brand-300'}`}>
             <div className="text-xl font-bold text-stone-900">{stats.byRole[r] || 0}</div>
             <div className={`badge text-[10px] mt-1 ${getRoleColor(r)}`}>{getRoleLabel(r)}</div>
@@ -252,26 +254,26 @@ export default function AdminUsersPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
-            type="text" placeholder="Tìm tên, email, SĐT..." value={search}
-            onChange={e => setSearch(e.target.value)}
+            type="text" placeholder="Tìm tên, email, SĐT..." value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
             className="input-field pl-9 w-full"
           />
         </div>
         {/* 3 bộ lọc trên CÙNG 1 dòng (mobile xếp dọc) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Role filter */}
-          <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="input-field w-full">
+          <select value={roleFilter} onChange={e => changeRole(e.target.value)} className="input-field w-full">
             <option value="">Tất cả vai trò</option>
             {ROLES.map(r => <option key={r} value={r}>{getRoleLabel(r)}</option>)}
           </select>
           {/* Status filter */}
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="input-field w-full">
+          <select value={statusFilter} onChange={e => changeStatus(e.target.value)} className="input-field w-full">
             <option value="">Tất cả trạng thái</option>
             <option value="active">Đang hoạt động</option>
             <option value="inactive">Vô hiệu</option>
           </select>
           {/* Sort */}
-          <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="input-field w-full">
+          <select value={sortBy} onChange={e => changeSort(e.target.value)} className="input-field w-full">
             <option value="createdAt_desc">Mới nhất trước</option>
             <option value="name_asc">Tên A → Z</option>
             <option value="role">Theo vai trò</option>
@@ -363,7 +365,7 @@ export default function AdminUsersPage() {
               </svg>
               <p className="text-stone-400 font-medium">Không tìm thấy người dùng</p>
               {(search || roleFilter || statusFilter) && (
-                <button onClick={() => { setSearch(''); setRoleFilter(''); setStatusFilter(''); }}
+                <button onClick={() => { setSearchInput(''); setSearch(''); setRoleFilter(''); setStatusFilter(''); setPage(1); }}
                   className="text-brand-600 text-sm mt-2 hover:underline">
                   Xoá bộ lọc
                 </button>

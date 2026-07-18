@@ -71,6 +71,18 @@ export function useUsers(params?: Record<string, string>) {
   };
 }
 
+// Số liệu TỔNG toàn nền tảng cho trang Quản lý người dùng (không theo trang/bộ lọc)
+export function useUserStats() {
+  const { data, error, isLoading, mutate } = useSWR('/api/users/stats', fetcher, SWR_OPTIONS);
+  return { stats: data as { total: number; active: number; byRole: Record<string, number> } | undefined, error, isLoading, mutate };
+}
+
+// Số liệu TỔNG toàn nền tảng cho trang Giao dịch
+export function useDealStats() {
+  const { data, error, isLoading, mutate } = useSWR('/api/deals/stats', fetcher, SWR_OPTIONS);
+  return { stats: data as { total: number; byStatus: Record<string, number>; commissionTotal: number; commissionCompany: number } | undefined, error, isLoading, mutate };
+}
+
 export function useShareLinks(params?: Record<string, string>) {
   const query = params ? new URLSearchParams(params).toString() : '';
   const { data, error, isLoading, mutate } = useSWR(

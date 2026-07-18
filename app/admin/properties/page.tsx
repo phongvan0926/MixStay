@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
 import { formatCurrency, getStatusColor, getStatusLabel } from '@/lib/utils';
@@ -19,7 +19,26 @@ export default function AdminPropertiesPage() {
   const [page, setPage] = useState(1);
 
   const { stats } = useDashboardStats();
-  const { properties, pagination, isLoading: loading, mutate } = useProperties({ page: String(page), limit: '20' });
+
+  // Bộ lọc chạy SERVER-SIDE (dò toàn nền tảng, dồn về trang 1) — không lọc client trên 20 dòng nữa.
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [filterCompany, setFilterCompany] = useState('');
+  const [filterLandlord, setFilterLandlord] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+
+  useEffect(() => {
+    const t = setTimeout(() => { setSearch(searchInput.trim()); setPage(1); }, 350);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const propParams: Record<string, string> = { page: String(page), limit: '20' };
+  if (search) propParams.search = search;
+  if (filterCompany) propParams.companyId = filterCompany;
+  if (filterLandlord) propParams.landlordId = filterLandlord;
+  if (filterStatus) propParams.status = filterStatus;
+
+  const { properties, pagination, isLoading: loading, mutate } = useProperties(propParams);
   const { companies } = useCompanies();
   const { users: landlordUsers } = useUsers({ role: 'LANDLORD', limit: '500' });
 
@@ -27,51 +46,23 @@ export default function AdminPropertiesPage() {
   const [editingProperty, setEditingProperty] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Filters
-  const [search, setSearch] = useState('');
-  const [filterCompany, setFilterCompany] = useState('');
-  const [filterLandlord, setFilterLandlord] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const handlePageChange = (newPage: number) => { setPage(newPage); };
 
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage);
-  };
+  const changeCompany = (v: string) => { setFilterCompany(v); setFilterLandlord(''); setPage(1); };
+  const changeLandlord = (v: string) => { setFilterLandlord(v); setPage(1); };
+  const changeStatus = (v: string) => { setFilterStatus(v); setPage(1); };
 
-  // Landlords filtered by selected company (cascade)
-  const landlords = useMemo(() => {
-    const source = filterCompany
-      ? properties.filter(p => filterCompany === '__none__' ? !p.companyId : p.companyId === filterCompany)
-      : properties;
-    const map = new Map<string, { id: string; name: string }>();
-    source.forEach(p => {
-      if (p.landlord && !map.has(p.landlord.id)) {
-        map.set(p.landlord.id, { id: p.landlord.id, name: p.landlord.name });
-      }
-    });
-    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [properties, filterCompany]);
+  // Dropdown chủ nhà = TOÀN BỘ chủ nhà (không phụ thuộc trang đang xem)
+  const landlords = useMemo(
+    () => [...(landlordUsers || [])].map((u: any) => ({ id: u.id, name: u.name })).sort((a, b) => a.name.localeCompare(b.name)),
+    [landlordUsers]
+  );
 
-  // Bỏ dấu tiếng Việt + thường hoá → gõ tìm tòa nhà theo tên/địa chỉ/quận/chủ nhà không phân biệt dấu.
-  const norm = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
-
-  const filtered = useMemo(() => {
-    const q = norm(search.trim());
-    return properties.filter(p => {
-      if (filterCompany && p.companyId !== filterCompany) return false;
-      if (filterCompany === '__none__' && p.companyId) return false;
-      if (filterLandlord && p.landlord?.id !== filterLandlord) return false;
-      if (filterStatus && p.status !== filterStatus) return false;
-      if (q) {
-        const hay = norm([p.name, p.fullAddress, p.district, p.streetName, p.landlord?.name].filter(Boolean).join(' '));
-        if (!hay.includes(q)) return false;
-      }
-      return true;
-    });
-  }, [properties, search, filterCompany, filterLandlord, filterStatus]);
+  // Server đã lọc + phân trang → render thẳng
+  const filtered = properties;
 
   const resetFilters = () => {
-    setSearch(''); setFilterCompany(''); setFilterLandlord(''); setFilterStatus('');
-    setPage(1);
+    setSearchInput(''); setSearch(''); setFilterCompany(''); setFilterLandlord(''); setFilterStatus(''); setPage(1);
   };
 
   const handleApprove = async (id: string, status: string) => {
@@ -167,7 +158,7 @@ export default function AdminPropertiesPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input type="text" placeholder="Gõ để lọc tòa nhà theo tên, địa chỉ, quận, chủ nhà…"
-              value={search} onChange={e => setSearch(e.target.value)} className="input-field pl-9 w-full" />
+              value={searchInput} onChange={e => setSearchInput(e.target.value)} className="input-field pl-9 w-full" />
           </div>
           <div className="flex items-center gap-3 sm:ml-auto">
             {hasFilters && (
@@ -175,22 +166,22 @@ export default function AdminPropertiesPage() {
                 className="px-3 py-2 text-sm text-stone-500 hover:text-stone-700 whitespace-nowrap">Xoá bộ lọc</button>
             )}
             <span className="text-sm text-stone-400 whitespace-nowrap">
-              {filtered.length}/{properties.length} tòa nhà
+              {pagination?.total ?? filtered.length} tòa nhà
             </span>
           </div>
         </div>
         {/* Hàng 2: Công ty + Chủ nhà + Trạng thái cùng 1 hàng */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <select value={filterCompany} onChange={e => { setFilterCompany(e.target.value); setFilterLandlord(''); }} className="input-field w-full">
+          <select value={filterCompany} onChange={e => changeCompany(e.target.value)} className="input-field w-full">
             <option value="">Tất cả công ty</option>
             <option value="__none__">Chưa gán công ty</option>
             {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}{c.isApproved === false ? ' (chờ duyệt)' : ''}</option>)}
           </select>
-          <select value={filterLandlord} onChange={e => setFilterLandlord(e.target.value)} className="input-field w-full">
+          <select value={filterLandlord} onChange={e => changeLandlord(e.target.value)} className="input-field w-full">
             <option value="">Tất cả chủ nhà</option>
             {landlords.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
           </select>
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="input-field w-full">
+          <select value={filterStatus} onChange={e => changeStatus(e.target.value)} className="input-field w-full">
             <option value="">Tất cả trạng thái</option>
             <option value="PENDING">Chờ duyệt</option>
             <option value="APPROVED">Đã duyệt</option>

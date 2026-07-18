@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage';
-import { useDeals, useCompanies } from '@/hooks/useData';
+import { useDeals, useCompanies, useDealStats } from '@/hooks/useData';
 import { SkeletonStats, SkeletonTable } from '@/components/ui/Skeleton';
 
 export default function AdminDealsPage() {
@@ -14,6 +14,8 @@ export default function AdminDealsPage() {
 
   const { deals, pagination, isLoading: loading, mutate } = useDeals({ page: String(page), limit: '20' });
   const { companies } = useCompanies();
+  // Thẻ thống kê = TỔNG toàn nền tảng (trước đây cộng nhầm theo 20 dòng của trang)
+  const { stats: dealStats } = useDealStats();
 
   const handlePageChange = (newPage: number) => { setPage(newPage); };
 
@@ -40,17 +42,24 @@ export default function AdminDealsPage() {
 
   if (loading) return <div className="p-8"><SkeletonStats count={4} /><div className="mt-6"><SkeletonTable rows={5} cols={6} /></div></div>;
 
-  const activeDeals = filtered.filter(d => d.status === 'CONFIRMED' || d.status === 'PAID');
-  const totalCommission = activeDeals.reduce((s, d) => s + (d.commissionTotal || 0), 0);
-  const companyCommission = activeDeals.reduce((s, d) => s + (d.commissionCompany || 0), 0);
-  const confirmedCount = activeDeals.length;
-  const pendingCount = filtered.filter(d => d.status === 'PENDING').length;
+  // Số liệu TỔNG nền tảng; fallback về trang hiện tại khi stats chưa tải xong
+  const totalDeals = dealStats?.total ?? filtered.length;
+  const confirmedCount = dealStats
+    ? (dealStats.byStatus?.CONFIRMED ?? 0) + (dealStats.byStatus?.PAID ?? 0)
+    : filtered.filter(d => d.status === 'CONFIRMED' || d.status === 'PAID').length;
+  const pendingCount = dealStats?.byStatus?.PENDING ?? filtered.filter(d => d.status === 'PENDING').length;
+  const totalCommission = dealStats
+    ? dealStats.commissionTotal
+    : filtered.filter(d => d.status === 'CONFIRMED' || d.status === 'PAID').reduce((s, d) => s + (d.commissionTotal || 0), 0);
+  const companyCommission = dealStats
+    ? dealStats.commissionCompany
+    : filtered.filter(d => d.status === 'CONFIRMED' || d.status === 'PAID').reduce((s, d) => s + (d.commissionCompany || 0), 0);
 
   const statCards = [
-    { label: 'Tổng giao dịch', value: filtered.length, icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>), gradient: 'from-blue-500 to-blue-600', bgLight: 'bg-blue-50', textColor: 'text-blue-700' },
+    { label: 'Tổng giao dịch', value: totalDeals, icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>), gradient: 'from-blue-500 to-blue-600', bgLight: 'bg-blue-50', textColor: 'text-blue-700' },
     { label: 'Đã xác nhận', value: confirmedCount, sub: pendingCount > 0 ? `${pendingCount} chờ duyệt` : undefined, icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>), gradient: 'from-emerald-500 to-emerald-600', bgLight: 'bg-emerald-50', textColor: 'text-emerald-700' },
-    { label: 'Tổng hoa hồng', value: formatCurrency(totalCommission), icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>), gradient: 'from-brand-500 to-brand-600', bgLight: 'bg-brand-50', textColor: 'text-brand-700' },
-    { label: 'HH Công ty', value: formatCurrency(companyCommission), icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>), gradient: 'from-purple-500 to-purple-600', bgLight: 'bg-purple-50', textColor: 'text-purple-700' },
+    { label: 'Tổng hoa hồng', value: totalCommission == null ? '—' : formatCurrency(totalCommission), icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>), gradient: 'from-brand-500 to-brand-600', bgLight: 'bg-brand-50', textColor: 'text-brand-700' },
+    { label: 'HH Công ty', value: companyCommission == null ? '—' : formatCurrency(companyCommission), icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>), gradient: 'from-purple-500 to-purple-600', bgLight: 'bg-purple-50', textColor: 'text-purple-700' },
   ];
 
   const hasFilters = filterCompany || filterStatus;

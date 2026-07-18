@@ -45,7 +45,12 @@ export default function LandlordPropertiesPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState(''); // tìm theo mã tin (MS-…) hoặc tên loại phòng
 
-  const { properties, pagination, isLoading: loading, mutate: mutateProps } = useProperties({ page: String(page), limit: '20' });
+  // Khi ĐANG tìm: nạp TẤT CẢ tòa của chủ nhà (giới hạn cao) để dò xuyên trang, không kẹt ở 20 dòng/trang;
+  // khi không tìm thì phân trang bình thường.
+  const searching = !!search.trim();
+  const { properties, pagination, isLoading: loading, mutate: mutateProps } = useProperties(
+    searching ? { page: '1', limit: '300' } : { page: String(page), limit: '20' }
+  );
   const { roomTypes, mutate: mutateRT } = useRoomTypes({ limit: '500' });
   const { inquiries, mutate: mutateInquiries } = useInquiries();
   const { stats } = useDashboardStats();
@@ -604,7 +609,7 @@ export default function LandlordPropertiesPage() {
         )}
       </div>
 
-      {pagination && (
+      {pagination && !searching && (
         <Pagination page={page} totalPages={pagination.totalPages} total={pagination.total} onPageChange={handlePageChange} />
       )}
 
