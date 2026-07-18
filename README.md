@@ -234,6 +234,16 @@ mixstay/
 
 ## Changelog
 
+### v9.6 — 2026-07-17 (loạt sửa lớn: lọc/số liệu, mã công ty, bản đồ ĐH, đăng ký chủ nhà)
+- **Lọc dồn trang 1 (server-side):** ô gõ-để-lọc ở admin/users, admin/properties, landlord/properties trước chỉ lọc client trên 20 dòng của trang → nay đẩy từ khoá + bộ lọc lên server, debounce + `setPage(1)`, dò xuyên toàn bộ. API properties search thêm fullAddress + tên chủ nhà.
+- **Số liệu TỔNG nền tảng:** thẻ thống kê Quản lý người dùng + Giao dịch lấy `/api/users/stats` & `/api/deals/stats` (aggregate groupBy) thay vì cộng theo trang; hoa hồng gate `VIEW_FINANCIAL_REPORTS`.
+- **Tiện ích:** bỏ trùng "Bình nóng lạnh" → "Bàn ăn"; RoomForm/QuickRoomTypeForm dùng chung `lib/listing-options`; migrate 667 phòng cũ "Bình nóng lạnh" → "Nóng lạnh".
+- **Ô "Thuộc công ty":** `SearchableSelect` (gõ lọc); `scope=active` trả thêm công ty do CHÍNH user tạo (kể cả chờ duyệt) → chủ nhà chọn được công ty vừa tạo; tạo công ty chờ duyệt → notification nhắc admin.
+- **Mã công ty:** `Company.code` (admin đặt, VD 066, unique ≤8 ký tự); mã tin HIỂN THỊ ghép `MS-066-XXXXXX` (không đổi listingCode gốc); tìm "066" ra mọi tin công ty đó. `lib/listing-code`: formatListingCode/parseComposedListingCode/normalizeCompanyCode.
+- **Bản đồ:** chip quận đếm SỐ TIN; popup ảnh tòa banner lớn; bấm quận tô nổi bật (mờ quận khác); 18 trường ĐH lớn (`HANOI_UNIVERSITIES`) + chọn trường + slider bán kính 0.5–5km + toggle lọc + vòng tròn; nút trang chủ gradient nổi bật.
+- **Cảnh báo trùng tòa (admin):** `/api/properties/duplicate-check` — tòa chờ duyệt hiện "⚠️ Có thể trùng" nếu tên gần giống cùng quận HOẶC toạ độ < ~150m; tự mất sau khi duyệt.
+- **Đăng ký:** Chủ nhà đứng trước CTV; chủ nhà đăng ký kèm tên công ty → tạo công ty chờ duyệt; DUYỆT công ty → tự duyệt các TÒA NHÀ chờ duyệt của công ty (tin đăng vẫn duyệt riêng).
+
 ### v9.5.1 — 2026-07-17 (sửa bản đồ Google trang tin bị chặn + lối vào bản đồ dễ thấy hơn)
 - **Sửa "This content is blocked" ở bản đồ trang tin đăng:** iframe Google Maps (`maps.google.com/...&output=embed`) bị CHÍNH CSP `frame-src` của app chặn từ đợt siết bảo mật (chỉ cho YouTube/TikTok/Facebook). Thêm `https://maps.google.com https://www.google.com` vào `frame-src` (next.config.js) → bản đồ chỉ đường trên trang tin hoạt động lại như cũ.
 - **Nút bản đồ trên nav:** desktop đổi thành "🗺️ Tìm phòng theo bản đồ"; mobile hiện "🗺️ Bản đồ" (có chữ, không còn mỗi icon).
