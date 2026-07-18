@@ -234,12 +234,12 @@ mixstay/
 
 ## Changelog
 
-### v9.7 — 2026-07-19 (tìm kiếm & ghim vị trí bất kỳ trên bản đồ + bán kính nấc 500m)
-- **Ghim vị trí bất kỳ trên bản đồ (`MapClient.tsx`):**
-  - **Ô Tìm kiếm địa điểm/địa chỉ:** Gõ từ khóa địa điểm (ví dụ: ĐH Bách Khoa, Ngã Tư Sở, 88 Láng Hạ...) với gợi ý dropdown kết hợp giữa danh sách trường ĐH local và OpenStreetMap Nominatim Geocoding API.
-  - **Ghim trực tiếp bằng cách click:** Click vào bất kỳ vị trí nào trên bản đồ để ghim điểm tìm kiếm 📍 (`customPin`).
-  - **Slider bán kính nấc 500m:** Slider từ `0.5km` đến `10km`, mỗi nấc kéo nhảy đúng **500m** (`step=0.5`). Hiển thị nhãn trực quan (500m, 1km, 1.5km...).
-  - **Lọc & Tô nổi bật:** Tự động tính cự ly toán học, vẽ vòng tròn bán kính màu đỏ, lọc/tô nổi bật các tòa trong bán kính và báo tổng số tòa/số tin tìm thấy.
+### v9.7 — 2026-07-19 (nút Định vị địa điểm bất kỳ trên bản đồ + bán kính nấc 500m)
+- **Nút "🎯 Định vị" & Ghim vị trí bất kỳ (`MapClient.tsx`):**
+  - **Nhập tên địa điểm + Bấm 🎯 Định vị (hoặc Enter):** Gõ tên địa điểm (VD: *Đại học Bách Khoa*, *Ngã Tư Sở*, *88 Láng Hạ*...) rồi bấm nút **"🎯 Định vị"** ➔ Tự động xác định tọa độ (ưu tiên dữ liệu local trường ĐH/quận Hà Nội, fallback gọi Nominatim Geocoding API), ghim vị trí ngay lập tức 📍 (`customPin`), cuộn bản đồ tới vị trí đó và hiển thị slider bán kính.
+  - **Ghim trực tiếp bằng cách click:** Click vào bất kỳ vị trí nào trên bản đồ để ghim nhanh điểm cần tìm.
+  - **Slider bán kính nấc 500m:** Slider từ `0.5km` đến `10km`, mỗi nấc nhảy **500m** (`step=0.5`).
+  - **Lọc & Báo cáo:** Tự động tính cự ly toán học, vẽ vòng tròn bán kính đỏ, lọc/tô nổi bật các tòa trong bán kính và báo tổng số tòa/số tin tìm thấy.
 
 ### v9.6 — 2026-07-17 (loạt sửa lớn: lọc/số liệu, mã công ty, bản đồ ĐH, đăng ký chủ nhà)
 - **Lọc dồn trang 1 (server-side):** ô gõ-để-lọc ở admin/users, admin/properties, landlord/properties trước chỉ lọc client trên 20 dòng của trang → nay đẩy từ khoá + bộ lọc lên server, debounce + `setPage(1)`, dò xuyên toàn bộ. API properties search thêm fullAddress + tên chủ nhà.
