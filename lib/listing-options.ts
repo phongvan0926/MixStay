@@ -5,7 +5,7 @@
 export const AMENITY_OPTIONS = [
   'Điều hoà', 'Nóng lạnh', 'WC riêng', 'Bếp riêng', 'Ban công',
   'Giường', 'Tủ quần áo', 'Máy giặt riêng', 'Tủ lạnh', 'Bàn làm việc',
-  'Kệ bếp', 'Bình nóng lạnh', 'Rèm cửa', 'Quạt trần', 'Smart TV',
+  'Kệ bếp', 'Bàn ăn', 'Rèm cửa', 'Quạt trần', 'Smart TV',
 ];
 
 export const ROOM_TYPE_OPTIONS = [

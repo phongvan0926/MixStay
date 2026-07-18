@@ -2,21 +2,10 @@
 
 import { useState, useMemo } from 'react';
 import { formatCurrency } from '@/lib/utils';
+// Danh mục dùng chung để 3 form không lệch nhau
+import { AMENITY_OPTIONS, ROOM_TYPE_OPTIONS } from '@/lib/listing-options';
 
-const ROOM_TYPES = [
-  { value: 'studio', label: 'Studio' },
-  { value: 'gac_xep', label: 'Gác xép' },
-  { value: 'don', label: 'Phòng đơn' },
-  { value: '1k1n', label: '1 ngủ 1 khách' },
-  { value: '2k1n', label: '2 ngủ 1 khách' },
-  { value: 'duplex', label: 'Duplex' },
-];
-
-const AMENITY_OPTIONS = [
-  'Điều hoà', 'Nóng lạnh', 'WC riêng', 'Bếp riêng', 'Ban công',
-  'Giường', 'Tủ quần áo', 'Máy giặt riêng', 'Tủ lạnh', 'Bàn làm việc',
-  'Kệ bếp', 'Bình nóng lạnh', 'Rèm cửa', 'Quạt trần', 'Smart TV',
-];
+const ROOM_TYPES = [...ROOM_TYPE_OPTIONS];
 
 function formatVndInput(val: number | string): string {
   const num = typeof val === 'string' ? parseInt(val.replace(/\D/g, ''), 10) : val;

@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { formatCurrency } from '@/lib/utils';
+// Danh mục tiện ích dùng chung (tránh 3 form lệch nhau)
+import { AMENITY_OPTIONS } from '@/lib/listing-options';
 
 interface RoomData {
   propertyId: string;
@@ -46,11 +48,6 @@ const ROOM_TYPES = [
   { value: 'duplex', label: 'Duplex' },
 ];
 
-const AMENITY_OPTIONS = [
-  'Điều hoà', 'Nóng lạnh', 'WC riêng', 'Bếp riêng', 'Ban công',
-  'Giường', 'Tủ quần áo', 'Máy giặt riêng', 'Tủ lạnh', 'Bàn làm việc',
-  'Kệ bếp', 'Bình nóng lạnh', 'Rèm cửa', 'Quạt trần', 'Smart TV',
-];
 
 const defaultData: RoomData = {
   propertyId: '',
