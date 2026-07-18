@@ -129,3 +129,27 @@ export function findDistrictForStreet(street: string | null | undefined): string
   if (!street) return null;
   return STREET_DISTRICT_MAP[normStreet(street)] ?? null;
 }
+
+// Các trường đại học/học viện lớn ở Hà Nội — hiển thị trên bản đồ tìm phòng /ban-do
+// để sinh viên tìm phòng theo bán kính quanh trường. Toạ độ tra từ OSM (xấp xỉ vị trí cổng chính).
+export type Uni = { name: string; short: string; lat: number; lng: number };
+export const HANOI_UNIVERSITIES: Uni[] = [
+  { name: 'ĐH Bách Khoa Hà Nội', short: 'Bách Khoa', lat: 21.0055, lng: 105.8436 },
+  { name: 'ĐH Kinh tế Quốc dân', short: 'KTQD (NEU)', lat: 20.9997, lng: 105.8435 },
+  { name: 'ĐH Xây dựng Hà Nội', short: 'Xây dựng', lat: 21.0032, lng: 105.8433 },
+  { name: 'ĐH Ngoại thương', short: 'Ngoại thương (FTU)', lat: 21.0225, lng: 105.8051 },
+  { name: 'ĐH Quốc gia HN (Cầu Giấy)', short: 'ĐHQG Cầu Giấy', lat: 21.0388, lng: 105.7819 },
+  { name: 'ĐH Sư phạm Hà Nội', short: 'Sư phạm', lat: 21.0390, lng: 105.7843 },
+  { name: 'ĐH Thương mại', short: 'Thương mại', lat: 21.0365, lng: 105.7752 },
+  { name: 'ĐH Y Hà Nội', short: 'Y Hà Nội', lat: 21.0022, lng: 105.8313 },
+  { name: 'ĐH Luật Hà Nội', short: 'Luật', lat: 21.0212, lng: 105.8100 },
+  { name: 'Học viện Báo chí & Tuyên truyền', short: 'Báo chí', lat: 21.0376, lng: 105.7888 },
+  { name: 'Học viện Ngân hàng', short: 'Ngân hàng', lat: 21.0068, lng: 105.8296 },
+  { name: 'Học viện CN Bưu chính Viễn thông', short: 'Bưu chính (PTIT)', lat: 20.9809, lng: 105.7871 },
+  { name: 'ĐH Công nghiệp Hà Nội', short: 'Công nghiệp', lat: 21.0543, lng: 105.7350 },
+  { name: 'ĐH Thủy lợi', short: 'Thủy lợi', lat: 21.0070, lng: 105.8251 },
+  { name: 'ĐH Kiến trúc Hà Nội', short: 'Kiến trúc', lat: 20.9804, lng: 105.7896 },
+  { name: 'ĐH Giao thông Vận tải', short: 'GTVT', lat: 21.0276, lng: 105.8027 },
+  { name: 'ĐH Thăng Long', short: 'Thăng Long', lat: 20.9759, lng: 105.8157 },
+  { name: 'ĐH FPT Hòa Lạc', short: 'FPT Hòa Lạc', lat: 21.0128, lng: 105.5265 },
+];

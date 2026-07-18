@@ -389,9 +389,10 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
             </button>
             <Link
               href="/ban-do"
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-brand-300 bg-white/80 px-4 sm:px-6 py-2.5 text-sm font-medium text-brand-700 hover:bg-brand-50 hover:border-brand-400 transition-colors whitespace-nowrap"
+              className="group inline-flex items-center justify-center gap-1.5 rounded-xl px-4 sm:px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-brand-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all whitespace-nowrap"
             >
-              🗺️ Tìm theo bản đồ
+              <span className="text-base">🗺️</span> Tìm phòng theo bản đồ
+              <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </Link>
           </div>
         </form>
