@@ -19,9 +19,16 @@ export async function GET(req: NextRequest) {
     // (chủ nhà tự đăng tin, CTV lọc, form gán công ty). Mọi user đã đăng nhập đều gọi được.
     if (scope === 'active') {
       if (!session?.user) return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+      // Công ty ĐÃ DUYỆT + đang hoạt động, HOẶC công ty do CHÍNH user tạo (kể cả đang CHỜ DUYỆT)
+      // → chủ nhà chọn được công ty mình vừa tạo mà không phải chờ admin duyệt xong.
       const activeCompanies = await prisma.company.findMany({
-        where: { isActive: true, isApproved: true },
-        select: { id: true, name: true, logo: true },
+        where: {
+          OR: [
+            { isActive: true, isApproved: true },
+            { createdById: (session.user as any).id },
+          ],
+        },
+        select: { id: true, name: true, logo: true, isApproved: true },
         orderBy: { name: 'asc' },
       });
       return NextResponse.json(activeCompanies);
@@ -102,6 +109,24 @@ export async function POST(req: NextRequest) {
         createdById: (session.user as any).id || null,
       },
     });
+
+    // Công ty do người khác (chủ nhà) tạo → CHỜ DUYỆT: nhắc admin duyệt (hiện ở chuông thông báo khi vào quản trị).
+    if (!isApproved) {
+      try {
+        const admins = await prisma.user.findMany({ where: { role: { in: ['ADMIN', 'ADMIN_STAFF'] }, isActive: true }, select: { id: true } });
+        if (admins.length) {
+          await prisma.notification.createMany({
+            data: admins.map(a => ({
+              userId: a.id,
+              type: 'company_pending',
+              title: 'Công ty mới chờ duyệt',
+              message: `${(session.user as any).name || 'Chủ nhà'} vừa tạo công ty "${company.name}" — cần duyệt để kích hoạt.`,
+              link: `/admin/companies`,
+            })),
+          });
+        }
+      } catch { /* thông báo lỗi không được chặn việc tạo công ty */ }
+    }
 
     return NextResponse.json(company, { status: 201 });
   } catch {

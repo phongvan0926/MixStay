@@ -121,7 +121,7 @@ export function useActiveCompanies() {
     SWR_OPTIONS
   );
   return {
-    companies: (Array.isArray(data) ? data : []) as { id: string; name: string; logo?: string | null }[],
+    companies: (Array.isArray(data) ? data : []) as { id: string; name: string; logo?: string | null; isApproved?: boolean }[],
     error,
     isLoading,
     mutate,
