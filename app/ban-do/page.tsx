@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 // Trang bản đồ tìm phòng — CÔNG KHAI. Map render client-only (Leaflet cần window).
 export default function BanDoPage() {
   return (
-    <div className="h-screen flex flex-col bg-stone-50">
+    <div className="flex flex-col bg-stone-50" style={{ height: '100dvh' }}>
       <PublicNav />
       <div className="flex-1 min-h-0 pt-16">
         <MapWrapper />

@@ -335,8 +335,8 @@ export default function MapClient() {
         )}
       </div>
 
-      {/* Panel Tìm kiếm địa điểm + Gợi ý Dropdown & Thanh kéo bán kính nấc 500m (nằm ở dưới) */}
-      <div className="absolute top-16 left-3 right-3 z-[1000] flex justify-center pointer-events-none">
+      {/* Panel Tìm kiếm địa điểm — bottom (trên address bar mobile), dropdown gợi ý mở lên trên */}
+      <div className="absolute left-3 right-3 z-[1000] flex justify-center pointer-events-none" style={{ bottom: 'max(12px, env(safe-area-inset-bottom, 12px))' }}>
         <div className="pointer-events-auto w-full max-w-lg rounded-2xl bg-white/95 backdrop-blur border border-stone-200 shadow-xl p-3 relative">
           
           {/* Ô nhập địa điểm + Nút 🎯 Định vị */}
@@ -382,7 +382,7 @@ export default function MapClient() {
 
           {/* Gợi ý địa điểm thả xuống (Suggestions Dropdown) */}
           {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute left-3 right-3 top-full mt-2 bg-white rounded-xl border border-stone-200 shadow-2xl max-h-56 overflow-y-auto z-[1010] p-1.5">
+            <div className="absolute left-3 right-3 bottom-full mb-2 bg-white rounded-xl border border-stone-200 shadow-2xl max-h-56 overflow-y-auto z-[1010] p-1.5">
               <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider px-2 py-1">Chọn vị trí khớp:</p>
               {suggestions.map((s, idx) => (
                 <button
@@ -442,8 +442,8 @@ export default function MapClient() {
           )}
 
           {!customPin && (
-            <p className="mt-2 text-[11px] text-stone-400 text-center">
-              💡 Nhập địa điểm ở trên chọn gợi ý / bấm <b>🎯 Định vị</b> hoặc <b>bấm trực tiếp lên bản đồ</b> để ghim vị trí!
+            <p className="mb-2 text-[11px] text-stone-400 text-center">
+              💡 Nhập địa điểm → chọn gợi ý / bấm <b>🎯 Định vị</b> hoặc <b>chấm trên bản đồ</b>
             </p>
           )}
         </div>
