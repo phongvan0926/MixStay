@@ -234,7 +234,10 @@ mixstay/
 
 ## Changelog
 
-### v9.7 — 2026-07-19 (nút Định vị địa điểm bất kỳ trên bản đồ + bán kính nấc 500m)
+### v9.7 — 2026-07-19 (nút Định vị địa điểm bất kỳ trên bản đồ + nhập Mã công ty trực tiếp)
+- **Điền Mã công ty trực tiếp ngoài thẻ (`admin/companies`):**
+  - Đưa ô nhập Mã công ty (`CompanyCodeInlineInput`) ra trực tiếp giao diện chính của thẻ công ty: **Tên công ty ➔ Trạng thái (Hoạt động/Tạm dừng) ➔ Ô điền Mã công ty**.
+  - Admin có thể gõ trực tiếp mã (VD: `066`) và bấm nút `Lưu` (hoặc Enter) để cập nhật tức thì mà không cần bấm nút "Sửa" hay mở modal.
 - **Nút "🎯 Định vị" & Ghim vị trí bất kỳ (`MapClient.tsx`):**
   - **Nhập tên địa điểm + Bấm 🎯 Định vị (hoặc Enter):** Gõ tên địa điểm (VD: *Đại học Bách Khoa*, *Ngã Tư Sở*, *88 Láng Hạ*...) rồi bấm nút **"🎯 Định vị"** ➔ Tự động xác định tọa độ (ưu tiên dữ liệu local trường ĐH/quận Hà Nội, fallback gọi Nominatim Geocoding API), ghim vị trí ngay lập tức 📍 (`customPin`), cuộn bản đồ tới vị trí đó và hiển thị slider bán kính.
   - **Ghim trực tiếp bằng cách click:** Click vào bất kỳ vị trí nào trên bản đồ để ghim nhanh điểm cần tìm.

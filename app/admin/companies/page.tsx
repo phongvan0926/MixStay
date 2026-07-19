@@ -7,6 +7,65 @@ import { SkeletonCardGrid } from '@/components/ui/Skeleton';
 
 const EMPTY_FORM = { name: '', description: '', phone: '', email: '', address: '', zaloGroupLink: '', code: '', isActive: true };
 
+// Component ô nhập Mã công ty trực tiếp (Inline Edit) ngay ở thẻ thông tin công ty
+function CompanyCodeInlineInput({ company, onUpdated }: { company: any; onUpdated: () => void }) {
+  const [code, setCode] = useState(company.code || '');
+  const [saving, setSaving] = useState(false);
+  const isChanged = code !== (company.code || '');
+
+  const handleSaveCode = async () => {
+    if (!isChanged) return;
+    const cleanCode = code.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+    setSaving(true);
+    try {
+      const res = await fetch('/api/companies', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: company.id, code: cleanCode }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Lỗi cập nhật mã công ty');
+        setCode(company.code || '');
+        return;
+      }
+      toast.success(cleanCode ? `Đã lưu mã công ty #${cleanCode}` : 'Đã xóa mã công ty');
+      onUpdated();
+    } catch {
+      toast.error('Lỗi khi kết nối server');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="inline-flex items-center gap-1 bg-stone-100/80 hover:bg-stone-100 p-0.5 px-2 rounded-lg border border-stone-200 focus-within:border-brand-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-brand-100 transition-all shrink-0">
+      <span className="text-[11px] font-bold text-stone-500 select-none">Mã:</span>
+      <input
+        type="text"
+        value={code}
+        onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8))}
+        onKeyDown={e => e.key === 'Enter' && handleSaveCode()}
+        placeholder="Gõ mã..."
+        maxLength={8}
+        className="w-16 text-xs font-mono font-bold text-stone-800 bg-transparent outline-none uppercase placeholder-stone-400"
+        title="Nhập mã công ty (tối đa 8 ký tự, ghép vào mã tin dạng MS-066-XXXXXX)"
+      />
+      {isChanged && (
+        <button
+          type="button"
+          onClick={handleSaveCode}
+          disabled={saving}
+          className="px-1.5 py-0.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold transition-all disabled:opacity-50 shrink-0"
+          title="Lưu mã công ty"
+        >
+          {saving ? '...' : 'Lưu'}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function AdminCompaniesPage() {
   const { companies, isLoading: loading, mutate } = useCompanies();
   const [search, setSearch] = useState('');
@@ -24,7 +83,12 @@ export default function AdminCompaniesPage() {
     if (approvalFilter === 'approved' && c.isApproved === false) return false;
     if (!search.trim()) return true;
     const q = search.toLowerCase();
-    return c.name.toLowerCase().includes(q) || (c.email || '').toLowerCase().includes(q) || (c.phone || '').includes(q);
+    return (
+      c.name.toLowerCase().includes(q) ||
+      (c.email || '').toLowerCase().includes(q) ||
+      (c.phone || '').includes(q) ||
+      (c.code || '').toLowerCase().includes(q)
+    );
   });
 
   const openAdd = () => { setEditItem(null); setForm({ ...EMPTY_FORM }); setShowModal(true); };
@@ -114,7 +178,7 @@ export default function AdminCompaniesPage() {
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <input type="text" placeholder="Tìm công ty..." value={search} onChange={e => setSearch(e.target.value)}
+          <input type="text" placeholder="Tìm tên công ty, mã công ty (VD: 066), SĐT..." value={search} onChange={e => setSearch(e.target.value)}
             className="input-field pl-9 w-full" />
         </div>
         <div className="flex gap-1.5 shrink-0">
@@ -138,24 +202,31 @@ export default function AdminCompaniesPage() {
           {filtered.map(c => (
             <div key={c.id} className={`card hover:shadow-md transition-shadow ${c.isApproved === false ? 'ring-1 ring-amber-300 bg-amber-50/30' : ''}`}>
               <div className="p-5">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-brand-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-brand-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-sm mt-0.5">
                     {c.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center flex-wrap gap-1.5 mb-1">
-                      <h3 className="font-semibold text-stone-900 truncate">{c.name}</h3>
+                    
+                    {/* Thứ tự hiển thị: 1. Tên công ty -> 2. Trạng thái -> 3. Ô điền Mã công ty */}
+                    <div className="flex items-center flex-wrap gap-2 mb-1.5">
+                      <h3 className="font-semibold text-stone-900 truncate max-w-[160px] sm:max-w-[190px]" title={c.name}>{c.name}</h3>
+
                       {c.isApproved === false ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700 shrink-0">
                           <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Chờ duyệt
                         </span>
                       ) : (
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${c.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0 ${c.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${c.isActive ? 'bg-emerald-500' : 'bg-red-500'}`} />
                           {c.isActive ? 'Hoạt động' : 'Tạm dừng'}
                         </span>
                       )}
+
+                      {/* Ô điền Mã công ty trực tiếp ngay phía sau */}
+                      <CompanyCodeInlineInput company={c} onUpdated={mutate} />
                     </div>
+
                     {c.description && <p className="text-xs text-stone-500 truncate">{c.description}</p>}
                     {c.phone && <p className="text-xs text-stone-400 mt-1">{c.phone}</p>}
                     {c.email && <p className="text-xs text-stone-400">{c.email}</p>}
@@ -164,8 +235,7 @@ export default function AdminCompaniesPage() {
                 </div>
 
                 {/* Stats row */}
-                <div className="flex items-center gap-3 mt-4 pt-3 border-t border-stone-100">
-                  {c.code && <span className="badge bg-stone-800 text-white text-[10px] font-mono" title="Mã công ty chèn vào mã tin">#{c.code}</span>}
+                <div className="flex items-center gap-2 mt-4 pt-3 border-t border-stone-100">
                   <span className="badge bg-brand-50 text-brand-700 text-[10px]">{c._count?.properties || 0} tòa nhà</span>
                   <span className="badge bg-purple-50 text-purple-700 text-[10px]">{getRoomTypeCount(c)} tin đăng</span>
                   <span className="text-xs text-stone-400 ml-auto">{formatDate(c.createdAt)}</span>
@@ -203,7 +273,7 @@ export default function AdminCompaniesPage() {
                     Share kho
                   </button>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => openEdit(c)} className="p-1.5 rounded-lg text-stone-400 hover:text-brand-600 hover:bg-brand-50 transition-colors" title="Sửa">
+                    <button onClick={() => openEdit(c)} className="p-1.5 rounded-lg text-stone-400 hover:text-brand-600 hover:bg-brand-50 transition-colors" title="Sửa chi tiết">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
