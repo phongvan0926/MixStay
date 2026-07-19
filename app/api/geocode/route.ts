@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { applyRateLimit } from '@/lib/rate-limit';
 
 // Server-side Geocoding proxy qua Nominatim OpenStreetMap API.
 // Giúp tránh lỗi CORS / rate-limit khi gọi trực tiếp từ trình duyệt client.
 export async function GET(req: NextRequest) {
+  // Chặn spam: Nominatim giới hạn ~1 req/s theo IP server → giới hạn client trước khi gọi ra ngoài.
+  const rateLimited = await applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   const q = req.nextUrl.searchParams.get('q');
   if (!q || !q.trim()) {
     return NextResponse.json({ error: 'Thiếu từ khóa tìm kiếm' }, { status: 400 });
