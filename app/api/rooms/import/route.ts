@@ -3,6 +3,14 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { applyRateLimit } from '@/lib/rate-limit';
+import { geocodeAddress } from '@/lib/geocode';
+
+// Chặn timeout serverless khi import nhiều tòa mới: geocode NGAY tối đa vài chục tòa VÀ chỉ trong
+// một ngân sách thời gian; phần vượt → để null, admin chạy scripts/geocode-properties.js đổ toạ độ sau.
+const IMPORT_GEOCODE_CAP = 40;
+const IMPORT_GEOCODE_BUDGET_MS = 7000; // dừng geocode sau ~7s (an toàn cả gói Vercel Hobby 10s)
+
+export const maxDuration = 60; // cho phép tới 60s trên gói hỗ trợ (Hobby vẫn bị kẹp ở mức của gói)
 
 // POST /api/rooms/import — bulk import room types from parsed Excel data
 export async function POST(req: NextRequest) {
@@ -27,6 +35,9 @@ export async function POST(req: NextRequest) {
 
     let createdProperties = 0;
     let createdRoomTypes = 0;
+    let geocoded = 0;        // số tòa mới đã định vị được
+    let geocodeSkipped = 0;  // số tòa mới chưa định vị (vượt cap/ngân sách / geocode trượt)
+    const geoStart = Date.now();
     const propertyCache: Record<string, string> = {}; // key -> propertyId
 
     for (const row of rows) {
@@ -64,6 +75,21 @@ export async function POST(req: NextRequest) {
           propertyId = newProp.id;
           existingProperties.push({ id: newProp.id, name: newProp.name, district: newProp.district });
           createdProperties++;
+
+          // Tự định vị tòa mới để lên bản đồ tìm kiếm (fail-safe, không chặn import).
+          // Dừng khi vượt cap SỐ LƯỢNG hoặc NGÂN SÁCH thời gian → phần còn lại dùng script backfill.
+          if (createdProperties <= IMPORT_GEOCODE_CAP && (Date.now() - geoStart) < IMPORT_GEOCODE_BUDGET_MS) {
+            try {
+              const geo = await geocodeAddress({
+                fullAddress: newProp.fullAddress, streetName: newProp.streetName,
+                district: newProp.district, city: newProp.city,
+              });
+              if (geo) {
+                await prisma.property.update({ where: { id: newProp.id }, data: { latitude: geo.lat, longitude: geo.lng } });
+                geocoded++;
+              } else geocodeSkipped++;
+            } catch { geocodeSkipped++; }
+          } else geocodeSkipped++;
         }
         propertyCache[propKey] = propertyId;
       }
@@ -107,11 +133,16 @@ export async function POST(req: NextRequest) {
       createdRoomTypes++;
     }
 
+    const geoNote = geocodeSkipped > 0
+      ? ` · ${geocoded} tòa đã định vị, ${geocodeSkipped} tòa chưa (chạy scripts/geocode-properties.js để đổ toạ độ)`
+      : (geocoded > 0 ? ` · đã định vị ${geocoded} tòa mới` : '');
     return NextResponse.json({
       success: true,
       createdProperties,
       createdRoomTypes,
-      message: `Đã import ${createdRoomTypes} tin đăng thuộc ${Object.keys(propertyCache).length} tòa nhà (${createdProperties} tòa mới)`,
+      geocoded,
+      geocodeSkipped,
+      message: `Đã import ${createdRoomTypes} tin đăng thuộc ${Object.keys(propertyCache).length} tòa nhà (${createdProperties} tòa mới)${geoNote}`,
     });
   } catch (error) {
     console.error('Import error:', error);
