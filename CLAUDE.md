@@ -55,7 +55,7 @@ lib/listing-code-server.ts → Server-only (crypto): generateListingCode, genera
 lib/user-company.ts → getUserCompany() — resolve company của user (cho topbar + share link)
 lib/zalo.ts         → Resolve link Zalo (company zaloGroupLink → landlord phone → env → fallback)
 lib/supabase.ts     → Supabase client (storage upload ảnh/video)
-prisma/schema.prisma → 12 bảng: users, accounts, sessions, companies, properties, room_types, deals, share_links, room_inquiries, notifications, settings, verification_tokens
+prisma/schema.prisma → 13 bảng: users, accounts, sessions, companies, properties, room_types, deals, share_links, room_inquiries, notifications, settings, verification_tokens, saved_listings (khách/CTV lưu/bookmark tin — SavedListing)
 prisma/seed.ts      → Demo data (password: 123456)
 prisma/backfill-listing-codes.ts → Backfill listingCode cho RoomType cũ (idempotent, chạy sau prisma db push)
 middleware.ts       → Route protection theo role (+ chặn /admin/{companies,users,settings} theo permission cho ADMIN_STAFF)
