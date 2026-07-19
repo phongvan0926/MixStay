@@ -336,7 +336,7 @@ export default function MapClient() {
       </div>
 
       {/* Panel Tìm kiếm địa điểm + Gợi ý Dropdown & Thanh kéo bán kính nấc 500m (nằm ở dưới) */}
-      <div className="absolute bottom-4 left-3 right-3 z-[1000] flex justify-center pointer-events-none">
+      <div className="absolute top-16 left-3 right-3 z-[1000] flex justify-center pointer-events-none">
         <div className="pointer-events-auto w-full max-w-lg rounded-2xl bg-white/95 backdrop-blur border border-stone-200 shadow-xl p-3 relative">
           
           {/* Ô nhập địa điểm + Nút 🎯 Định vị */}
@@ -382,7 +382,7 @@ export default function MapClient() {
 
           {/* Gợi ý địa điểm thả xuống (Suggestions Dropdown) */}
           {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute left-3 right-3 bottom-full mb-2 bg-white rounded-xl border border-stone-200 shadow-2xl max-h-56 overflow-y-auto z-[1010] p-1.5">
+            <div className="absolute left-3 right-3 top-full mt-2 bg-white rounded-xl border border-stone-200 shadow-2xl max-h-56 overflow-y-auto z-[1010] p-1.5">
               <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider px-2 py-1">Chọn vị trí khớp:</p>
               {suggestions.map((s, idx) => (
                 <button
