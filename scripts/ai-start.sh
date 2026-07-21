@@ -14,7 +14,13 @@ git log --oneline -8
 echo
 
 echo "▶ Đồng bộ remote (chỉ fast-forward, an toàn — không tạo merge, không ghi đè):"
-timeout 15 git pull --ff-only 2>&1 | sed 's/^/  /' || true
+# fetch rồi merge ĐÚNG 1 nhánh upstream (@{u}) — tránh lỗi "Cannot fast-forward to multiple branches"
+# mà `git pull --ff-only` không tham số hay gặp khi remote có nhiều nhánh.
+if timeout 15 git fetch -q origin 2>/dev/null; then
+  git merge --ff-only '@{u}' 2>&1 | sed 's/^/  /' || echo "  (không ff được — có file chưa commit hoặc đã phân nhánh, xử lý tay trước)"
+else
+  echo "  (không fetch được — kiểm tra mạng, bỏ qua bước đồng bộ)"
+fi
 echo
 
 echo "✔ Sẵn sàng làm việc."
