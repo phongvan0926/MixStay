@@ -234,6 +234,10 @@ mixstay/
 
 ## Changelog
 
+### v9.9 — 2026-07-21 (fix: cột Công ty ở admin/rooms hiện "—" dù tòa đã gắn công ty)
+- **Lỗi:** bảng Tin đăng (admin/rooms) cột "Công ty" hiện "—" với nhiều tin dù tòa nhà đã thuộc công ty đã duyệt. Nguyên nhân: cột tra công ty QUA 2 lớp — `properties.find(...)` (list `useProperties` chỉ APPROVED, **limit 200**) rồi mới `companies.find(...)`; dự án có ~428 tòa APPROVED nên tòa NGOÀI top 200 → `prop=undefined` → hiện "—" (dù `r.property.company` đã có sẵn từ API).
+- **Sửa:** lấy thẳng `r.property.company.name` / `r.property.companyId` (API `/api/rooms` đã trả cho admin) cho cột hiển thị, bộ lọc theo công ty, và export Excel — bỏ phụ thuộc list bị giới hạn. File: `app/admin/rooms/page.tsx`.
+
 ### v9.8 — 2026-07-19 (sửa bản đồ mobile: panel tìm địa điểm xuống bottom + 100dvh)
 - **Root cause mobile bị che phần dưới bản đồ:** `h-screen` (= `100vh`) trên mobile tính cả phần bị browser chrome (URL bar, toolbar) che → phần đáy bản đồ bị mất. Sửa bằng `height: 100dvh` (dynamic viewport height, tự co khi toolbar hiện/ẩn).
 - **Panel tìm địa điểm xuống bottom (giống Google Maps):** trước ở `top-16` (ngay dưới chip quận) → đưa xuống `bottom: max(12px, env(safe-area-inset-bottom))` — luôn nằm trên address bar/toolbar mobile, không bị che. iPhone có notch/home indicator dùng `safe-area-inset-bottom`.

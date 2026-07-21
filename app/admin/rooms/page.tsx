@@ -185,9 +185,10 @@ export default function AdminRoomsPage() {
   const filteredRooms = useMemo(() => {
     return rooms.filter(r => {
       if (filterCompany) {
-        const prop = properties.find(p => p.id === r.property?.id);
-        if (filterCompany === '__none__' && prop?.companyId) return false;
-        if (filterCompany !== '__none__' && prop?.companyId !== filterCompany) return false;
+        // Dùng companyId trả thẳng từ API (không tra qua list properties bị giới hạn 200 → sót tòa)
+        const cid = r.property?.companyId;
+        if (filterCompany === '__none__' && cid) return false;
+        if (filterCompany !== '__none__' && cid !== filterCompany) return false;
       }
       if (filterProperty && r.property?.id !== filterProperty) return false;
       if (filterRoomType && r.typeName !== filterRoomType) return false;
@@ -337,8 +338,7 @@ export default function AdminRoomsPage() {
   const exportCurrentData = async () => {
     const XLSX = await import('xlsx');
     const dataToExport = filteredRooms.map((r: any) => {
-      const prop = properties.find(p => p.id === r.property?.id);
-      const companyName = companies.find((c: any) => c.id === prop?.companyId)?.name || '';
+      const companyName = r.property?.company?.name || '';
       let c6 = '', c12 = '';
       try {
         const c = typeof r.commissionJson === 'string' ? JSON.parse(r.commissionJson) : r.commissionJson;
@@ -503,8 +503,9 @@ export default function AdminRoomsPage() {
             </thead>
             <tbody className="divide-y divide-stone-100">
               {filteredRooms.map((r: any) => {
-                const prop = properties.find(p => p.id === r.property?.id);
-                const companyName = companies.find((c: any) => c.id === prop?.companyId)?.name;
+                // Tên công ty lấy THẲNG từ API (r.property.company) — trước đây tra qua list
+                // properties (limit 200) rồi companies → tòa ngoài top 200 hiện nhầm "—".
+                const companyName = r.property?.company?.name;
                 const badge = getAvailabilityBadge(r);
                 return (
                   <tr key={r.id} className="hover:bg-stone-50/50 transition-colors">
