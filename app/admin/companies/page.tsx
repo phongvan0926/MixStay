@@ -1,7 +1,9 @@
 'use client';
 import { useState } from 'react';
+import useSWR from 'swr';
 import toast from 'react-hot-toast';
 import { formatDate } from '@/lib/utils';
+import { fetcher } from '@/lib/fetcher';
 import { useCompanies } from '@/hooks/useData';
 import { SkeletonCardGrid } from '@/components/ui/Skeleton';
 
@@ -68,6 +70,41 @@ function CompanyCodeInlineInput({ company, onUpdated }: { company: any; onUpdate
 
 export default function AdminCompaniesPage() {
   const { companies, isLoading: loading, mutate } = useCompanies();
+  // Nhóm công ty nghi trùng (cùng tên) để gộp
+  const { data: dupData, mutate: mutateDup } = useSWR('/api/companies/duplicates', fetcher, { revalidateOnFocus: false });
+  const dupGroups: any[] = dupData?.groups || [];
+  const [showDup, setShowDup] = useState(false);
+  const [mergingKey, setMergingKey] = useState<string | null>(null);
+
+  // Gộp: giữ keeperId, chuyển tòa của các cty còn lại trong nhóm về keeper, xoá chúng
+  const mergeGroup = async (group: any, keeperId: string) => {
+    const mergeIds = group.companies.map((c: any) => c.id).filter((id: string) => id !== keeperId);
+    if (!confirm(`Gộp ${mergeIds.length} công ty trùng vào công ty đã chọn? Chuyển hết tòa nhà rồi xoá các công ty kia (không hoàn tác).`)) return;
+    setMergingKey(group.key);
+    try {
+      const res = await fetch('/api/companies/merge', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keeperId, mergeIds }),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error || 'Lỗi gộp'); return; }
+      toast.success(`Đã gộp: chuyển ${data.moved} tòa, xoá ${data.deleted} công ty`);
+      mutateDup(); mutate();
+    } finally { setMergingKey(null); }
+  };
+
+  // Đánh dấu nhóm KHÔNG trùng → bỏ cảnh báo hẳn
+  const dismissGroup = async (group: any) => {
+    if (!confirm(`Xác nhận các công ty tên "${group.name}" KHÔNG trùng nhau? Sẽ bỏ cảnh báo này vĩnh viễn.`)) return;
+    const res = await fetch('/api/companies/duplicates', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: group.key }),
+    });
+    if (!res.ok) { const d = await res.json().catch(() => ({})); toast.error(d.error || 'Lỗi'); return; }
+    toast.success('Đã bỏ cảnh báo trùng cho nhóm này');
+    mutateDup();
+  };
+
   const [search, setSearch] = useState('');
   const [approvalFilter, setApprovalFilter] = useState<'all' | 'pending' | 'approved'>('all');
   const [showModal, setShowModal] = useState(false);
@@ -177,6 +214,52 @@ export default function AdminCompaniesPage() {
           Thêm công ty
         </button>
       </div>
+
+      {/* Nhóm công ty NGHI TRÙNG (cùng tên) — rà & gộp */}
+      {dupGroups.length > 0 && (
+        <div className="mb-6 rounded-2xl border border-amber-300 bg-amber-50/60 overflow-hidden">
+          <button onClick={() => setShowDup(v => !v)}
+            className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-amber-50">
+            <span className="font-semibold text-amber-800 text-sm">
+              🔀 {dupGroups.length} nhóm công ty nghi trùng tên — bấm để rà &amp; gộp
+            </span>
+            <span className="text-amber-600 text-xs">{showDup ? 'Thu gọn ▲' : 'Xem ▼'}</span>
+          </button>
+          {showDup && (
+            <div className="px-4 pb-4 space-y-3">
+              {dupGroups.map(group => (
+                <div key={group.key} className="rounded-xl border border-amber-200 bg-white p-3">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <p className="text-sm font-semibold text-stone-800">&quot;{group.name}&quot; — {group.companies.length} công ty</p>
+                    <button onClick={() => dismissGroup(group)}
+                      className="text-[11px] px-2 py-1 rounded-lg bg-stone-100 text-stone-600 hover:bg-stone-200 whitespace-nowrap">
+                      Không trùng — bỏ cảnh báo
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-stone-500 mb-2">Chọn công ty GIỮ LẠI (các công ty khác sẽ chuyển hết tòa vào rồi bị xoá):</p>
+                  <div className="space-y-1.5">
+                    {group.companies.map((c: any) => (
+                      <div key={c.id} className="flex items-center gap-2 text-xs rounded-lg border border-stone-100 px-2 py-1.5">
+                        <span className="flex-1 min-w-0 truncate">
+                          <b>{c.name}</b>
+                          {c.code && <span className="ml-1 font-mono text-stone-500">#{c.code}</span>}
+                          {c.phone && <span className="ml-1 text-stone-400">· {c.phone}</span>}
+                          <span className="ml-1 text-brand-600">· {c.propertyCount} tòa</span>
+                          {c.isApproved === false && <span className="ml-1 text-amber-600">· chờ duyệt</span>}
+                        </span>
+                        <button onClick={() => mergeGroup(group, c.id)} disabled={mergingKey === group.key}
+                          className="shrink-0 px-2 py-1 rounded-lg bg-brand-600 text-white font-medium hover:bg-brand-700 disabled:opacity-50">
+                          {mergingKey === group.key ? '...' : 'Giữ & gộp vào đây'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Search + lọc duyệt */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">

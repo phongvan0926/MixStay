@@ -234,6 +234,11 @@ mixstay/
 
 ## Changelog
 
+### v9.11 — 2026-07-21 (công ty: tự điền, cảnh báo trùng tên, quét & gộp công ty trùng)
+- **Form tự điền công ty:** chủ nhà có ĐÚNG 1 công ty → form tạo tòa điền sẵn công ty đó (khỏi phải chọn, vẫn đổi được). `GET /api/companies?scope=mine` + `defaultCompanyId` cho PropertyForm.
+- **Cảnh báo trùng tên khi tạo công ty:** gõ tên trùng công ty đã có (bỏ dấu) → PropertyForm (+ Công ty mới) hiện banner + nút "Dùng công ty này"; admin/companies hiện cảnh báo "đã có công ty tên này (mã …)".
+- **Quét & gộp công ty trùng (admin/companies):** `GET /api/companies/duplicates` gom nhóm ≥2 công ty cùng tên (trừ nhóm đã đánh dấu không-trùng); banner "N nhóm nghi trùng" → chọn công ty giữ lại → `POST /api/companies/merge` (chuyển hết tòa về keeper + xoá các cty kia, transaction an toàn); hoặc "Không trùng — bỏ cảnh báo" (`POST /api/companies/duplicates` lưu Setting `dismissed_duplicate_companies`, ẩn nhóm đó vĩnh viễn).
+
 ### v9.10 — 2026-07-21 (fix: tòa chủ nhà "mồ côi" công ty — tự gắn công ty của chính họ)
 - **Lỗi:** chủ nhà tạo công ty riêng (VD C QUỲNH VTL→TQ HOUSING, Viết Cường→HC HOUSE) nhưng khi thêm tòa lại không chọn công ty → tòa `companyId=null`, công ty hiện "0 tòa", cột Công ty ở admin hiện "—".
 - **Vá gốc rễ:** `POST /api/properties` — nếu người tạo là LANDLORD, KHÔNG chọn công ty, VÀ có ĐÚNG 1 công ty do chính họ tạo → tự gắn tòa vào công ty đó (phủ mọi luồng: form, AI, import). Chủ nhà có 0 hoặc >1 công ty thì giữ nguyên (không đoán).
