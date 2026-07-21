@@ -116,6 +116,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Chủ nhà không chọn công ty NHƯNG có ĐÚNG 1 công ty của mình → tự gắn (tránh tòa "mồ côi"
+    // công ty như trước: chủ nhà tạo công ty riêng nhưng tòa lại companyId=null).
+    let resolvedCompanyId: string | null = body.companyId || null;
+    if (!resolvedCompanyId && session.user.role === 'LANDLORD') {
+      const own = await prisma.company.findMany({ where: { createdById: session.user.id }, select: { id: true }, take: 2 });
+      if (own.length === 1) resolvedCompanyId = own[0].id;
+    }
+
     // Tự geocode toạ độ từ địa chỉ khi client không gửi (để pin tự có trên bản đồ /ban-do).
     // Geocode lỗi → null, KHÔNG chặn tạo tòa (backfill lại bằng scripts/geocode-properties.js).
     let geo: { lat: number; lng: number } | null = null;
@@ -126,7 +134,7 @@ export async function POST(req: NextRequest) {
     const property = await prisma.property.create({
       data: {
         landlordId,
-        companyId: body.companyId || null,
+        companyId: resolvedCompanyId,
         name: body.name,
         description: body.description,
         fullAddress: body.fullAddress,

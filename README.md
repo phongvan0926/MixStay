@@ -234,6 +234,11 @@ mixstay/
 
 ## Changelog
 
+### v9.10 — 2026-07-21 (fix: tòa chủ nhà "mồ côi" công ty — tự gắn công ty của chính họ)
+- **Lỗi:** chủ nhà tạo công ty riêng (VD C QUỲNH VTL→TQ HOUSING, Viết Cường→HC HOUSE) nhưng khi thêm tòa lại không chọn công ty → tòa `companyId=null`, công ty hiện "0 tòa", cột Công ty ở admin hiện "—".
+- **Vá gốc rễ:** `POST /api/properties` — nếu người tạo là LANDLORD, KHÔNG chọn công ty, VÀ có ĐÚNG 1 công ty do chính họ tạo → tự gắn tòa vào công ty đó (phủ mọi luồng: form, AI, import). Chủ nhà có 0 hoặc >1 công ty thì giữ nguyên (không đoán).
+- **Dọn dữ liệu cũ:** gắn 6 tòa "mồ côi" của 2 chủ nhà (mỗi người đúng 1 công ty) về công ty của họ; bỏ qua tài khoản tạo nhiều công ty (admin) vì mơ hồ.
+
 ### v9.9 — 2026-07-21 (fix: cột Công ty ở admin/rooms hiện "—" dù tòa đã gắn công ty)
 - **Lỗi:** bảng Tin đăng (admin/rooms) cột "Công ty" hiện "—" với nhiều tin dù tòa nhà đã thuộc công ty đã duyệt. Nguyên nhân: cột tra công ty QUA 2 lớp — `properties.find(...)` (list `useProperties` chỉ APPROVED, **limit 200**) rồi mới `companies.find(...)`; dự án có ~428 tòa APPROVED nên tòa NGOÀI top 200 → `prop=undefined` → hiện "—" (dù `r.property.company` đã có sẵn từ API).
 - **Sửa:** lấy thẳng `r.property.company.name` / `r.property.companyId` (API `/api/rooms` đã trả cho admin) cho cột hiển thị, bộ lọc theo công ty, và export Excel — bỏ phụ thuộc list bị giới hạn. File: `app/admin/rooms/page.tsx`.
