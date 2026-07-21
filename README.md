@@ -234,6 +234,13 @@ mixstay/
 
 ## Changelog
 
+### v9.8 — 2026-07-19 (sửa bản đồ mobile: panel tìm địa điểm xuống bottom + 100dvh)
+- **Root cause mobile bị che phần dưới bản đồ:** `h-screen` (= `100vh`) trên mobile tính cả phần bị browser chrome (URL bar, toolbar) che → phần đáy bản đồ bị mất. Sửa bằng `height: 100dvh` (dynamic viewport height, tự co khi toolbar hiện/ẩn).
+- **Panel tìm địa điểm xuống bottom (giống Google Maps):** trước ở `top-16` (ngay dưới chip quận) → đưa xuống `bottom: max(12px, env(safe-area-inset-bottom))` — luôn nằm trên address bar/toolbar mobile, không bị che. iPhone có notch/home indicator dùng `safe-area-inset-bottom`.
+- **Dropdown gợi ý mở lên trên:** `top-full` → `bottom-full` — dropdown hiển thị phía trên ô tìm thay vì xuống dưới, phù hợp khi panel ở bottom.
+- **Thu gọn tip text** hiển thị khi chưa ghim vị trí cho gọn hơn.
+- **Files thay đổi:** `app/ban-do/page.tsx` (`100dvh`), `app/ban-do/MapClient.tsx` (bottom + safe-area + dropdown direction).
+
 ### v9.7 — 2026-07-19 (nút Định vị địa điểm bất kỳ trên bản đồ + nhập Mã công ty trực tiếp)
 - **Điền Mã công ty trực tiếp ngoài thẻ (`admin/companies`):**
   - Đưa ô nhập Mã công ty (`CompanyCodeInlineInput`) ra trực tiếp giao diện chính của thẻ công ty: **Tên công ty ➔ Trạng thái (Hoạt động/Tạm dừng) ➔ Ô điền Mã công ty**.
