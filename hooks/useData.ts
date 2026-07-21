@@ -71,6 +71,12 @@ export function useUsers(params?: Record<string, string>) {
   };
 }
 
+// Công ty do CHÍNH user tạo (để form tự điền khi chủ nhà chỉ có 1 công ty)
+export function useMyCompanies() {
+  const { data, error, isLoading, mutate } = useSWR('/api/companies?scope=mine', fetcher, SWR_OPTIONS);
+  return { companies: (Array.isArray(data) ? data : []) as { id: string; name: string; isApproved?: boolean }[], error, isLoading, mutate };
+}
+
 // Số liệu TỔNG toàn nền tảng cho trang Quản lý người dùng (không theo trang/bộ lọc)
 export function useUserStats() {
   const { data, error, isLoading, mutate } = useSWR('/api/users/stats', fetcher, SWR_OPTIONS);

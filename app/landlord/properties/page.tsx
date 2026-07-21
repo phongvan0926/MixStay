@@ -8,7 +8,7 @@ import RoomTypeForm from '@/components/forms/RoomTypeForm';
 import AIQuickCreate from '@/components/ai/AIQuickCreate';
 import Pagination from '@/components/ui/Pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage';
-import { useProperties, useRoomTypes, useInquiries, useDashboardStats, useActiveCompanies } from '@/hooks/useData';
+import { useProperties, useRoomTypes, useInquiries, useDashboardStats, useActiveCompanies, useMyCompanies } from '@/hooks/useData';
 import { SkeletonStats, SkeletonCardGrid } from '@/components/ui/Skeleton';
 import { normalizeListingCode, formatListingCode } from '@/lib/listing-code';
 
@@ -55,6 +55,9 @@ export default function LandlordPropertiesPage() {
   const { inquiries, mutate: mutateInquiries } = useInquiries();
   const { stats } = useDashboardStats();
   const { companies: activeCompanies } = useActiveCompanies();
+  const { companies: myCompanies } = useMyCompanies();
+  // Chủ nhà có ĐÚNG 1 công ty → điền sẵn vào form tạo tòa (khỏi phải chọn)
+  const defaultCompanyId = myCompanies.length === 1 ? myCompanies[0].id : '';
 
   // View mode
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -649,6 +652,7 @@ export default function LandlordPropertiesPage() {
                   onSubmit={handlePropertySubmit}
                   isAdmin={false}
                   companies={activeCompanies}
+                  defaultCompanyId={defaultCompanyId}
                   loading={submitting}
                 />
               )}

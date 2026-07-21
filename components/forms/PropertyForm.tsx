@@ -41,6 +41,8 @@ interface PropertyFormProps {
   landlords?: { id: string; name: string; email?: string }[];
   /** Cho phép tạo công ty mới ngay trong form (chủ nhà tự đăng tin). Mặc định true. */
   allowCreateCompany?: boolean;
+  /** Công ty mặc định điền sẵn khi TẠO MỚI (chủ nhà chỉ có 1 công ty → khỏi phải chọn). Vẫn đổi được. */
+  defaultCompanyId?: string;
 }
 
 const AMENITY_OPTIONS = [
@@ -88,9 +90,10 @@ const defaultData: PropertyData = {
   status: 'PENDING',
 };
 
-export default function PropertyForm({ initialData, onSubmit, isAdmin = false, canTransferOwnership = false, loading = false, companies = [], landlords = [], allowCreateCompany = true }: PropertyFormProps) {
+export default function PropertyForm({ initialData, onSubmit, isAdmin = false, canTransferOwnership = false, loading = false, companies = [], landlords = [], allowCreateCompany = true, defaultCompanyId = '' }: PropertyFormProps) {
   const [form, setForm] = useState<PropertyData>(defaultData);
-  const [companyId, setCompanyId] = useState<string>(initialData?.companyId || '');
+  // Tạo mới + chủ nhà có đúng 1 công ty → điền sẵn công ty đó (vẫn đổi được); sửa thì theo dữ liệu cũ.
+  const [companyId, setCompanyId] = useState<string>(initialData?.companyId || (initialData?.id ? '' : defaultCompanyId) || '');
   const isEdit = !!initialData?.id;
 
   // Tạo công ty mới ngay trong form (chờ admin duyệt). extraCompanies giữ công ty vừa tạo/đang gán.
@@ -110,6 +113,12 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
     for (const c of extraCompanies) map.set(c.id, c);
     return Array.from(map.values());
   })();
+
+  // Cảnh báo trùng tên: gõ tên công ty mới mà đã có công ty cùng tên (bỏ dấu) → gợi ý dùng lại.
+  const normName = (s: string) => (s || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/\s+/g, ' ');
+  const dupCompany = newCompanyName.trim().length >= 2
+    ? [...companies, ...extraCompanies].find(c => normName(c.name) === normName(newCompanyName))
+    : undefined;
 
   const handleCreateCompany = async () => {
     const name = newCompanyName.trim();
@@ -251,6 +260,14 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
                 <input className="input-field" placeholder="Tên công ty *" value={newCompanyName}
                   onChange={e => setNewCompanyName(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateCompany(); } }} />
+                {dupCompany && (
+                  <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    ⚠️ Đã có công ty tên <b>&quot;{dupCompany.name}&quot;</b>.{' '}
+                    <button type="button"
+                      onClick={() => { setCompanyId(dupCompany.id); setShowNewCompany(false); setNewCompanyName(''); setNewCompanyPhone(''); toast.success(`Đã chọn công ty "${dupCompany.name}"`); }}
+                      className="font-semibold underline hover:text-amber-900">Dùng công ty này</button>{' '}thay vì tạo trùng.
+                  </div>
+                )}
                 <input className="input-field" placeholder="SĐT/Zalo liên hệ (tuỳ chọn)" value={newCompanyPhone}
                   onChange={e => setNewCompanyPhone(e.target.value)} />
                 <div className="flex gap-2">

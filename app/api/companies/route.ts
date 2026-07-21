@@ -35,6 +35,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(activeCompanies);
     }
 
+    // scope=mine: công ty do CHÍNH user tạo — để form biết chủ nhà có mấy công ty (mặc định điền khi có đúng 1).
+    if (scope === 'mine') {
+      if (!session?.user) return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+      const mine = await prisma.company.findMany({
+        where: { createdById: (session.user as any).id },
+        select: { id: true, name: true, isApproved: true },
+        orderBy: { name: 'asc' },
+      });
+      return NextResponse.json(mine);
+    }
+
     // Mặc định: trang QUẢN TRỊ công ty — cần MANAGE_COMPANIES, trả TẤT CẢ (kể cả chờ duyệt).
     const denial = requirePermission(session, 'MANAGE_COMPANIES');
     if (denial) return denial;

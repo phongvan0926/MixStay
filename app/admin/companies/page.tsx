@@ -78,6 +78,12 @@ export default function AdminCompaniesPage() {
   // Công ty chờ duyệt = isApproved === false (chủ nhà tự tạo, chưa được admin duyệt).
   const pendingCount = companies.filter(c => c.isApproved === false).length;
 
+  // Cảnh báo trùng tên khi THÊM công ty mới (bỏ dấu, không phân biệt hoa thường).
+  const normName = (s: string) => (s || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/\s+/g, ' ');
+  const dupCompanyOnCreate = form.name.trim().length >= 2
+    ? companies.find((c: any) => normName(c.name) === normName(form.name))
+    : undefined;
+
   const filtered = companies.filter(c => {
     if (approvalFilter === 'pending' && c.isApproved !== false) return false;
     if (approvalFilter === 'approved' && c.isApproved === false) return false;
@@ -315,6 +321,11 @@ export default function AdminCompaniesPage() {
                 <label className="block text-sm font-medium text-stone-700 mb-1">Tên công ty / hệ thống <span className="text-red-500">*</span></label>
                 <input type="text" required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   className="input-field w-full" placeholder="VD: Công ty ABC" />
+                {!editItem && dupCompanyOnCreate && (
+                  <p className="mt-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
+                    ⚠️ Đã có công ty tên <b>&quot;{dupCompanyOnCreate.name}&quot;</b>{dupCompanyOnCreate.code ? ` (mã ${dupCompanyOnCreate.code})` : ''} — kiểm tra kẻo tạo trùng.
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-1">
