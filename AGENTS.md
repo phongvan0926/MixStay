@@ -1,5 +1,13 @@
 # AGENTS.md - Hướng dẫn cho AI agents (Codex, Antigravity, Claude...)
 
+## 🚀 LỆNH TẮT: người dùng gõ `MIX`
+Khi người dùng gõ đúng `MIX` (hoặc `MIX <việc cần làm>`), TRƯỚC KHI trả lời phải làm ngay:
+1. Chạy `bash scripts/ai-start.sh` (git status + git log + pull ff-only) và đọc kết quả.
+2. Đọc kỹ TOÀN BỘ file này (CLAUDE.md ≡ AGENTS.md), mục Changelog MỚI NHẤT trong `README.md`, và `prisma/schema.prisma`.
+3. Tuân thủ mọi QUY TẮC + AN TOÀN trong file cho tới hết phiên (xem mục "Cộng tác nhiều AI agent" và "Quy tắc khi sửa code").
+4. Nếu có `<việc>` kèm theo → làm luôn. Nếu không → tóm tắt 2–3 dòng xác nhận đã nắm rồi chờ việc.
+→ Mục đích: 1 từ duy nhất để mọi AI (Claude/Codex/Antigravity) tự onboard, người dùng không phải nhắc lại ngữ cảnh.
+
 ## Dự án
 MixStay Manager v2 - Nền tảng phân phối & quản lý chung cư mini.
 Kết nối 4 vai trò: Admin (Công ty), Môi giới, Chủ nhà, Khách thuê.
@@ -108,8 +116,9 @@ Repo này có NHIỀU AI agent cùng làm việc trên cùng thư mục, cùng c
 - **Trước khi bắt đầu việc mới:** (đã gộp vào script trên) xem `git log` các commit mình không tạo — file định sửa có thể vừa bị agent khác đổi. KHÔNG revert/ghi đè thay đổi của agent khác trừ khi chủ dự án yêu cầu.
 - **Changelog dùng chung:** đánh số version nối tiếp trong README.md (dòng mới nhất trên cùng), dù là agent nào làm. Xem version mới nhất trong Changelog trước khi thêm.
 - **AGENTS.md là bản sao của CLAUDE.md** (chỉ khác dòng tiêu đề): sửa 1 trong 2 file thì PHẢI đồng bộ file kia — 2 file lệch nhau từng làm agent dùng lại field đã xoá (`isAvailable`).
-- **Commit ngay sau khi xong việc** (working tree sạch) để agent khác không dính conflict với thay đổi dở dang.
+- **Commit ngay sau khi xong việc** (working tree sạch) để agent khác không dính conflict với thay đổi dở dang. **Trước khi commit chạy `npx tsc --noEmit` + `npm run build`** cho sạch.
 - KHÔNG commit `.env` / `.env.local`; `npx prisma db push` đụng DB PRODUCTION dùng chung — chỉ thêm cột nullable/có default, không xoá/đổi kiểu cột.
+- **KHÔNG chạy script sửa/xoá dữ liệu PRODUCTION bừa** — tuyệt đối tránh `deleteMany({})` không điều kiện (đã từng xoá nhầm toàn bộ notifications). HỎI chủ dự án trước khi đụng dữ liệu production; việc khó hoàn tác (push, xoá dữ liệu, đổi schema) → xác nhận trước.
 
 ## Excel Import/Export (Admin > Quản lý phòng)
 - Thư viện: xlsx (SheetJS)
