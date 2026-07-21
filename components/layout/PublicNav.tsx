@@ -29,9 +29,10 @@ export default function PublicNav() {
           <Link href="/" className="flex items-center" aria-label="MixStay - Trang chủ">
             <Logo variant="light" className="h-9 w-auto" />
           </Link>
+          {/* Nổi bật: pill vàng gold trên nền nav xanh đậm (gold-400 + chữ brand-900 an toàn tương phản) */}
           <Link href="/ban-do"
-            className="text-sm px-2.5 sm:px-3 py-2 rounded-xl font-medium text-white/90 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap">
-            🗺️ <span className="sm:hidden">Bản đồ</span><span className="hidden sm:inline">Tìm phòng theo bản đồ</span>
+            className="inline-flex items-center gap-1 text-sm px-2.5 sm:px-3.5 py-1.5 rounded-full font-semibold bg-gold-400 text-brand-900 shadow-sm ring-1 ring-gold-300/60 hover:bg-gold-300 hover:shadow-md transition-all whitespace-nowrap">
+            🗺️ <span className="sm:hidden">Bản đồ</span><span className="hidden sm:inline">Tìm trên bản đồ</span>
           </Link>
         </div>
 

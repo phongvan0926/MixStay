@@ -379,19 +379,21 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
 
           {/* Submit ở cuối form — CĂN GIỮA (tránh bị FAB hotline góc phải che).
               Kèm nút "Tìm theo bản đồ" to ngang nút Tìm phòng để mobile dễ thấy lối vào bản đồ. */}
-          <div className="mt-3 grid grid-cols-2 sm:flex sm:justify-center gap-2">
+          {/* Mobile: xếp DỌC (nút bản đồ full-width, chữ căn giữa — thoát FAB hotline góc phải);
+              desktop: 2 nút cạnh nhau, căn giữa. */}
+          <div className="mt-3 flex flex-col sm:flex-row sm:justify-center gap-2">
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary sm:w-auto px-4 sm:px-10 py-2.5 text-sm font-medium"
+              className="btn-primary w-full sm:w-auto px-4 sm:px-10 py-2.5 text-sm font-medium"
             >
               {loading ? 'Đang tìm...' : 'Tìm phòng'}
             </button>
             <Link
               href="/ban-do"
-              className="group inline-flex items-center justify-center gap-1.5 rounded-xl px-4 sm:px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-brand-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all whitespace-nowrap"
+              className="group inline-flex items-center justify-center gap-1.5 w-full sm:w-auto rounded-xl px-4 sm:px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-brand-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all whitespace-nowrap"
             >
-              <span className="text-base">🗺️</span> Tìm phòng theo bản đồ
+              🗺️ Tìm theo bản đồ
               <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </Link>
           </div>

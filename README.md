@@ -234,6 +234,10 @@ mixstay/
 
 ## Changelog
 
+### v9.12 — 2026-07-21 (nút bản đồ nổi bật trên nav + gọn trên mobile)
+- **Nav trang chủ:** nút bản đồ cạnh logo đổi từ link mờ → **pill vàng gold** (gold-400 + chữ brand-900, nổi bật trên nền nav xanh đậm); text desktop "Tìm trên bản đồ", mobile "Bản đồ".
+- **Module tìm phòng:** nút "Tìm phòng theo bản đồ" → "**Tìm theo bản đồ**" (ngắn gọn). Mobile xếp DỌC 2 nút full-width (trước là 2 cột, nút bản đồ bị FAB hotline che góc + chữ sát mép) → nút bản đồ full-width chữ căn giữa, nổi bật hơn, không bị che.
+
 ### v9.11 — 2026-07-21 (công ty: tự điền, cảnh báo trùng tên, quét & gộp công ty trùng)
 - **Form tự điền công ty:** chủ nhà có ĐÚNG 1 công ty → form tạo tòa điền sẵn công ty đó (khỏi phải chọn, vẫn đổi được). `GET /api/companies?scope=mine` + `defaultCompanyId` cho PropertyForm.
 - **Cảnh báo trùng tên khi tạo công ty:** gõ tên trùng công ty đã có (bỏ dấu) → PropertyForm (+ Công ty mới) hiện banner + nút "Dùng công ty này"; admin/companies hiện cảnh báo "đã có công ty tên này (mã …)".
