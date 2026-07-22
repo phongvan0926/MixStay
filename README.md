@@ -234,6 +234,10 @@ mixstay/
 
 ## Changelog
 
+### v9.13 — 2026-07-22 (fix: mã công ty chưa ghép vào mã tin ở TRANG TIN CÔNG KHAI)
+- **Lỗi:** trang tin công khai (`/tin/[id]`, `/share/[token]`) vẫn hiện `MS-RWQYQ5` dù tòa thuộc công ty có mã (VD TimeHouse #010) → phải là `MS-010-RWQYQ5`. Trước chỉ áp `formatListingCode` cho trang admin/broker/landlord, quên trang công khai; và API công khai không trả `company.code`.
+- **Sửa:** API `/api/rooms/public/[id]` + `/api/share-links` thêm `code` vào company select; `ShareViewClient` ghép mã hiển thị `MS-<code>-XXXXXX` cho cả "Mã tin" lẫn nội dung Copy. Verify Playwright: `/tin/[id]` hiện đúng `MS-010-RWQYQ5`.
+
 ### v9.12 — 2026-07-21 (nút bản đồ nổi bật trên nav + gọn trên mobile)
 - **Nav trang chủ:** nút bản đồ cạnh logo đổi từ link mờ → **nền vàng gold** (gold-400 + chữ brand-900, nổi bật trên nền nav xanh đậm), **bo góc rounded-xl giống nút Đăng ký**; text desktop "🗺️ Tìm trên bản đồ", mobile "🗺️ Bản đồ".
 - **Module tìm phòng:** nút "Tìm phòng theo bản đồ" → "**Tìm theo bản đồ**" (ngắn gọn, bỏ icon), giữ **cạnh nút Tìm phòng** (mobile chia đôi hàng) cho gọn.

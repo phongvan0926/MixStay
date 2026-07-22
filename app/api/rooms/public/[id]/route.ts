@@ -36,7 +36,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             fullAddress: true, // CHỈ dùng server-side để dựng publicAddress (ẩn số nhà) — KHÔNG trả về client
             parkingCar: true, parkingBike: true, evCharging: true, petAllowed: true, foreignerOk: true,
             // NO lat, lng, zaloPhone
-            company: { select: { id: true, name: true, logo: true, zaloGroupLink: true, description: true } },
+            company: { select: { id: true, name: true, code: true, logo: true, zaloGroupLink: true, description: true } },
             landlord: { select: { id: true, name: true, phone: true } }, // phone dùng cho FAB Zalo deeplink (KHÔNG render trên UI)
           },
         },

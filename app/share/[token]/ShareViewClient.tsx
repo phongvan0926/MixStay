@@ -8,6 +8,7 @@ import VideoGallery from '@/components/ui/VideoGallery';
 import ZaloFab from '@/components/ui/ZaloFab';
 import ListingActionBar from '@/components/ui/ListingActionBar';
 import { buildListingText } from '@/lib/listing-text';
+import { formatListingCode } from '@/lib/listing-code';
 import CallFab from '@/components/ui/CallFab';
 import Logo from '@/components/ui/Logo';
 import { getZaloLink } from '@/lib/zalo';
@@ -228,9 +229,11 @@ export default function ShareViewClient() {
   const shareUrl = token ? `/share/${token}` : `/tin/${id}`;
   const absShareUrl = (typeof window !== 'undefined' ? window.location.origin : '') + shareUrl;
   const listingLocation = [property?.publicAddress || property?.streetName, property?.district].filter(Boolean).join(', ');
+  // Mã tin HIỂN THỊ = ghép mã công ty (nếu tòa thuộc công ty có mã): MS-010-XXXXXX
+  const displayListingCode = formatListingCode(roomType.listingCode, property?.company?.code);
   const copyText = buildListingText({
     name: roomType.name, typeName: roomType.typeName, areaSqm: roomType.areaSqm,
-    priceMonthly: roomType.priceMonthly, deposit: roomType.deposit, listingCode: roomType.listingCode,
+    priceMonthly: roomType.priceMonthly, deposit: roomType.deposit, listingCode: displayListingCode,
     location: listingLocation, amenities: roomType.amenities, buildingAmenities: property?.amenities,
     description: roomType.description, url: absShareUrl,
   });
@@ -299,7 +302,7 @@ export default function ShareViewClient() {
                 <span className="text-stone-600 font-medium">{[property?.publicAddress, property?.district].filter(Boolean).join(', ') || property?.district}</span>
               </p>
               {roomType.listingCode && (
-                <p className="text-xs font-mono font-semibold text-stone-500 mt-1.5 inline-block bg-stone-100 px-2 py-0.5 rounded">Mã tin: {roomType.listingCode}</p>
+                <p className="text-xs font-mono font-semibold text-stone-500 mt-1.5 inline-block bg-stone-100 px-2 py-0.5 rounded">Mã tin: {displayListingCode}</p>
               )}
             </div>
             <div className="order-1 sm:order-2 shrink-0">

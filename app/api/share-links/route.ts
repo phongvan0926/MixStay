@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
           amenities: true, images: true, totalFloors: true, services: true,
           fullAddress: true, // server-side dựng publicAddress (ẩn số nhà) — sanitizeProperty bỏ trước khi trả về
           parkingCar: true, parkingBike: true, evCharging: true, petAllowed: true, foreignerOk: true,
-          company: { select: { id: true, name: true, logo: true, zaloGroupLink: true, description: true } },
+          company: { select: { id: true, name: true, code: true, logo: true, zaloGroupLink: true, description: true } },
           roomTypes: {
             where: { isApproved: true, status: { in: ['AVAILABLE', 'UPCOMING'] } },
             select: {
@@ -134,7 +134,7 @@ export async function GET(req: NextRequest) {
                   fullAddress: true, // server-side dựng publicAddress (ẩn số nhà) — bỏ trước khi trả về
                   parkingCar: true, parkingBike: true, evCharging: true, petAllowed: true, foreignerOk: true,
                   // NO lat, lng, landlord phone
-                  company: { select: { id: true, name: true, logo: true, zaloGroupLink: true, description: true } },
+                  company: { select: { id: true, name: true, code: true, logo: true, zaloGroupLink: true, description: true } },
                   landlord: { select: { id: true, name: true, phone: true } }, // phone dùng cho FAB Zalo deeplink (KHÔNG render trên UI)
                 },
               },
