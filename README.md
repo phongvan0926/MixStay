@@ -234,6 +234,10 @@ mixstay/
 
 ## Changelog
 
+### v9.15 — 2026-07-23 (hết hẳn popup đổi trạng thái + chọn nhiều phòng đặt trạng thái hàng loạt)
+- **Fix sót popup:** trang CHỦ NHÀ (landlord/properties) vẫn còn `prompt()` hỏi ngày khi bấm đổi trạng thái (v9.14 mới sửa trang admin) → đã bỏ ở CẢ 2 view (card + list): bấm là đổi ngay, sang "Sắp trống" tự đặt ngày = đầu tháng sau + ô ngày inline khung vàng "⚠️ Sẽ trống từ" để sửa (bỏ trống = đầu tháng sau).
+- **Chọn nhiều phòng đặt trạng thái hàng loạt (admin/rooms):** checkbox từng dòng + chọn cả trang; tick chọn → thanh "Đã chọn N phòng" với 3 nút 🟢/🟡/🔴 đổi một thể ("Sắp trống" hàng loạt tự đặt đầu tháng sau, sửa lẻ từng phòng bằng ô ngày).
+
 ### v9.14 — 2026-07-23 (bật/tắt nhanh trạng thái phòng + infinite scroll trang /phong)
 - **Bật/tắt nhanh trạng thái phòng (admin/rooms):** nút trạng thái mỗi dòng bấm để xoay vòng 🟢 Còn → 🟡 Sắp trống → 🔴 Hết → 🟢. Sang "Sắp trống" **tự đặt ngày = đầu tháng sau** (bỏ prompt cũ), kèm **ô ngày inline khung vàng** để sửa "sẽ trống từ"; để trống = tháng sau.
 - **Trang /phong infinite scroll:** cuộn tới gần cuối **tự nạp thêm phòng** (IntersectionObserver, nạp trước ~600px), khỏi bấm "Xem thêm" (vẫn giữ nút dự phòng cho list ngắn). Verify Playwright: 12 → 36 phòng khi cuộn.

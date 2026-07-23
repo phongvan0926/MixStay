@@ -249,6 +249,37 @@ export default function AdminRoomsPage() {
     }
   };
 
+  // === Chọn nhiều phòng → đặt trạng thái hàng loạt ===
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkUpdating, setBulkUpdating] = useState(false);
+  const toggleSelect = (id: string) => setSelectedIds(prev => {
+    const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
+  });
+  const allPageSelected = rooms.length > 0 && rooms.every((r: any) => selectedIds.has(r.id));
+  const toggleSelectAllPage = () => setSelectedIds(prev => {
+    const n = new Set(prev);
+    if (allPageSelected) rooms.forEach((r: any) => n.delete(r.id));
+    else rooms.forEach((r: any) => n.add(r.id));
+    return n;
+  });
+  const bulkSetStatus = async (next: 'AVAILABLE' | 'UPCOMING' | 'UNAVAILABLE') => {
+    if (selectedIds.size === 0) return;
+    setBulkUpdating(true);
+    try {
+      const ids = Array.from(selectedIds);
+      let ok = 0, fail = 0;
+      for (const id of ids) {
+        const body: any = { id, status: next };
+        body.expectedAvailableDate = next === 'UPCOMING' ? firstOfNextMonthISO() : null;
+        const res = await fetch('/api/rooms', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        res.ok ? ok++ : fail++;
+      }
+      toast.success(`Đã đổi ${ok} phòng sang ${next === 'AVAILABLE' ? '🟢 Còn phòng' : next === 'UPCOMING' ? '🟡 Sắp trống (đầu tháng sau)' : '🔴 Hết phòng'}${fail ? ` — ${fail} lỗi` : ''}`);
+      setSelectedIds(new Set());
+      mutate();
+    } finally { setBulkUpdating(false); }
+  };
+
   // Bấm nút trạng thái → xoay vòng Còn → Sắp trống → Hết → Còn.
   // Sang "Sắp trống" tự đặt ngày = đầu tháng sau (không hỏi); sửa lại bằng ô ngày inline khung vàng bên dưới.
   const cycleStatus = async (r: any) => {
@@ -485,11 +516,32 @@ export default function AdminRoomsPage() {
         </div>
       </div>
 
+      {/* Thanh hành động hàng loạt — hiện khi có phòng được tick chọn */}
+      {selectedIds.size > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-3 py-2">
+          <span className="text-sm font-semibold text-brand-800">Đã chọn {selectedIds.size} phòng:</span>
+          <button onClick={() => bulkSetStatus('AVAILABLE')} disabled={bulkUpdating}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors disabled:opacity-50">🟢 Còn phòng</button>
+          <button onClick={() => bulkSetStatus('UPCOMING')} disabled={bulkUpdating}
+            title="Ngày sẽ trống tự đặt = đầu tháng sau (sửa từng phòng bằng ô ngày ở cột Trạng thái)"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors disabled:opacity-50">🟡 Sắp trống</button>
+          <button onClick={() => bulkSetStatus('UNAVAILABLE')} disabled={bulkUpdating}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors disabled:opacity-50">🔴 Hết phòng</button>
+          {bulkUpdating && <span className="text-xs text-stone-500">Đang cập nhật…</span>}
+          <button onClick={() => setSelectedIds(new Set())} disabled={bulkUpdating}
+            className="ml-auto px-2 py-1 text-xs text-stone-500 hover:text-stone-700">✕ Bỏ chọn</button>
+        </div>
+      )}
+
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1200px]">
             <thead className="bg-stone-50/80">
               <tr>
+                <th className="table-header w-8">
+                  <input type="checkbox" checked={allPageSelected} onChange={toggleSelectAllPage}
+                    title="Chọn tất cả phòng trang này" className="accent-brand-600 w-4 h-4 cursor-pointer" />
+                </th>
                 <th className="table-header">Ảnh</th>
                 <th className="table-header">Tin đăng</th>
                 <th className="table-header">Tòa nhà</th>
@@ -512,7 +564,11 @@ export default function AdminRoomsPage() {
                 const companyName = r.property?.company?.name;
                 const badge = getAvailabilityBadge(r);
                 return (
-                  <tr key={r.id} className="hover:bg-stone-50/50 transition-colors">
+                  <tr key={r.id} className={`transition-colors ${selectedIds.has(r.id) ? 'bg-brand-50/60' : 'hover:bg-stone-50/50'}`}>
+                    <td className="table-cell">
+                      <input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleSelect(r.id)}
+                        className="accent-brand-600 w-4 h-4 cursor-pointer" />
+                    </td>
                     <td className="table-cell">
                       {r.images && r.images.length > 0 ? (
                         <OptimizedImage src={r.images[0]} alt={r.name} width={48} height={48} className="w-12 h-12 rounded-lg object-cover border border-stone-200" />
@@ -612,7 +668,7 @@ export default function AdminRoomsPage() {
                 );
               })}
               {filteredRooms.length === 0 && (
-                <tr><td colSpan={13} className="table-cell text-center text-stone-400 py-12">
+                <tr><td colSpan={14} className="table-cell text-center text-stone-400 py-12">
                   {rooms.length === 0 ? 'Chưa có phòng nào' : 'Không tìm thấy phòng phù hợp'}
                 </td></tr>
               )}

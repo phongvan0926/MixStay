@@ -12,6 +12,18 @@ import { useProperties, useRoomTypes, useInquiries, useDashboardStats, useActive
 import { SkeletonStats, SkeletonCardGrid } from '@/components/ui/Skeleton';
 import { normalizeListingCode, formatListingCode } from '@/lib/listing-code';
 
+// Ngày mặc định khi chuyển "Sắp trống" mà chưa chọn: 1 của THÁNG SAU.
+function firstOfNextMonthISO(): string {
+  const n = new Date();
+  return new Date(n.getFullYear(), n.getMonth() + 1, 1).toISOString();
+}
+// ISO → yyyy-MM-dd cho <input type="date">
+function toDateInputValue(iso?: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+}
+
 const ROOM_TYPE_LABELS: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1N1K',
   '2k1n': '2N1K', studio: 'Studio', duplex: 'Duplex',
@@ -295,20 +307,11 @@ export default function LandlordPropertiesPage() {
     } finally { setSubmitting(false); }
   };
 
-  // Cycle status: Còn phòng → Hết phòng → Sắp trống → Còn phòng
-  const cycleStatus = async (id: string, current: 'AVAILABLE' | 'UPCOMING' | 'UNAVAILABLE') => {
-    const next: 'AVAILABLE' | 'UPCOMING' | 'UNAVAILABLE' =
-      current === 'AVAILABLE' ? 'UNAVAILABLE' : current === 'UNAVAILABLE' ? 'UPCOMING' : 'AVAILABLE';
-
+  // Đặt trạng thái trực tiếp (dùng cho cả cycle + ô ngày inline "sẽ trống từ")
+  const setRTStatus = async (id: string, next: 'AVAILABLE' | 'UPCOMING' | 'UNAVAILABLE', expectedAvailableDate?: string | null) => {
     const body: any = { id, status: next };
-    if (next === 'UPCOMING') {
-      const dateStr = prompt('Ngày phòng sẽ trống (YYYY-MM-DD):', new Date(Date.now() + 14 * 86400_000).toISOString().slice(0, 10));
-      if (!dateStr) return;
-      body.expectedAvailableDate = new Date(dateStr).toISOString();
-    } else {
-      body.expectedAvailableDate = null;
-    }
-
+    if (next === 'UPCOMING') body.expectedAvailableDate = expectedAvailableDate || firstOfNextMonthISO();
+    else body.expectedAvailableDate = null;
     const res = await fetch('/api/rooms', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -320,6 +323,15 @@ export default function LandlordPropertiesPage() {
       const err = await res.json().catch(() => ({}));
       toast.error(err.error || 'Lỗi cập nhật');
     }
+  };
+
+  // Cycle status: Còn phòng → Hết phòng → Sắp trống → Còn phòng.
+  // KHÔNG hỏi gì cả (hết popup) — sang "Sắp trống" tự đặt ngày = ĐẦU THÁNG SAU,
+  // muốn đổi ngày thì dùng ô ngày khung vàng hiện ngay dưới badge.
+  const cycleStatus = async (id: string, current: 'AVAILABLE' | 'UPCOMING' | 'UNAVAILABLE') => {
+    const next: 'AVAILABLE' | 'UPCOMING' | 'UNAVAILABLE' =
+      current === 'AVAILABLE' ? 'UNAVAILABLE' : current === 'UNAVAILABLE' ? 'UPCOMING' : 'AVAILABLE';
+    await setRTStatus(id, next);
   };
 
   // Inline edits
@@ -565,6 +577,7 @@ export default function LandlordPropertiesPage() {
                         onChangeAvailableNames={setEditAvailableNames}
                         onEdit={() => openEditRT(rt)}
                         onToggle={() => cycleStatus(rt.id, rt.status || (rt.isAvailable === false ? 'UNAVAILABLE' : 'AVAILABLE'))}
+                        onSetUpcomingDate={(id, iso) => setRTStatus(id, 'UPCOMING', iso)}
                         onReplyInquiry={replyInquiry}
                         onShare={() => shareRoomType(rt.id)}
                         sharing={sharingRT === rt.id}
@@ -585,6 +598,7 @@ export default function LandlordPropertiesPage() {
                     onChangeAvailableNames={setEditAvailableNames}
                     onEdit={openEditRT}
                     onToggle={cycleStatus}
+                    onSetUpcomingDate={(id, iso) => setRTStatus(id, 'UPCOMING', iso)}
                     onShare={shareRoomType}
                     sharingId={sharingRT}
                   />
@@ -758,13 +772,14 @@ function RoomTypeCard({
   rt, property, inquiries,
   editingAvailable, editAvailableUnits, editAvailableNames,
   onStartEdit, onCancelEdit, onSaveAvailable, onChangeAvailableUnits, onChangeAvailableNames,
-  onEdit, onToggle, onReplyInquiry, onShare, sharing,
+  onEdit, onToggle, onReplyInquiry, onShare, sharing, onSetUpcomingDate,
 }: {
   rt: any; property: any; inquiries: any[];
   editingAvailable: string | null; editAvailableUnits: number; editAvailableNames: string;
   onStartEdit: () => void; onCancelEdit: () => void; onSaveAvailable: () => void;
   onChangeAvailableUnits: (n: number) => void; onChangeAvailableNames: (s: string) => void;
   onEdit: () => void; onToggle: () => void;
+  onSetUpcomingDate: (id: string, iso: string) => void;
   onReplyInquiry: (id: string, reply: string) => void;
   onShare: () => void; sharing: boolean;
 }) {
@@ -915,12 +930,16 @@ function RoomTypeCard({
                   ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-200'
                   : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200')}>
             {rt.status === 'UNAVAILABLE' ? '🔴 Hết phòng' : rt.status === 'UPCOMING' ? '🟡 Sắp trống' : '🟢 Còn phòng'}
-            {rt.status === 'UPCOMING' && rt.expectedAvailableDate && (
-              <span className="block text-[10px] font-normal mt-0.5 opacity-80">
-                từ {new Date(rt.expectedAvailableDate).toLocaleDateString('vi-VN')}
-              </span>
-            )}
           </button>
+          {rt.status === 'UPCOMING' && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 px-2 py-1">
+              <label className="block text-[9px] font-medium text-amber-700 leading-tight">⚠️ Sẽ trống từ (bỏ trống = đầu tháng sau):</label>
+              <input type="date"
+                value={toDateInputValue(rt.expectedAvailableDate)}
+                onChange={e => onSetUpcomingDate(rt.id, e.target.value ? new Date(e.target.value).toISOString() : firstOfNextMonthISO())}
+                className="mt-0.5 w-full text-[10px] bg-white border border-amber-200 rounded px-1 py-0.5 text-amber-800" />
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -932,13 +951,14 @@ function RoomTypeListView({
   rts, property,
   editingAvailable, editAvailableUnits, editAvailableNames,
   onStartEdit, onCancelEdit, onSaveAvailable, onChangeAvailableUnits, onChangeAvailableNames,
-  onEdit, onToggle, onShare, sharingId,
+  onEdit, onToggle, onShare, sharingId, onSetUpcomingDate,
 }: {
   rts: any[]; property: any;
   editingAvailable: string | null; editAvailableUnits: number; editAvailableNames: string;
   onStartEdit: (rt: any) => void; onCancelEdit: () => void; onSaveAvailable: (id: string) => void;
   onChangeAvailableUnits: (n: number) => void; onChangeAvailableNames: (s: string) => void;
   onEdit: (rt: any) => void; onToggle: (id: string, current: 'AVAILABLE' | 'UPCOMING' | 'UNAVAILABLE') => void;
+  onSetUpcomingDate: (id: string, iso: string) => void;
   onShare: (id: string) => void; sharingId: string | null;
 }) {
   return (
@@ -1038,12 +1058,16 @@ function RoomTypeListView({
                     <span>
                       {rt.status === 'UNAVAILABLE' ? '🔴 Hết phòng' : rt.status === 'UPCOMING' ? '🟡 Sắp trống' : '🟢 Còn phòng'}
                     </span>
-                    {rt.status === 'UPCOMING' && rt.expectedAvailableDate && (
-                      <span className="text-[9px] opacity-80">
-                        từ {new Date(rt.expectedAvailableDate).toLocaleDateString('vi-VN')}
-                      </span>
-                    )}
                   </button>
+                  {rt.status === 'UPCOMING' && (
+                    <div className="mt-1 mx-auto max-w-[150px] rounded-md border border-amber-300 bg-amber-50 px-1.5 py-1 text-left">
+                      <label className="block text-[9px] font-medium text-amber-700 leading-tight">⚠️ Sẽ trống từ:</label>
+                      <input type="date"
+                        value={toDateInputValue(rt.expectedAvailableDate)}
+                        onChange={e => onSetUpcomingDate(rt.id, e.target.value ? new Date(e.target.value).toISOString() : firstOfNextMonthISO())}
+                        className="mt-0.5 w-full text-[10px] bg-white border border-amber-200 rounded px-1 py-0.5 text-amber-800" />
+                    </div>
+                  )}
                 </td>
                 <td className="px-3 py-2 text-right">
                   {isEditingRow ? (
