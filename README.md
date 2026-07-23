@@ -234,6 +234,10 @@ mixstay/
 
 ## Changelog
 
+### v9.14 — 2026-07-23 (bật/tắt nhanh trạng thái phòng + infinite scroll trang /phong)
+- **Bật/tắt nhanh trạng thái phòng (admin/rooms):** nút trạng thái mỗi dòng bấm để xoay vòng 🟢 Còn → 🟡 Sắp trống → 🔴 Hết → 🟢. Sang "Sắp trống" **tự đặt ngày = đầu tháng sau** (bỏ prompt cũ), kèm **ô ngày inline khung vàng** để sửa "sẽ trống từ"; để trống = tháng sau.
+- **Trang /phong infinite scroll:** cuộn tới gần cuối **tự nạp thêm phòng** (IntersectionObserver, nạp trước ~600px), khỏi bấm "Xem thêm" (vẫn giữ nút dự phòng cho list ngắn). Verify Playwright: 12 → 36 phòng khi cuộn.
+
 ### v9.13 — 2026-07-22 (fix: mã công ty chưa ghép vào mã tin ở TRANG TIN CÔNG KHAI)
 - **Lỗi:** trang tin công khai (`/tin/[id]`, `/share/[token]`) vẫn hiện `MS-RWQYQ5` dù tòa thuộc công ty có mã (VD TimeHouse #010) → phải là `MS-010-RWQYQ5`. Trước chỉ áp `formatListingCode` cho trang admin/broker/landlord, quên trang công khai; và API công khai không trả `company.code`.
 - **Sửa:** API `/api/rooms/public/[id]` + `/api/share-links` thêm `code` vào company select; `ShareViewClient` ghép mã hiển thị `MS-<code>-XXXXXX` cho cả "Mã tin" lẫn nội dung Copy. Verify Playwright: `/tin/[id]` hiện đúng `MS-010-RWQYQ5`.

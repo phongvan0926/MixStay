@@ -193,6 +193,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
 
   // "Xem thêm" — nạp trang kế tiếp và nối vào danh sách (xem toàn bộ phòng mới nhất)
   const loadMore = async () => {
+    if (loadingMore || loading || !results || results.length >= total) return; // chống gọi trùng (infinite scroll)
     setLoadingMore(true);
     try {
       const next = page + 1;
@@ -213,6 +214,22 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
       setLoadingMore(false);
     }
   };
+
+  // Infinite scroll: tự nạp thêm khi cuộn tới gần cuối — khỏi bấm "Xem thêm".
+  const hasMore = !!results && results.length < total;
+  const loadMoreRef = useRef(loadMore);
+  loadMoreRef.current = loadMore;
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasMore || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(
+      entries => { if (entries[0].isIntersecting) loadMoreRef.current(); },
+      { rootMargin: '600px' } // nạp trước khi chạm đáy ~600px cho mượt
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMore]);
 
   // Lưu vị trí cuộn ngay trước khi rời sang trang chi tiết phòng
   const rememberScroll = () => {
@@ -493,17 +510,23 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
               })}
             </div>
 
-            {/* Xem thêm — nạp tiếp phòng mới nhất (phân trang nối, không cần đăng nhập) */}
-            {results.length < total && (
-              <div className="text-center mt-8">
-                <button
-                  type="button"
-                  onClick={loadMore}
-                  disabled={loadingMore}
-                  className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium text-sm bg-white border border-stone-300 text-stone-700 hover:border-brand-400 hover:text-brand-700 hover:shadow-sm transition-all disabled:opacity-60"
-                >
-                  {loadingMore ? 'Đang tải...' : `Xem thêm phòng (${results.length}/${total})`}
-                </button>
+            {/* Infinite scroll: sentinel tự nạp thêm khi cuộn tới; nút chỉ là dự phòng (list quá ngắn) */}
+            {hasMore && (
+              <div ref={sentinelRef} className="text-center mt-8">
+                {loadingMore ? (
+                  <span className="inline-flex items-center gap-2 text-sm text-stone-500">
+                    <svg className="w-4 h-4 animate-spin text-brand-500" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z" /></svg>
+                    Đang tải thêm phòng…
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={loadMore}
+                    className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium text-sm bg-white border border-stone-300 text-stone-700 hover:border-brand-400 hover:text-brand-700 hover:shadow-sm transition-all"
+                  >
+                    Xem thêm phòng ({results.length}/{total})
+                  </button>
+                )}
               </div>
             )}
           </>

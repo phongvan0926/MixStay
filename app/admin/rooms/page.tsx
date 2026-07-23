@@ -18,6 +18,18 @@ const ROOM_TYPE_LABELS: Record<string, string> = {
   '1k1n': '1N1K', '2k1n': '2N1K', duplex: 'Duplex',
 };
 
+// Ngày mặc định khi chuyển "Sắp trống" mà chưa chọn: 1 của THÁNG SAU.
+function firstOfNextMonthISO(): string {
+  const n = new Date();
+  return new Date(n.getFullYear(), n.getMonth() + 1, 1).toISOString();
+}
+// ISO → yyyy-MM-dd cho <input type="date">
+function toDateInputValue(iso?: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+}
+
 // Excel column mapping
 const EXCEL_COLUMNS = [
   { key: 'propertyName', label: 'Tên tòa nhà', required: true },
@@ -237,18 +249,13 @@ export default function AdminRoomsPage() {
     }
   };
 
+  // Bấm nút trạng thái → xoay vòng Còn → Sắp trống → Hết → Còn.
+  // Sang "Sắp trống" tự đặt ngày = đầu tháng sau (không hỏi); sửa lại bằng ô ngày inline khung vàng bên dưới.
   const cycleStatus = async (r: any) => {
     const next: 'AVAILABLE' | 'UPCOMING' | 'UNAVAILABLE' =
       r.status === 'AVAILABLE' ? 'UPCOMING' : r.status === 'UPCOMING' ? 'UNAVAILABLE' : 'AVAILABLE';
-    if (next === 'UPCOMING') {
-      const dateStr = prompt('Ngày phòng sẽ trống (YYYY-MM-DD):', new Date(Date.now() + 14 * 86400_000).toISOString().slice(0, 10));
-      if (!dateStr) return;
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) { toast.error('Ngày không hợp lệ'); return; }
-      await setStatus(r.id, 'UPCOMING', d.toISOString());
-    } else {
-      await setStatus(r.id, next);
-    }
+    if (next === 'UPCOMING') await setStatus(r.id, 'UPCOMING', firstOfNextMonthISO());
+    else await setStatus(r.id, next);
   };
 
   const toggleApproval = async (id: string, current: boolean) => {
@@ -567,10 +574,14 @@ export default function AdminRoomsPage() {
                         className={`badge cursor-pointer transition-colors ${badge.cls} hover:opacity-80`}>
                         {badge.label}
                       </button>
-                      {r.status === 'UPCOMING' && r.expectedAvailableDate && (
-                        <p className="text-[10px] text-amber-600 mt-0.5">
-                          từ {new Date(r.expectedAvailableDate).toLocaleDateString('vi-VN')}
-                        </p>
+                      {r.status === 'UPCOMING' && (
+                        <div className="mt-1 rounded-md border border-amber-300 bg-amber-50 px-1.5 py-1 max-w-[150px]">
+                          <label className="block text-[9px] font-medium text-amber-700 leading-tight">⚠️ Sẽ trống từ (bỏ trống = đầu tháng sau):</label>
+                          <input type="date"
+                            value={toDateInputValue(r.expectedAvailableDate)}
+                            onChange={e => setStatus(r.id, 'UPCOMING', e.target.value ? new Date(e.target.value).toISOString() : firstOfNextMonthISO())}
+                            className="mt-0.5 w-full text-[10px] bg-white border border-amber-200 rounded px-1 py-0.5 text-amber-800" />
+                        </div>
                       )}
                     </td>
                     <td className="table-cell">
