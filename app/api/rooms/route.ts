@@ -35,9 +35,14 @@ export async function GET(req: NextRequest) {
 
     const where: any = {};
 
-    // Admin sees all rooms; others only see approved
-    if (session?.user?.role !== 'ADMIN') {
+    // Admin-family thấy mọi tin (kể cả chờ duyệt — staff cần thấy để duyệt); người khác chỉ tin đã duyệt
+    if (session?.user?.role !== 'ADMIN' && session?.user?.role !== 'ADMIN_STAFF') {
       where.isApproved = true;
+    } else {
+      // Lọc theo duyệt: approved=false → chỉ tin CHỜ DUYỆT; approved=true → chỉ tin đã duyệt
+      const approvedParam = url.searchParams.get('approved');
+      if (approvedParam === 'false') where.isApproved = false;
+      else if (approvedParam === 'true') where.isApproved = true;
     }
 
     if (propertyId) where.propertyId = propertyId;

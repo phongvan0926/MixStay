@@ -234,6 +234,10 @@ mixstay/
 
 ## Changelog
 
+### v9.18 — 2026-07-23 (bộ lọc "Chờ duyệt" ở quản trị Tin đăng + staff thấy được tin chờ duyệt)
+- **Thiếu lọc duyệt:** admin muốn duyệt tin phải tự nhìn từng badge vàng. Thêm dropdown thứ 4: **"⏳ Chờ duyệt / ✓ Đã duyệt"** — lọc server-side (`/api/rooms?approved=false`), dò xuyên trang, dồn về trang 1.
+- **Fix quyền kèm theo:** ADMIN_STAFF trước bị ép chỉ thấy tin đã duyệt → có quyền APPROVE_LISTINGS cũng KHÔNG thấy tin để duyệt. Nay admin-family (ADMIN + ADMIN_STAFF) thấy mọi tin.
+
 ### v9.17 — 2026-07-23 (fix menu quản trị mobile bị "rơi khỏi màn hình" + bảng Tin đăng 8 cột)
 - **ROOT CAUSE menu mobile:** thanh menu dưới (bottom nav) vốn CÓ sẵn nhưng `<main>` (flex item) thiếu `min-w-0` → không co theo màn hình mà PHÌNH theo bảng rộng → mobile browser mở viewport như desktop (chữ bé tí, phải zoom out, bottom nav rơi xuống đáy trang ~2500px). Fix 1 dòng `min-w-0` → viewport mobile chuẩn 390px, menu dưới hiện NGAY trên mọi trang quản trị (mọi vai trò), bảng cuộn ngang gọn trong khung riêng.
 - **Bảng Tin đăng 14 → 8 cột** (đỡ kéo ngang, laptop 1366px hết cuộn): gộp Ảnh vào cột Tin đăng; Loại + Diện tích + Ngắn hạn thành dòng phụ dưới tiêu đề; Công ty thành badge cạnh quận; Duyệt xếp dọc cùng cột Trạng thái. min-w bảng 1280→900.

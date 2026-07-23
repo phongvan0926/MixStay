@@ -166,6 +166,7 @@ export default function AdminRoomsPage() {
   const [filterProperty, setFilterProperty] = useState('');
   const [filterRoomType, setFilterRoomType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [filterApproved, setFilterApproved] = useState(''); // '' | 'false' (chờ duyệt) | 'true' (đã duyệt)
 
   const roomParams: Record<string, string> = { page: String(page), limit: '20' };
   if (search) roomParams.search = search;
@@ -173,6 +174,7 @@ export default function AdminRoomsPage() {
   if (filterProperty) roomParams.propertyId = filterProperty;
   if (filterRoomType) roomParams.typeName = filterRoomType;
   if (filterStatus) roomParams.status = filterStatus;
+  if (filterApproved) roomParams.approved = filterApproved;
 
   const { roomTypes: rooms, pagination, isLoading: loading, mutate } = useRoomTypes(roomParams);
   const { properties, mutate: mutateProperties } = useProperties({ status: 'APPROVED', limit: '200' });
@@ -199,6 +201,7 @@ export default function AdminRoomsPage() {
   const changeProperty = (v: string) => { setFilterProperty(v); setPage(1); };
   const changeRoomType = (v: string) => { setFilterRoomType(v); setPage(1); };
   const changeStatus = (v: string) => { setFilterStatus(v); setPage(1); };
+  const changeApproved = (v: string) => { setFilterApproved(v); setPage(1); };
 
   // Properties cho dropdown (cascade theo công ty đang lọc)
   const filteredProperties = useMemo(() => {
@@ -420,7 +423,7 @@ export default function AdminRoomsPage() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Danh sách phòng');
 
-    const hasFilters = filterCompany || filterProperty || filterRoomType || filterStatus;
+    const hasFilters = filterCompany || filterProperty || filterRoomType || filterStatus || filterApproved;
     const filename = hasFilters
       ? `MixStay_Phong_Filtered_${new Date().toISOString().slice(0, 10)}.xlsx`
       : `MixStay_Phong_${new Date().toISOString().slice(0, 10)}.xlsx`;
@@ -430,7 +433,7 @@ export default function AdminRoomsPage() {
 
   if (loading) return <div className="p-8"><SkeletonTable rows={6} cols={8} /></div>;
 
-  const hasFilters = filterCompany || filterProperty || filterRoomType || filterStatus;
+  const hasFilters = filterCompany || filterProperty || filterRoomType || filterStatus || filterApproved;
 
   return (
     <div>
@@ -475,7 +478,7 @@ export default function AdminRoomsPage() {
           </form>
           <div className="flex items-center gap-3 sm:ml-auto">
             {hasFilters && (
-              <button onClick={() => { setFilterCompany(''); setFilterProperty(''); setFilterRoomType(''); setFilterStatus(''); setPage(1); }}
+              <button onClick={() => { setFilterCompany(''); setFilterProperty(''); setFilterRoomType(''); setFilterStatus(''); setFilterApproved(''); setPage(1); }}
                 className="px-3 py-2 text-sm text-stone-500 hover:text-stone-700 transition-colors whitespace-nowrap">Xoá bộ lọc</button>
             )}
             <span className="text-sm text-stone-400 whitespace-nowrap">{pagination?.total ?? rooms.length} phòng</span>
@@ -495,8 +498,8 @@ export default function AdminRoomsPage() {
           emptyText="Không tìm thấy tòa nhà — hãy chọn từ danh sách"
         />
 
-        {/* Hàng 3: Công ty + Kiểu phòng + Trạng thái — CÙNG 1 dòng */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {/* Hàng 3: Công ty + Kiểu phòng + Trạng thái + Duyệt — CÙNG 1 dòng */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <select className="input-field w-full" value={filterCompany}
             onChange={e => changeCompany(e.target.value)}>
             <option value="">Tất cả công ty</option>
@@ -512,6 +515,11 @@ export default function AdminRoomsPage() {
             <option value="AVAILABLE">🟢 Còn phòng</option>
             <option value="UNAVAILABLE">🔴 Hết phòng</option>
             <option value="UPCOMING">🟡 Sắp trống</option>
+          </select>
+          <select className="input-field w-full" value={filterApproved} onChange={e => changeApproved(e.target.value)}>
+            <option value="">Duyệt: tất cả</option>
+            <option value="false">⏳ Chờ duyệt</option>
+            <option value="true">✓ Đã duyệt</option>
           </select>
         </div>
       </div>
