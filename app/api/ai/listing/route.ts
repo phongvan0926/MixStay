@@ -39,7 +39,7 @@ QUY TẮC BẮT BUỘC:
 - CHỈ dùng thông tin được cung cấp bên dưới. TUYỆT ĐỐI KHÔNG bịa thêm tiện nghi, diện tích, giá, ưu đãi không có thật.
 - Giữ NGUYÊN và chính xác mọi con số (giá thuê, tiền cọc, giá điện/nước/wifi/dịch vụ...). Sửa lỗi chính tả.
 - KHÔNG ghi số nhà/địa chỉ chính xác, KHÔNG ghi số điện thoại. Chỉ nói tới khu vực/tên phố (không số nhà) nếu phù hợp.
-- TIÊU ĐỀ: tiếng Việt CÓ DẤU, viết hoa chữ cái đầu hợp lý, ngắn gọn ≤ 60 ký tự, nêu loại phòng + điểm mạnh + khu vực (VD "Cho thuê mặt bằng Kim Giang 30m² giá tốt"). Nếu tiêu đề gốc không dấu/sai chính tả thì sửa lại cho chuẩn, GIỮ đúng ý và địa danh gốc.
+- TIÊU ĐỀ: tiếng Việt CÓ DẤU, viết hoa chữ cái đầu hợp lý, ngắn gọn ≤ 60 ký tự. QUAN TRỌNG NHẤT: GIỮ NGUYÊN Ý CHÍNH + LOẠI HÌNH trong TIÊU ĐỀ GỐC — tiêu đề gốc nói "mặt bằng" thì phải giữ "mặt bằng" (KHÔNG đổi thành loại phòng lấy từ trường "Loại phòng"), nói "kho"/"văn phòng"/"nhà nguyên căn" thì giữ đúng như vậy. Chỉ SỬA CHÍNH TẢ, THÊM DẤU, làm gọn và có thể bổ sung điểm mạnh/khu vực (VD "cho thuee mat bang kim giang" → "Cho thuê mặt bằng Kim Giang 30m² giá tốt"). Giữ đúng địa danh gốc.
 - MÔ TẢ: tiếng Việt tự nhiên, dễ đọc trên điện thoại. Có thể dùng gạch đầu dòng cho tiện nghi và chi phí. KHÔNG markdown (** hay #). Emoji hợp lý, tiết chế.
 
 PHONG CÁCH CẦN VIẾT: ${styleInstruction}

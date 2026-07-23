@@ -234,6 +234,10 @@ mixstay/
 
 ## Changelog
 
+### v9.20 — 2026-07-23 (AI chuẩn hóa: giữ đúng loại hình tiêu đề gốc + user sửa được kết quả)
+- **Giữ ý chính tiêu đề gốc:** prompt yêu cầu GIỮ NGUYÊN loại hình trong tiêu đề gốc — "mặt bằng"/"kho"/"văn phòng"/"nhà nguyên căn" không bị đổi thành loại phòng lấy từ trường Kiểu phòng; chỉ sửa chính tả + thêm dấu + làm gọn. Verify: "cho thuee mat bang kim giang" (typeName=don) → "Cho thuê mặt bằng Kim Giang 30m² có bãi đỗ ô tô" ✓.
+- **User tham gia sửa kết quả AI:** preview trong "✨ AI chuẩn hóa tiêu đề + mô tả" đổi thành Ô NHẬP SỬA ĐƯỢC (input tiêu đề + textarea mô tả) — chỉnh xong bấm "Dùng bản này (đã gồm chỉnh sửa của bạn)" mới áp vào form, rồi vẫn phải bấm Lưu tin như thường.
+
 ### v9.19 — 2026-07-23 (AI chuẩn hóa CẢ TIÊU ĐỀ + mô tả tin đăng)
 - **Vấn đề:** nhiều tin người dùng đăng tiêu đề không dấu ("cho thuee mat bang kim giang"), mô tả sơ sài; nút AI cũ chỉ viết lại MÔ TẢ.
 - **Nâng cấp:** `/api/ai/listing` structured output trả `{title, description}` — tiêu đề chuẩn hóa tiếng Việt CÓ DẤU ≤60 ký tự (giữ ý + địa danh, không số nhà/SĐT). `AiListingAssistant` (nút "✨ AI chuẩn hóa tiêu đề + mô tả" trong form Sửa tin — admin/chủ nhà đều dùng được) preview cả 2, bấm "Dùng bản này" áp vào cả ô tiêu đề lẫn mô tả (không auto-lưu, người dùng bấm Lưu như thường).

@@ -121,27 +121,35 @@ export default function AiListingAssistant(props: Props) {
 
       {result && (
         <div className="mt-3">
-          <p className="text-xs font-medium text-stone-500 mb-1.5">Bản AI đề xuất (xem trước):</p>
+          <p className="text-xs font-medium text-stone-500 mb-1.5">Bản AI đề xuất — bạn SỬA TRỰC TIẾP được trước khi dùng:</p>
           {resultTitle && (
-            <div className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 mb-1.5">
-              <p className="text-[10px] font-medium text-violet-500 uppercase">Tiêu đề chuẩn hóa</p>
-              <p className="text-sm font-semibold text-stone-800">{resultTitle}</p>
+            <div className="mb-1.5">
+              <p className="text-[10px] font-medium text-violet-500 uppercase mb-0.5">Tiêu đề chuẩn hóa (sửa được)</p>
+              <input
+                value={resultTitle}
+                onChange={e => setResultTitle(e.target.value)}
+                className="w-full rounded-lg border border-violet-200 bg-white px-3 py-2 text-sm font-semibold text-stone-800 focus:border-violet-400 focus:ring-1 focus:ring-violet-200 outline-none"
+              />
             </div>
           )}
-          <div className="rounded-lg border border-stone-200 bg-white p-3 max-h-64 overflow-y-auto">
-            <p className="text-sm text-stone-700 whitespace-pre-line leading-relaxed">{result}</p>
-          </div>
+          <p className="text-[10px] font-medium text-violet-500 uppercase mb-0.5">Mô tả (sửa được)</p>
+          <textarea
+            value={result}
+            onChange={e => setResult(e.target.value)}
+            rows={8}
+            className="w-full rounded-lg border border-stone-200 bg-white p-3 text-sm text-stone-700 leading-relaxed focus:border-violet-400 focus:ring-1 focus:ring-violet-200 outline-none resize-y"
+          />
           <div className="flex gap-2 mt-2">
             <button type="button" onClick={apply}
               className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-all">
-              ✅ Dùng bản này
+              ✅ Dùng bản này (đã gồm chỉnh sửa của bạn)
             </button>
             <button type="button" onClick={() => setResult('')}
               className="px-3 py-1.5 rounded-lg text-xs font-medium bg-stone-100 text-stone-600 hover:bg-stone-200 transition-all">
               Bỏ
             </button>
           </div>
-          <p className="text-[11px] text-stone-400 mt-1.5">Bạn có thể sửa lại sau khi áp dụng. AI chỉ dùng thông tin bạn nhập, có thể chưa hoàn hảo — hãy kiểm tra số liệu.</p>
+          <p className="text-[11px] text-stone-400 mt-1.5">Sửa trực tiếp trong 2 ô trên rồi bấm Dùng. AI chỉ dùng thông tin bạn nhập — hãy kiểm tra số liệu trước khi Lưu tin.</p>
         </div>
       )}
     </div>
