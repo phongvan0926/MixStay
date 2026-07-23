@@ -455,11 +455,11 @@ export default function MapClient() {
         </div>
       )}
 
-      <MapContainer center={HANOI_CENTER} zoom={12} className="h-full w-full" scrollWheelZoom>
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+      {/* attributionControl={false}: tắt hộp attribution mặc định (chữ "Leaflet" + cờ).
+          Dòng © OpenStreetMap vẫn PHẢI giữ theo giấy phép tile miễn phí của OSM —
+          render riêng bên dưới ở dạng nhỏ, mờ, kín đáo nhất có thể. */}
+      <MapContainer center={HANOI_CENTER} zoom={12} className="h-full w-full" scrollWheelZoom attributionControl={false}>
+        <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <ZoomWatcher onZoom={setZoom} />
         <MapClickHandler onMapClick={handleMapClick} />
         <FlyTo target={flyTarget} />
@@ -535,6 +535,16 @@ export default function MapClient() {
           );
         })}
       </MapContainer>
+
+      {/* Ghi công OSM (bắt buộc theo giấy phép) — thu nhỏ, mờ, góc phải dưới, không logo/không "Leaflet" */}
+      <a
+        href="https://www.openstreetmap.org/copyright"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute bottom-0.5 right-1 z-[500] text-[9px] leading-none text-stone-400/70 hover:text-stone-500 bg-white/40 px-1 rounded"
+      >
+        © OpenStreetMap
+      </a>
     </div>
   );
 }

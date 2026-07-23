@@ -234,6 +234,10 @@ mixstay/
 
 ## Changelog
 
+### v9.24 — 2026-07-23 (bản đồ: gọn attribution + backfill pin tòa thiếu tọa độ)
+- **Ẩn hộp attribution mặc định của Leaflet** (chữ "Leaflet" + cờ) trên `/ban-do`; giữ dòng **© OpenStreetMap** thu nhỏ, mờ ở góc (bắt buộc theo giấy phép tile OSM — không được bỏ hẳn).
+- **Kiểm chứng luồng tự đánh dấu bản đồ:** tạo/sửa tòa đã TỰ geocode tọa độ từ địa chỉ (POST/PUT `properties`); tòa chỉ hiện trên bản đồ khi APPROVED + có tin duyệt còn hiệu lực (`/api/rooms/map`, cache 5'). Phát hiện 172/466 tòa thiếu tọa độ (địa chỉ bẩn khiến geocode fail âm thầm) → chạy backfill `scripts/geocode-properties.js` điền bù.
+
 ### v9.23 — 2026-07-23 (kho công ty: khóa khách trong hệ sinh thái công ty — không link/hotline ra ngoài)
 - **Chế độ kho công ty trên trang tin lẻ:** thẻ phòng ở `/share/company/[id]` dẫn sang `/tin/[id]?kho=<companyId>` — trang tin nhận `?kho=` (chỉ hiệu lực khi đúng công ty của tin, không hiệu lực trên link CTV) và: logo KHÔNG dẫn về trang chủ; nav thay hotline MixStay bằng nút "🏢 Kho phòng {công ty}" quay về kho; **Tin đăng liên quan chỉ gợi ý tin CÙNG công ty** (`/api/rooms/related?companyId=`) và các thẻ liên quan giữ nguyên `?kho=` khi bấm tiếp; nút chia sẻ cũng giữ `?kho=`.
 - **Liên hệ chỉ về công ty/quản lý tòa:** FAB Zalo = link nhóm Zalo công ty → SĐT chủ tòa (KHÔNG fallback Zalo hệ thống); FAB Gọi = SĐT công ty → SĐT chủ tòa, không có thì ẨN (không hiện hotline MixStay). API `rooms/public/[id]` trả thêm `company.phone` cho việc này. Trang kho `/share/company` cũng bỏ fallback hotline MixStay khi công ty thiếu SĐT.
