@@ -234,6 +234,11 @@ mixstay/
 
 ## Changelog
 
+### v9.19 — 2026-07-23 (AI chuẩn hóa CẢ TIÊU ĐỀ + mô tả tin đăng)
+- **Vấn đề:** nhiều tin người dùng đăng tiêu đề không dấu ("cho thuee mat bang kim giang"), mô tả sơ sài; nút AI cũ chỉ viết lại MÔ TẢ.
+- **Nâng cấp:** `/api/ai/listing` structured output trả `{title, description}` — tiêu đề chuẩn hóa tiếng Việt CÓ DẤU ≤60 ký tự (giữ ý + địa danh, không số nhà/SĐT). `AiListingAssistant` (nút "✨ AI chuẩn hóa tiêu đề + mô tả" trong form Sửa tin — admin/chủ nhà đều dùng được) preview cả 2, bấm "Dùng bản này" áp vào cả ô tiêu đề lẫn mô tả (không auto-lưu, người dùng bấm Lưu như thường).
+- Verify: "cho thuee mat bang kim giang" → "Cho thuê phòng đơn Kim Giang 30m² ban công, đủ đồ" + mô tả gọn giữ đúng số liệu.
+
 ### v9.18 — 2026-07-23 (bộ lọc "Chờ duyệt" ở quản trị Tin đăng + staff thấy được tin chờ duyệt)
 - **Thiếu lọc duyệt:** admin muốn duyệt tin phải tự nhìn từng badge vàng. Thêm dropdown thứ 4: **"⏳ Chờ duyệt / ✓ Đã duyệt"** — lọc server-side (`/api/rooms?approved=false`), dò xuyên trang, dồn về trang 1.
 - **Fix quyền kèm theo:** ADMIN_STAFF trước bị ép chỉ thấy tin đã duyệt → có quyền APPROVE_LISTINGS cũng KHÔNG thấy tin để duyệt. Nay admin-family (ADMIN + ADMIN_STAFF) thấy mọi tin.

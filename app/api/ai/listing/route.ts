@@ -33,22 +33,19 @@ function buildPrompt(styleInstruction: string, ctx: {
   lines.push(`- Mô tả gốc (thô, có thể có lỗi) của chủ nhà: ${ctx.raw?.trim() ? ctx.raw.trim() : '(chưa có — hãy viết mới từ thông tin trên)'}`);
 
   return `Bạn là chuyên gia viết tin cho thuê chung cư mini / phòng trọ tại Việt Nam.
-Nhiệm vụ: VIẾT LẠI phần MÔ TẢ tin đăng cho chuẩn, rõ ràng, đúng chính tả và hấp dẫn hơn, theo ĐÚNG phong cách yêu cầu.
+Nhiệm vụ: CHUẨN HÓA tin đăng — viết lại cả TIÊU ĐỀ lẫn MÔ TẢ cho chuẩn, rõ ràng, đúng chính tả tiếng Việt CÓ DẤU và hấp dẫn hơn, theo ĐÚNG phong cách yêu cầu.
 
 QUY TẮC BẮT BUỘC:
 - CHỈ dùng thông tin được cung cấp bên dưới. TUYỆT ĐỐI KHÔNG bịa thêm tiện nghi, diện tích, giá, ưu đãi không có thật.
 - Giữ NGUYÊN và chính xác mọi con số (giá thuê, tiền cọc, giá điện/nước/wifi/dịch vụ...). Sửa lỗi chính tả.
-- KHÔNG ghi số nhà/địa chỉ chính xác, KHÔNG ghi số điện thoại. Chỉ nói tới khu vực (quận) nếu phù hợp.
-- Viết tiếng Việt tự nhiên, dễ đọc trên điện thoại. Có thể dùng gạch đầu dòng cho tiện nghi và chi phí.
-- KHÔNG dùng ký hiệu markdown (dấu ** hay #). Có thể dùng emoji hợp lý, tiết chế.
-- CHỈ trả về nội dung mô tả cuối cùng, KHÔNG kèm lời dẫn, không kèm tiêu đề "Mô tả:", không giải thích.
+- KHÔNG ghi số nhà/địa chỉ chính xác, KHÔNG ghi số điện thoại. Chỉ nói tới khu vực/tên phố (không số nhà) nếu phù hợp.
+- TIÊU ĐỀ: tiếng Việt CÓ DẤU, viết hoa chữ cái đầu hợp lý, ngắn gọn ≤ 60 ký tự, nêu loại phòng + điểm mạnh + khu vực (VD "Cho thuê mặt bằng Kim Giang 30m² giá tốt"). Nếu tiêu đề gốc không dấu/sai chính tả thì sửa lại cho chuẩn, GIỮ đúng ý và địa danh gốc.
+- MÔ TẢ: tiếng Việt tự nhiên, dễ đọc trên điện thoại. Có thể dùng gạch đầu dòng cho tiện nghi và chi phí. KHÔNG markdown (** hay #). Emoji hợp lý, tiết chế.
 
 PHONG CÁCH CẦN VIẾT: ${styleInstruction}
 
 THÔNG TIN PHÒNG:
-${lines.join('\n')}
-
-Hãy viết lại phần mô tả:`;
+${lines.join('\n')}`;
 }
 
 export async function POST(req: NextRequest) {
@@ -106,7 +103,17 @@ export async function POST(req: NextRequest) {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: 0.8,
-        maxOutputTokens: 1200,
+        maxOutputTokens: 1500,
+        // Structured output: trả cả TIÊU ĐỀ chuẩn hóa (có dấu) lẫn MÔ TẢ
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'OBJECT',
+          properties: {
+            title: { type: 'STRING', description: 'Tiêu đề tin chuẩn hóa: tiếng Việt có dấu, ≤60 ký tự, không số nhà/SĐT' },
+            description: { type: 'STRING', description: 'Mô tả tin đã chuẩn hóa theo phong cách yêu cầu' },
+          },
+          required: ['title', 'description'],
+        },
         thinkingConfig: { thinkingBudget: 0 }, // tắt "thinking" → không nuốt token, trả đủ nội dung
       },
     });
@@ -118,7 +125,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Không gọi được AI. Vui lòng thử lại.' }, { status: 502 });
     }
 
-    const text = result.text;
+    let title = '';
+    let text = '';
+    try {
+      const parsed = JSON.parse(result.text);
+      title = (parsed?.title || '').trim();
+      text = (parsed?.description || '').trim();
+    } catch {
+      text = result.text; // phòng hờ model trả text trần
+    }
 
     if (!text) {
       return NextResponse.json({ error: 'AI chưa trả về nội dung, thử lại nhé.' }, { status: 502 });
@@ -127,7 +142,8 @@ export async function POST(req: NextRequest) {
     // Dọn nhẹ: bỏ ký hiệu markdown ** còn sót, khoảng trắng thừa.
     const cleaned = text.replace(/\*\*/g, '').replace(/\n{3,}/g, '\n\n').trim();
 
-    return NextResponse.json({ text: cleaned, style: style.key });
+    // `text` giữ tên field cũ (tương thích); `title` là phần mới cho chuẩn hóa tiêu đề.
+    return NextResponse.json({ text: cleaned, title, style: style.key });
   } catch (error: any) {
     console.error('/api/ai/listing error:', error);
     return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });

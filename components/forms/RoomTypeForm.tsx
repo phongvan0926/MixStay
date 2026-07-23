@@ -437,7 +437,10 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
               amenities={form.amenities}
               description={form.description}
               propertyId={form.propertyId}
-              onApply={text => updateField('description', text)}
+              onApply={({ description, title }) => {
+                updateField('description', description);
+                if (title) updateField('name', title); // tiêu đề chuẩn hóa (có dấu) thay tiêu đề cũ
+              }}
             />
           </div>
         </div>

@@ -13,8 +13,8 @@ interface Props {
   amenities?: string[];
   description?: string;
   propertyId?: string;
-  // Áp dụng nội dung AL vào ô mô tả của form.
-  onApply: (text: string) => void;
+  // Áp dụng kết quả AI vào form: mô tả + tiêu đề chuẩn hóa (nếu có).
+  onApply: (payload: { description: string; title?: string }) => void;
 }
 
 export default function AiListingAssistant(props: Props) {
@@ -23,10 +23,12 @@ export default function AiListingAssistant(props: Props) {
   const [style, setStyle] = useState(DEFAULT_AI_STYLE);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState('');
+  const [resultTitle, setResultTitle] = useState('');
 
   const generate = async () => {
     setLoading(true);
     setResult('');
+    setResultTitle('');
     try {
       const res = await fetch('/api/ai/listing', {
         method: 'POST',
@@ -49,6 +51,7 @@ export default function AiListingAssistant(props: Props) {
         return;
       }
       setResult(data.text || '');
+      setResultTitle(data.title || '');
     } catch {
       toast.error('Lỗi kết nối, thử lại nhé');
     } finally {
@@ -57,10 +60,11 @@ export default function AiListingAssistant(props: Props) {
   };
 
   const apply = () => {
-    onApply(result);
+    onApply({ description: result, title: resultTitle || undefined });
     setResult('');
+    setResultTitle('');
     setOpen(false);
-    toast.success('Đã áp dụng nội dung AI vào ô mô tả');
+    toast.success(resultTitle ? 'Đã chuẩn hóa tiêu đề + mô tả bằng AI' : 'Đã áp dụng nội dung AI vào ô mô tả');
   };
 
   if (!open) {
@@ -70,7 +74,7 @@ export default function AiListingAssistant(props: Props) {
         onClick={() => setOpen(true)}
         className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gradient-to-r from-violet-50 to-brand-50 border border-violet-200 text-violet-700 hover:from-violet-100 hover:to-brand-100 transition-all"
       >
-        ✨ AI hỗ trợ chuẩn hóa tin đăng
+        ✨ AI chuẩn hóa tiêu đề + mô tả
       </button>
     );
   }
@@ -78,8 +82,8 @@ export default function AiListingAssistant(props: Props) {
   return (
     <div className="mt-2 rounded-xl border border-violet-200 bg-violet-50/40 p-3">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-semibold text-violet-800">✨ AI hỗ trợ chuẩn hóa tin đăng</p>
-        <button type="button" onClick={() => { setOpen(false); setResult(''); }} className="text-stone-400 hover:text-stone-600 text-sm">✕</button>
+        <p className="text-sm font-semibold text-violet-800">✨ AI chuẩn hóa tiêu đề + mô tả</p>
+        <button type="button" onClick={() => { setOpen(false); setResult(''); setResultTitle(''); }} className="text-stone-400 hover:text-stone-600 text-sm">✕</button>
       </div>
 
       {/* Chọn phong cách viết */}
@@ -118,6 +122,12 @@ export default function AiListingAssistant(props: Props) {
       {result && (
         <div className="mt-3">
           <p className="text-xs font-medium text-stone-500 mb-1.5">Bản AI đề xuất (xem trước):</p>
+          {resultTitle && (
+            <div className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 mb-1.5">
+              <p className="text-[10px] font-medium text-violet-500 uppercase">Tiêu đề chuẩn hóa</p>
+              <p className="text-sm font-semibold text-stone-800">{resultTitle}</p>
+            </div>
+          )}
           <div className="rounded-lg border border-stone-200 bg-white p-3 max-h-64 overflow-y-auto">
             <p className="text-sm text-stone-700 whitespace-pre-line leading-relaxed">{result}</p>
           </div>
