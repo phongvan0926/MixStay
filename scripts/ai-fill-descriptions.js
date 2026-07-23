@@ -8,7 +8,7 @@
  */
 const {PrismaClient}=require('@prisma/client');
 const fs=require('fs');
-for(const f of ['.env.local','.env']){try{fs.readFileSync(f,'utf8').split('\n').forEach(l=>{const m=l.match(/^([A-Z_]+)=(.*)$/);if(m&&!process.env[m[1]])process.env[m[1]]=m[2].replace(/^["']|["']$/g,'');});}catch{}}
+for(const f of ['.env.local','.env']){try{fs.readFileSync(f,'utf8').split('\n').forEach(l=>{const m=l.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);if(m&&!process.env[m[1]])process.env[m[1]]=m[2].replace(/^["']|["']$/g,'');});}catch{}}
 const p=new PrismaClient();
 const KEYS=(()=>{const set=new Set();const add=v=>v?.split(',').forEach(k=>{const t=k.trim();if(t)set.add(t);});add(process.env.GEMINI_API_KEYS);add(process.env.GEMINI_API_KEY);for(let i=2;i<=10;i++)add(process.env['GEMINI_API_KEY_'+i]);return [...set];})();
 const MODEL=process.env.GEMINI_MODEL||'gemini-2.5-flash';

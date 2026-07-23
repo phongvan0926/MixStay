@@ -14,7 +14,7 @@ const fs = require('fs');
 for (const f of ['.env.local', '.env']) {
   try {
     fs.readFileSync(f, 'utf8').split('\n').forEach(l => {
-      const m = l.match(/^([A-Z_]+)=(.*)$/);
+      const m = l.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
       if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
     });
   } catch {}
