@@ -29,6 +29,18 @@ export const OTHER_DISTRICTS = [
 // Danh sách đầy đủ 30 quận/huyện (quận hay dùng đứng trước cho tiện chọn).
 export const HANOI_DISTRICTS = [...PRIMARY_DISTRICTS, ...OTHER_DISTRICTS];
 
+// Chuẩn hóa tên quận người dùng gõ tay về ĐÚNG tên trong HANOI_DISTRICTS
+// ("đống đa "/"ĐỐNG ĐA" → "Đống Đa") — tránh bản đồ/bộ lọc tách cụm vì hoa-thường.
+// Không khớp quận nào → trả nguyên văn (đã trim).
+const normDistrict = (s: string) =>
+  s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'd').toLowerCase().trim();
+const DISTRICT_BY_NORM = new Map(HANOI_DISTRICTS.map(d => [normDistrict(d), d]));
+export function canonicalDistrict(input: string | null | undefined): string {
+  const raw = (input || '').trim();
+  if (!raw) return raw;
+  return DISTRICT_BY_NORM.get(normDistrict(raw)) || raw;
+}
+
 // 12 quận nội thành (trước sáp nhập 7/2025) — hiện làm pill chính ở bộ lọc "Khu vực".
 export const INNER_CITY_DISTRICTS = [
   'Ba Đình', 'Hoàn Kiếm', 'Tây Hồ', 'Long Biên', 'Cầu Giấy', 'Đống Đa',

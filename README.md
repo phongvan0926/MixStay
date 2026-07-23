@@ -234,6 +234,11 @@ mixstay/
 
 ## Changelog
 
+### v9.26 — 2026-07-23 (audit pin toàn bộ + gộp quận trùng hoa-thường — phủ pin 100%)
+- **Audit pin theo tuyến phố** (`scripts/geocode-audit-pins.js` mới): đối chiếu pin từng tòa với vị trí TUYẾN PHỐ của chính nó (geocode mỗi cụm phố+quận 1 lần) — pin lệch >3km khỏi phố mình thì ghim lại. Sửa **43 pin sai** (Yên Xá lệch 8,9km, Chùa Láng 7,1km, Tân Ấp/Phú Lương pin nhầm về Hồ Gươm...) + 4 ca chủ dự án báo + ca Bạch Mai bị ô tên đường ghi bậy "Pháo Đài Láng". Backup: `~/.mixstay-backups/backup-fix-pins-2026-07-23.json`.
+- **Ghim nốt "Ngõ Hòa Bình 6 Minh Khai"** (chủ dự án xác nhận thuộc Hai Bà Trưng) → phủ pin **466/466 tòa (100%)**.
+- **Gộp quận trùng hoa-thường:** 36 tòa "đống đa "/"THANH XUÂN"/"bắc từ liêm"... về đúng tên chuẩn — bản đồ hết cảnh 1 quận 3 cụm; sửa 2 quận ghi nhầm (Chương Dương→Hoàn Kiếm, Quốc Oai→Thanh Trì). **Chặn tái phát:** helper `canonicalDistrict()` (lib/hanoi-locations.ts) tự chuẩn hóa tên quận ở API tạo/sửa tòa + import Excel.
+
 ### v9.25 — 2026-07-23 (geocode nấc 4 bằng AI: địa chỉ bẩn vẫn tự ghim gần đúng lên bản đồ)
 - **`lib/geocode.ts` thêm bước 4 (AI):** khi 3 nấc thường trượt, Gemini BÓC TÁCH địa chỉ bẩn thành `{phố chuẩn, phường, mốc lân cận}` (VD "Nhà 66 ven hồ Hạ Đình, ngay trường tiểu học Hạ Đình" → mốc "Trường tiểu học Hạ Đình") rồi geocode từng phần qua Nominatim. Gemini KHÔNG bao giờ tự trả tọa độ (chống bịa) — Nominatim định vị + chốt chặn 7km quanh tâm quận vẫn giữ nguyên. Ghim gần đúng khu vực là đạt (theo yêu cầu chủ dự án — người đăng lớn tuổi không cần biết dùng bản đồ). Fail-soft: không có key/AI lỗi → trả null, không chặn lưu tòa.
 - **`lib/gemini.ts`:** xoay key cả khi Google trả 5xx (503 quá tải thoáng qua) — trước chỉ xoay khi 429.

@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { geocodeAddress } from '@/lib/geocode';
+import { canonicalDistrict } from '@/lib/hanoi-locations';
 
 // Chặn timeout serverless khi import nhiều tòa mới: geocode NGAY tối đa vài chục tòa VÀ chỉ trong
 // một ngân sách thời gian; phần vượt → để null, admin chạy scripts/geocode-properties.js đổ toạ độ sau.
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
               landlordId: session.user.id,
               name: (row.propertyName || '').trim(),
               fullAddress: (row.fullAddress || '').trim() || `${row.streetName || ''}, ${row.district || ''}, ${row.city || 'Hà Nội'}`,
-              district: (row.district || '').trim(),
+              district: canonicalDistrict(row.district), // gộp hoa-thường về tên quận chuẩn
               streetName: (row.streetName || '').trim(),
               city: (row.city || '').trim() || 'Hà Nội',
               totalFloors: parseInt(row.totalFloors) || 1,

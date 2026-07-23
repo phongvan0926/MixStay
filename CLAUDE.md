@@ -43,7 +43,7 @@ lib/geocode.ts      → geocodeAddress() Nominatim/OSM server-only (query kèm q
 lib/listing-options.ts → AMENITY_OPTIONS + ROOM_TYPE_OPTIONS dùng chung form + AI enum (client-safe)
 lib/listing-code.ts → LISTING_CODE_REGEX, normalizeListingCode, formatListingCode (ghép mã công ty MS-066-XXXXXX — DISPLAY, không đổi listingCode gốc), parseComposedListingCode, normalizeCompanyCode
 lib/hanoi-locations.ts → HANOI_DISTRICTS, INNER_CITY/OUTER_DISTRICTS, HANOI_UNIVERSITIES (18 trường lớn cho bản đồ), findDistrictForStreet
-scripts/geocode-properties.js → Backfill lat/long tòa cũ từ địa chỉ (1 req/s, --force để chạy lại tất cả); geocode-properties-pass2.js (làm sạch địa chỉ bẩn); geocode-fix-outliers.js (rà + sửa pin đặt sai quận, viewbox bounded)
+scripts/geocode-properties.js → Backfill lat/long tòa cũ từ địa chỉ (1 req/s, --force để chạy lại tất cả); geocode-properties-pass2.js (làm sạch địa chỉ bẩn); geocode-fix-outliers.js (rà + sửa pin đặt sai quận, viewbox bounded); geocode-audit-pins.js (audit pin theo TUYẾN PHỐ của chính tòa — pin lệch >3km khỏi phố mình thì ghim lại, bắt được ca lệch nhỏ mà fix-outliers lọt)
 components/layout/  → DashboardLayout.tsx (sidebar + topbar + notification badge), AuthProvider.tsx
 components/ui/      → Skeleton.tsx, ImageUpload.tsx, VideoUpload.tsx, VideoLinkInput.tsx, VideoPlayer.tsx, VideoGallery.tsx, OptimizedImage.tsx, Pagination.tsx, DistrictPills.tsx, PriceRangeSlider.tsx, ZaloFab.tsx
 components/forms/   → PropertyForm.tsx, RoomTypeForm.tsx, RoomForm.tsx, QuickRoomTypeForm.tsx

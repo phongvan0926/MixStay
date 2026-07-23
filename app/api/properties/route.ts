@@ -7,6 +7,7 @@ import { applyRateLimit } from '@/lib/rate-limit';
 import { propertyCreateSchema, propertyUpdateSchema, validateBody } from '@/lib/validations';
 import { requirePermission } from '@/lib/permissions-server';
 import { geocodeAddress } from '@/lib/geocode';
+import { canonicalDistrict } from '@/lib/hanoi-locations';
 
 export async function GET(req: NextRequest) {
   const rateLimited = await applyRateLimit(req, 'api');
@@ -139,7 +140,7 @@ export async function POST(req: NextRequest) {
         description: body.description,
         fullAddress: body.fullAddress,
         houseNumber: body.houseNumber || null, // số nhà (ẩn với khách)
-        district: body.district,
+        district: canonicalDistrict(body.district), // "đống đa " → "Đống Đa": bản đồ/bộ lọc không tách cụm
         streetName: body.streetName,
         city: body.city || 'Hà Nội',
         latitude: body.latitude ? parseFloat(body.latitude) : (geo?.lat ?? null),
@@ -241,7 +242,7 @@ export async function PUT(req: NextRequest) {
         ...(data.description !== undefined && { description: data.description }),
         ...(data.fullAddress && { fullAddress: data.fullAddress }),
         ...(data.houseNumber !== undefined && { houseNumber: data.houseNumber || null }),
-        ...(data.district && { district: data.district }),
+        ...(data.district && { district: canonicalDistrict(data.district) }),
         ...(data.streetName && { streetName: data.streetName }),
         ...(data.city !== undefined && { city: data.city }),
         ...(data.totalFloors && { totalFloors: parseInt(data.totalFloors) }),
