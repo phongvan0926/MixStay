@@ -993,7 +993,7 @@ function RoomTypeListView({
                   </div>
                 </td>
                 <td className="px-3 py-2">
-                  <p className="font-medium text-stone-900 text-sm">{rt.name}</p>
+                  <p className="font-medium text-stone-900 text-sm leading-snug line-clamp-2" title={rt.name}>{rt.name}</p>
                   <p className="text-xs text-stone-400">
                     {rt.areaSqm}m²
                     {rt.listingCode && <span className="font-mono font-semibold"> • {formatListingCode(rt.listingCode, rt.property?.company?.code)}</span>}

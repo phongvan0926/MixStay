@@ -719,7 +719,7 @@ export default function BrokerInventoryPage() {
 
                   {/* Title + type */}
                   <div className="mb-1">
-                    <h3 className="font-semibold text-stone-900 text-[15px]">{room.name}</h3>
+                    <h3 className="font-semibold text-stone-900 text-[15px] leading-snug line-clamp-2" title={room.name}>{room.name}</h3>
                     <p className="text-sm text-stone-500">
                       {room.property?.name} • {room.areaSqm}m²
                     </p>

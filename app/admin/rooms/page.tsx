@@ -535,7 +535,7 @@ export default function AdminRoomsPage() {
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1200px]">
+          <table className="w-full min-w-[1280px]">
             <thead className="bg-stone-50/80">
               <tr>
                 <th className="table-header w-8">
@@ -543,8 +543,8 @@ export default function AdminRoomsPage() {
                     title="Chọn tất cả phòng trang này" className="accent-brand-600 w-4 h-4 cursor-pointer" />
                 </th>
                 <th className="table-header">Ảnh</th>
-                <th className="table-header">Tin đăng</th>
-                <th className="table-header">Tòa nhà</th>
+                <th className="table-header min-w-[240px]">Tin đăng</th>
+                <th className="table-header min-w-[170px]">Tòa nhà</th>
                 <th className="table-header">Công ty</th>
                 <th className="table-header">Loại</th>
                 <th className="table-header">Diện tích</th>
@@ -576,8 +576,8 @@ export default function AdminRoomsPage() {
                         <div className="w-12 h-12 rounded-lg bg-stone-100 flex items-center justify-center text-stone-400 text-lg">🚪</div>
                       )}
                     </td>
-                    <td className="table-cell">
-                      <p className="font-semibold text-stone-900">{r.name}</p>
+                    <td className="table-cell min-w-[240px] max-w-[320px]">
+                      <p className="font-semibold text-stone-900 leading-snug line-clamp-2" title={r.name}>{r.name}</p>
                       {r.listingCode && (
                         <p className="text-[10px] font-mono font-semibold text-stone-400 mt-0.5">Mã: {formatListingCode(r.listingCode, r.property?.company?.code)}</p>
                       )}
@@ -589,9 +589,9 @@ export default function AdminRoomsPage() {
                         </p>
                       )}
                     </td>
-                    <td className="table-cell">
-                      <p className="text-stone-700">{r.property?.name}</p>
-                      <p className="text-xs text-stone-400">{r.property?.district}</p>
+                    <td className="table-cell min-w-[170px] max-w-[220px]">
+                      <p className="text-stone-700 leading-snug line-clamp-2" title={r.property?.name}>{r.property?.name}</p>
+                      <p className="text-xs text-stone-400 truncate">{r.property?.district}</p>
                     </td>
                     <td className="table-cell">
                       {companyName ? <span className="badge bg-brand-50 text-brand-700 text-[10px]">{companyName}</span> : <span className="text-xs text-stone-400">—</span>}

@@ -234,6 +234,10 @@ mixstay/
 
 ## Changelog
 
+### v9.16 — 2026-07-23 (bảng tin đăng gọn: tiêu đề dài tối đa 2 dòng, hết hàng cao)
+- **Lỗi view:** tiêu đề tin dài (cột hẹp do bảng nhiều cột) gãy 5–6 dòng → mỗi hàng cao gấp 3, nhiều nền trắng, cuộn mãi mới hết trang.
+- **Sửa:** cột "Tin đăng" + "Tòa nhà" đặt bề rộng tối thiểu (240px/170px, bảng đã có cuộn ngang) + tiêu đề `line-clamp-2` (tối đa 2 dòng, hover xem đủ). Áp cùng kiểu cho danh sách tin ở trang chủ nhà (list view + wizard) và kho CTV. Hàng từ ~330px → ~110px.
+
 ### v9.15 — 2026-07-23 (hết hẳn popup đổi trạng thái + chọn nhiều phòng đặt trạng thái hàng loạt)
 - **Fix sót popup:** trang CHỦ NHÀ (landlord/properties) vẫn còn `prompt()` hỏi ngày khi bấm đổi trạng thái (v9.14 mới sửa trang admin) → đã bỏ ở CẢ 2 view (card + list): bấm là đổi ngay, sang "Sắp trống" tự đặt ngày = đầu tháng sau + ô ngày inline khung vàng "⚠️ Sẽ trống từ" để sửa (bỏ trống = đầu tháng sau).
 - **Chọn nhiều phòng đặt trạng thái hàng loạt (admin/rooms):** checkbox từng dòng + chọn cả trang; tick chọn → thanh "Đã chọn N phòng" với 3 nút 🟢/🟡/🔴 đổi một thể ("Sắp trống" hàng loạt tự đặt đầu tháng sau, sửa lẻ từng phòng bằng ô ngày).
