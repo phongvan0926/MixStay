@@ -234,9 +234,11 @@ mixstay/
 
 ## Changelog
 
-### v9.24 — 2026-07-23 (bản đồ: gọn attribution + backfill pin tòa thiếu tọa độ)
+### v9.24 — 2026-07-23 (bản đồ: gọn attribution + phủ pin 96% + vá geocode theo hệ phường mới OSM)
 - **Ẩn hộp attribution mặc định của Leaflet** (chữ "Leaflet" + cờ) trên `/ban-do`; giữ dòng **© OpenStreetMap** thu nhỏ, mờ ở góc (bắt buộc theo giấy phép tile OSM — không được bỏ hẳn).
-- **Kiểm chứng luồng tự đánh dấu bản đồ:** tạo/sửa tòa đã TỰ geocode tọa độ từ địa chỉ (POST/PUT `properties`); tòa chỉ hiện trên bản đồ khi APPROVED + có tin duyệt còn hiệu lực (`/api/rooms/map`, cache 5'). Phát hiện 172/466 tòa thiếu tọa độ (địa chỉ bẩn khiến geocode fail âm thầm) → chạy backfill `scripts/geocode-properties.js` điền bù.
+- **Tìm ra gốc rễ tòa không hiện pin:** OSM Hà Nội đã chuyển sang HỆ PHƯỜNG MỚI (bỏ cấp quận) → query Nominatim kèm tên quận cũ ("X, Hai Bà Trưng") trượt hàng loạt; cộng thêm streetName chứa "ngõ 91/1..." Nominatim không biết. 172/466 tòa thiếu tọa độ.
+- **Backfill 4 vòng** (fullAddress → làm sạch → tên phố trần → bỏ quận + xác minh 7km quanh tâm quận): 172 → còn **19 tòa** thiếu pin (địa chỉ quá bẩn kiểu "TÒA 148", cần sửa tay). Phủ tọa độ **447/466 (96%)**, bản đồ hiện **429 pin**.
+- **Vá `lib/geocode.ts` cho tòa MỚI:** thêm bước 3 — bóc ngõ/ngách lấy tên phố trần, query KHÔNG kèm quận, chỉ nhận kết quả trong 7km quanh tâm quận (bảng `DISTRICT_CENTERS` 13 quận, median từ 447 tòa đã pin) — tòa mới đăng sẽ tự có pin với tỷ lệ cao hơn hẳn, không lặp lại lỗi cũ.
 
 ### v9.23 — 2026-07-23 (kho công ty: khóa khách trong hệ sinh thái công ty — không link/hotline ra ngoài)
 - **Chế độ kho công ty trên trang tin lẻ:** thẻ phòng ở `/share/company/[id]` dẫn sang `/tin/[id]?kho=<companyId>` — trang tin nhận `?kho=` (chỉ hiệu lực khi đúng công ty của tin, không hiệu lực trên link CTV) và: logo KHÔNG dẫn về trang chủ; nav thay hotline MixStay bằng nút "🏢 Kho phòng {công ty}" quay về kho; **Tin đăng liên quan chỉ gợi ý tin CÙNG công ty** (`/api/rooms/related?companyId=`) và các thẻ liên quan giữ nguyên `?kho=` khi bấm tiếp; nút chia sẻ cũng giữ `?kho=`.
