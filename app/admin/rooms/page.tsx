@@ -533,27 +533,23 @@ export default function AdminRoomsPage() {
         </div>
       )}
 
+      {/* Gợi ý vuốt ngang cho mobile — nhiều người không biết bảng cuộn được */}
+      <p className="lg:hidden text-[11px] text-stone-400 mb-1.5 text-center">⇠ Vuốt ngang bảng để xem thêm cột ⇢</p>
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1280px]">
+          <table className="w-full min-w-[900px]">
             <thead className="bg-stone-50/80">
               <tr>
                 <th className="table-header w-8">
                   <input type="checkbox" checked={allPageSelected} onChange={toggleSelectAllPage}
                     title="Chọn tất cả phòng trang này" className="accent-brand-600 w-4 h-4 cursor-pointer" />
                 </th>
-                <th className="table-header">Ảnh</th>
-                <th className="table-header min-w-[240px]">Tin đăng</th>
-                <th className="table-header min-w-[170px]">Tòa nhà</th>
-                <th className="table-header">Công ty</th>
-                <th className="table-header">Loại</th>
-                <th className="table-header">Diện tích</th>
+                <th className="table-header min-w-[250px]">Tin đăng</th>
+                <th className="table-header min-w-[165px]">Tòa nhà</th>
                 <th className="table-header">Giá thuê</th>
                 <th className="table-header">Phòng trống</th>
                 <th className="table-header">HH 6T/12T</th>
-                <th className="table-header">Ngắn hạn</th>
                 <th className="table-header">Trạng thái</th>
-                <th className="table-header">Duyệt</th>
                 <th className="table-header">Thao tác</th>
               </tr>
             </thead>
@@ -569,18 +565,23 @@ export default function AdminRoomsPage() {
                       <input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleSelect(r.id)}
                         className="accent-brand-600 w-4 h-4 cursor-pointer" />
                     </td>
-                    <td className="table-cell">
-                      {r.images && r.images.length > 0 ? (
-                        <OptimizedImage src={r.images[0]} alt={r.name} width={48} height={48} className="w-12 h-12 rounded-lg object-cover border border-stone-200" />
-                      ) : (
-                        <div className="w-12 h-12 rounded-lg bg-stone-100 flex items-center justify-center text-stone-400 text-lg">🚪</div>
-                      )}
-                    </td>
-                    <td className="table-cell min-w-[240px] max-w-[320px]">
-                      <p className="font-semibold text-stone-900 leading-snug line-clamp-2" title={r.name}>{r.name}</p>
+                    <td className="table-cell min-w-[250px] max-w-[340px]">
+                      <div className="flex items-start gap-2.5">
+                        {r.images && r.images.length > 0 ? (
+                          <OptimizedImage src={r.images[0]} alt={r.name} width={48} height={48} className="w-12 h-12 rounded-lg object-cover border border-stone-200 shrink-0" />
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-stone-100 flex items-center justify-center text-stone-400 text-lg shrink-0">🚪</div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-semibold text-stone-900 leading-snug line-clamp-2" title={r.name}>{r.name}</p>
                       {r.listingCode && (
                         <p className="text-[10px] font-mono font-semibold text-stone-400 mt-0.5">Mã: {formatListingCode(r.listingCode, r.property?.company?.code)}</p>
                       )}
+                      {/* Loại · diện tích · ngắn hạn — gộp từ 3 cột riêng cho bảng gọn */}
+                      <p className="text-[10px] text-stone-500 mt-0.5">
+                        {(ROOM_TYPE_LABELS[r.typeName] || r.typeName || '—')} · {r.areaSqm}m²
+                        {r.shortTermAllowed && <span className="text-violet-600" title={r.shortTermPrice ? `Ngắn hạn ${formatCurrency(r.shortTermPrice)}` : 'Cho thuê ngắn hạn'}> · 📅 ngắn hạn</span>}
+                      </p>
                       {/* Đăng bởi ai + khi nào — liếc nhanh, chi tiết (SĐT/email/cập nhật) xem trong modal Sửa */}
                       {(r.property?.landlord?.name || r.createdAt) && (
                         <p className="text-[10px] text-stone-400 mt-0.5">
@@ -588,19 +589,17 @@ export default function AdminRoomsPage() {
                           {r.createdAt && <> · {formatDate(r.createdAt)}</>}
                         </p>
                       )}
+                        </div>
+                      </div>
                     </td>
-                    <td className="table-cell min-w-[170px] max-w-[220px]">
+                    <td className="table-cell min-w-[165px] max-w-[220px]">
                       <p className="text-stone-700 leading-snug line-clamp-2" title={r.property?.name}>{r.property?.name}</p>
-                      <p className="text-xs text-stone-400 truncate">{r.property?.district}</p>
+                      <p className="text-xs text-stone-400 truncate">
+                        {r.property?.district}
+                        {companyName && <span className="ml-1 inline-block align-middle badge bg-brand-50 text-brand-700 !text-[9px] !px-1.5 !py-0" title={companyName}>{companyName}</span>}
+                      </p>
                     </td>
-                    <td className="table-cell">
-                      {companyName ? <span className="badge bg-brand-50 text-brand-700 text-[10px]">{companyName}</span> : <span className="text-xs text-stone-400">—</span>}
-                    </td>
-                    <td className="table-cell">
-                      <span className="badge bg-stone-100 text-stone-700">{ROOM_TYPE_LABELS[r.typeName] || r.typeName || '—'}</span>
-                    </td>
-                    <td className="table-cell">{r.areaSqm}m²</td>
-                    <td className="table-cell font-semibold text-brand-600">{formatCurrency(r.priceMonthly)}</td>
+                    <td className="table-cell font-semibold text-brand-600 whitespace-nowrap">{formatCurrency(r.priceMonthly)}</td>
                     <td className="table-cell">
                       <div className="flex items-center gap-1">
                         <span className="text-emerald-600 font-bold">{r.availableUnits}</span>
@@ -614,16 +613,6 @@ export default function AdminRoomsPage() {
                       </p>
                     </td>
                     <td className="table-cell"><span className="text-xs text-orange-600 font-medium">{getCommissionText(r)}</span></td>
-                    <td className="table-cell">
-                      {r.shortTermAllowed ? (
-                        <div>
-                          <span className="badge bg-violet-100 text-violet-700 text-[10px]">Có</span>
-                          {r.shortTermPrice && <p className="text-[10px] text-stone-400 mt-0.5">{formatCurrency(r.shortTermPrice)}</p>}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-stone-400">—</span>
-                      )}
-                    </td>
                     <td className="table-cell">
                       <button onClick={() => cycleStatus(r)}
                         title="Bấm để đổi trạng thái: Còn → Sắp trống → Hết → Còn"
@@ -639,13 +628,13 @@ export default function AdminRoomsPage() {
                             className="mt-0.5 w-full text-[10px] bg-white border border-amber-200 rounded px-1 py-0.5 text-amber-800" />
                         </div>
                       )}
-                    </td>
-                    <td className="table-cell">
-                      <button onClick={() => toggleApproval(r.id, r.isApproved)} disabled={!canApprove}
-                        title={canApprove ? '' : 'Cần quyền Duyệt tin đăng (APPROVE_LISTINGS)'}
-                        className={`badge cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${r.isApproved ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}>
-                        {r.isApproved ? '✓ Đã duyệt' : 'Chờ duyệt'}
-                      </button>
+                      <div className="mt-1">
+                        <button onClick={() => toggleApproval(r.id, r.isApproved)} disabled={!canApprove}
+                          title={canApprove ? '' : 'Cần quyền Duyệt tin đăng (APPROVE_LISTINGS)'}
+                          className={`badge cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${r.isApproved ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}>
+                          {r.isApproved ? '✓ Đã duyệt' : 'Chờ duyệt'}
+                        </button>
+                      </div>
                     </td>
                     <td className="table-cell">
                       <div className="flex items-center gap-2">
@@ -668,7 +657,7 @@ export default function AdminRoomsPage() {
                 );
               })}
               {filteredRooms.length === 0 && (
-                <tr><td colSpan={14} className="table-cell text-center text-stone-400 py-12">
+                <tr><td colSpan={8} className="table-cell text-center text-stone-400 py-12">
                   {rooms.length === 0 ? 'Chưa có phòng nào' : 'Không tìm thấy phòng phù hợp'}
                 </td></tr>
               )}

@@ -180,7 +180,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
 
         {/* Main content */}
-        <main className="flex-1 lg:ml-60 min-h-[calc(100vh-4rem)] pb-20 lg:pb-8">
+        {/* min-w-0: flex item mặc định KHÔNG co dưới bề rộng content → bảng rộng làm main phình
+            → viewport mobile mở rộng như desktop (chữ nhỏ, bottom nav rơi khỏi màn hình).
+            min-w-0 ép main co theo màn hình, bảng cuộn NGANG trong container của nó. */}
+        <main className="flex-1 min-w-0 lg:ml-60 min-h-[calc(100vh-4rem)] pb-20 lg:pb-8">
           <div className="p-4 sm:p-6 max-w-7xl mx-auto page-enter">
             {children}
           </div>
