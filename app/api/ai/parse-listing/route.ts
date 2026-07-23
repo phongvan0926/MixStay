@@ -103,10 +103,9 @@ export async function POST(req: NextRequest) {
       contents: [{ parts: [{ text: buildPrompt(text) }] }],
       generationConfig: {
         temperature: 0.2, // bóc tách dữ liệu → cần chính xác, không cần sáng tạo
-        maxOutputTokens: 2000,
+        maxOutputTokens: 4000, // model mới có thinking nội bộ ăn vào budget — để rộng
         responseMimeType: 'application/json',
         responseSchema: RESPONSE_SCHEMA,
-        thinkingConfig: { thinkingBudget: 0 },
       },
     });
 

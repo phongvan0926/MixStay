@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: 0.8,
-        maxOutputTokens: 1500,
+        maxOutputTokens: 3000, // model mới có thinking nội bộ ăn vào budget — để rộng
         // Structured output: trả cả TIÊU ĐỀ chuẩn hóa (có dấu) lẫn MÔ TẢ
         responseMimeType: 'application/json',
         responseSchema: {
@@ -114,7 +114,6 @@ export async function POST(req: NextRequest) {
           },
           required: ['title', 'description'],
         },
-        thinkingConfig: { thinkingBudget: 0 }, // tắt "thinking" → không nuốt token, trả đủ nội dung
       },
     });
 

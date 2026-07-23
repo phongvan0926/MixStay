@@ -1,9 +1,11 @@
 // lib/gemini.ts — Helper gọi Gemini SERVER-SIDE dùng chung (key không bao giờ ra client).
 // Hỗ trợ NHIỀU API key (nhiều tài khoản Google) để TỰ XOAY khi 1 key hết quota free:
 // GEMINI_API_KEY, GEMINI_API_KEY_2..10, và GEMINI_API_KEYS (danh sách ngăn cách bởi dấu phẩy).
-// Model đổi qua env GEMINI_MODEL (mặc định gemini-2.5-flash).
+// Model đổi qua env GEMINI_MODEL (mặc định gemini-flash-latest).
 
-export const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+// gemini-flash-latest: alias Google tự trỏ bản flash mới nhất — tài khoản MỚI không còn được
+// dùng gemini-2.5-flash (404 "no longer available to new users") nên alias này an toàn cho mọi key.
+export const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-flash-latest';
 
 export function getGeminiKeys(): string[] {
   const set = new Set<string>();

@@ -11,12 +11,12 @@ const fs=require('fs');
 for(const f of ['.env.local','.env']){try{fs.readFileSync(f,'utf8').split('\n').forEach(l=>{const m=l.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);if(m&&!process.env[m[1]])process.env[m[1]]=m[2].replace(/^["']|["']$/g,'');});}catch{}}
 const p=new PrismaClient();
 const KEYS=(()=>{const set=new Set();const add=v=>v?.split(',').forEach(k=>{const t=k.trim();if(t)set.add(t);});add(process.env.GEMINI_API_KEYS);add(process.env.GEMINI_API_KEY);for(let i=2;i<=10;i++)add(process.env['GEMINI_API_KEY_'+i]);return [...set];})();
-const MODEL=process.env.GEMINI_MODEL||'gemini-2.5-flash';
+const MODEL=process.env.GEMINI_MODEL||'gemini-flash-latest';
 let ki=0;
 async function gem(prompt){
   for(let t=0;t<KEYS.length*2;t++){
     const key=KEYS[ki%KEYS.length];
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.7,maxOutputTokens:800,responseMimeType:'application/json',responseSchema:{type:'OBJECT',properties:{description:{type:'STRING'}},required:['description']},thinkingConfig:{thinkingBudget:0}}})});
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.7,maxOutputTokens:2000,responseMimeType:'application/json',responseSchema:{type:'OBJECT',properties:{description:{type:'STRING'}},required:['description']}}})});
     if(res.ok){const d=await res.json();return (d?.candidates?.[0]?.content?.parts||[]).map(x=>x?.text||'').join('');}
     if(res.status===429){ki++; await new Promise(r=>setTimeout(r,3000)); continue;}
     throw new Error('Gemini '+res.status);
