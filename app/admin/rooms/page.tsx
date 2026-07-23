@@ -149,7 +149,20 @@ export default function AdminRoomsPage() {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
 
-  const { roomTypes: rooms, pagination, isLoading: loading, mutate } = useRoomTypes({ page: String(page), limit: '20', ...(search ? { search } : {}) });
+  // Filters (khai báo trước để đưa vào params gọi API — LỌC SERVER-SIDE, dò xuyên trang + dồn về trang 1)
+  const [filterCompany, setFilterCompany] = useState('');
+  const [filterProperty, setFilterProperty] = useState('');
+  const [filterRoomType, setFilterRoomType] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+
+  const roomParams: Record<string, string> = { page: String(page), limit: '20' };
+  if (search) roomParams.search = search;
+  if (filterCompany) roomParams.companyId = filterCompany;
+  if (filterProperty) roomParams.propertyId = filterProperty;
+  if (filterRoomType) roomParams.typeName = filterRoomType;
+  if (filterStatus) roomParams.status = filterStatus;
+
+  const { roomTypes: rooms, pagination, isLoading: loading, mutate } = useRoomTypes(roomParams);
   const { properties, mutate: mutateProperties } = useProperties({ status: 'APPROVED', limit: '200' });
   const { companies } = useCompanies();
 
@@ -167,39 +180,23 @@ export default function AdminRoomsPage() {
   const [importResult, setImportResult] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Filters
-  const [filterCompany, setFilterCompany] = useState('');
-  const [filterProperty, setFilterProperty] = useState('');
-  const [filterRoomType, setFilterRoomType] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
-
   const handlePageChange = (newPage: number) => { setPage(newPage); };
 
-  // Properties filtered by selected company (cascade)
+  // Đổi bộ lọc → dồn về trang 1 (server đã lọc toàn nền tảng)
+  const changeCompany = (v: string) => { setFilterCompany(v); setFilterProperty(''); setPage(1); };
+  const changeProperty = (v: string) => { setFilterProperty(v); setPage(1); };
+  const changeRoomType = (v: string) => { setFilterRoomType(v); setPage(1); };
+  const changeStatus = (v: string) => { setFilterStatus(v); setPage(1); };
+
+  // Properties cho dropdown (cascade theo công ty đang lọc)
   const filteredProperties = useMemo(() => {
     if (!filterCompany) return properties;
     if (filterCompany === '__none__') return properties.filter(p => !p.companyId);
     return properties.filter(p => p.companyId === filterCompany);
   }, [properties, filterCompany]);
 
-  const filteredRooms = useMemo(() => {
-    return rooms.filter(r => {
-      if (filterCompany) {
-        // Dùng companyId trả thẳng từ API (không tra qua list properties bị giới hạn 200 → sót tòa)
-        const cid = r.property?.companyId;
-        if (filterCompany === '__none__' && cid) return false;
-        if (filterCompany !== '__none__' && cid !== filterCompany) return false;
-      }
-      if (filterProperty && r.property?.id !== filterProperty) return false;
-      if (filterRoomType && r.typeName !== filterRoomType) return false;
-      if (filterStatus) {
-        if (filterStatus === 'AVAILABLE' && r.status !== 'AVAILABLE') return false;
-        if (filterStatus === 'UPCOMING' && r.status !== 'UPCOMING') return false;
-        if (filterStatus === 'UNAVAILABLE' && r.status !== 'UNAVAILABLE') return false;
-      }
-      return true;
-    });
-  }, [rooms, properties, filterCompany, filterProperty, filterRoomType, filterStatus]);
+  // Server đã lọc + phân trang → render thẳng
+  const filteredRooms = rooms;
 
   const openCreate = () => { setEditingRoom(null); setAiPrefill(null); setShowModal(true); };
   const openEdit = (room: any) => { setEditingRoom(room); setAiPrefill(null); setShowModal(true); };
@@ -440,10 +437,10 @@ export default function AdminRoomsPage() {
           </form>
           <div className="flex items-center gap-3 sm:ml-auto">
             {hasFilters && (
-              <button onClick={() => { setFilterCompany(''); setFilterProperty(''); setFilterRoomType(''); setFilterStatus(''); }}
+              <button onClick={() => { setFilterCompany(''); setFilterProperty(''); setFilterRoomType(''); setFilterStatus(''); setPage(1); }}
                 className="px-3 py-2 text-sm text-stone-500 hover:text-stone-700 transition-colors whitespace-nowrap">Xoá bộ lọc</button>
             )}
-            <span className="text-sm text-stone-400 whitespace-nowrap">Hiển thị {filteredRooms.length}/{rooms.length} phòng</span>
+            <span className="text-sm text-stone-400 whitespace-nowrap">{pagination?.total ?? rooms.length} phòng</span>
           </div>
         </div>
 
@@ -451,7 +448,7 @@ export default function AdminRoomsPage() {
         <SearchableSelect
           className="w-full"
           value={filterProperty}
-          onChange={setFilterProperty}
+          onChange={changeProperty}
           options={[
             { value: '', label: 'Tất cả tòa nhà' },
             ...filteredProperties.map((p: any) => ({ value: p.id, label: `${p.name} — ${p.district}` })),
@@ -463,16 +460,16 @@ export default function AdminRoomsPage() {
         {/* Hàng 3: Công ty + Kiểu phòng + Trạng thái — CÙNG 1 dòng */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <select className="input-field w-full" value={filterCompany}
-            onChange={e => { setFilterCompany(e.target.value); setFilterProperty(''); }}>
+            onChange={e => changeCompany(e.target.value)}>
             <option value="">Tất cả công ty</option>
             <option value="__none__">Chưa gán công ty</option>
             {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}{c.isApproved === false ? ' (chờ duyệt)' : ''}</option>)}
           </select>
-          <select className="input-field w-full" value={filterRoomType} onChange={e => setFilterRoomType(e.target.value)}>
+          <select className="input-field w-full" value={filterRoomType} onChange={e => changeRoomType(e.target.value)}>
             <option value="">Tất cả kiểu phòng</option>
             {Object.entries(ROOM_TYPE_LABELS).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
           </select>
-          <select className="input-field w-full" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+          <select className="input-field w-full" value={filterStatus} onChange={e => changeStatus(e.target.value)}>
             <option value="">Tất cả trạng thái</option>
             <option value="AVAILABLE">🟢 Còn phòng</option>
             <option value="UNAVAILABLE">🔴 Hết phòng</option>

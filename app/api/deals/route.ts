@@ -17,11 +17,15 @@ export async function GET(req: NextRequest) {
 
     const url = new URL(req.url);
     const status = url.searchParams.get('status');
+    const companyId = url.searchParams.get('companyId');
     const where: any = {};
 
     // Broker chỉ thấy deals CỦA MÌNH
     if (session.user.role === 'BROKER') where.brokerId = session.user.id;
     if (status) where.status = status;
+    // Lọc theo công ty (qua tòa nhà của phòng) — __none__ = phòng thuộc tòa chưa gán công ty
+    if (companyId === '__none__') where.roomType = { property: { companyId: null } };
+    else if (companyId) where.roomType = { property: { companyId } };
 
     const { page, limit, skip } = getPaginationParams(url);
 

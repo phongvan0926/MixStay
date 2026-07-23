@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
@@ -12,24 +12,22 @@ export default function AdminDealsPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const [page, setPage] = useState(1);
 
-  const { deals, pagination, isLoading: loading, mutate } = useDeals({ page: String(page), limit: '20' });
+  // Lọc SERVER-SIDE (dò xuyên trang + dồn về trang 1)
+  const dealParams: Record<string, string> = { page: String(page), limit: '20' };
+  if (filterCompany) dealParams.companyId = filterCompany;
+  if (filterStatus) dealParams.status = filterStatus;
+
+  const { deals, pagination, isLoading: loading, mutate } = useDeals(dealParams);
   const { companies } = useCompanies();
   // Thẻ thống kê = TỔNG toàn nền tảng (trước đây cộng nhầm theo 20 dòng của trang)
   const { stats: dealStats } = useDealStats();
 
   const handlePageChange = (newPage: number) => { setPage(newPage); };
+  const changeCompany = (v: string) => { setFilterCompany(v); setPage(1); };
+  const changeStatus = (v: string) => { setFilterStatus(v); setPage(1); };
 
-  const filtered = useMemo(() => {
-    return deals.filter(d => {
-      if (filterCompany) {
-        const companyId = d.roomType?.property?.companyId;
-        if (filterCompany === '__none__' && companyId) return false;
-        if (filterCompany !== '__none__' && companyId !== filterCompany) return false;
-      }
-      if (filterStatus && d.status !== filterStatus) return false;
-      return true;
-    });
-  }, [deals, filterCompany, filterStatus]);
+  // Server đã lọc → render thẳng
+  const filtered = deals;
 
   const updateStatus = async (id: string, status: string) => {
     await fetch('/api/deals', {
@@ -67,7 +65,7 @@ export default function AdminDealsPage() {
   return (
     <div>
       <h1 className="font-display text-2xl font-bold mb-2">Giao dịch & Hoa hồng</h1>
-      <p className="text-sm text-stone-500 mb-6">{deals.length} giao dịch</p>
+      <p className="text-sm text-stone-500 mb-6">{pagination?.total ?? deals.length} giao dịch</p>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -88,12 +86,12 @@ export default function AdminDealsPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-5">
-        <select value={filterCompany} onChange={e => setFilterCompany(e.target.value)} className="input-field w-full sm:!w-auto sm:min-w-[160px]">
+        <select value={filterCompany} onChange={e => changeCompany(e.target.value)} className="input-field w-full sm:!w-auto sm:min-w-[160px]">
           <option value="">Tất cả công ty</option>
           <option value="__none__">Chưa gán công ty</option>
           {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}{c.isApproved === false ? ' (chờ duyệt)' : ''}</option>)}
         </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="input-field w-full sm:!w-auto sm:min-w-[140px]">
+        <select value={filterStatus} onChange={e => changeStatus(e.target.value)} className="input-field w-full sm:!w-auto sm:min-w-[140px]">
           <option value="">Tất cả trạng thái</option>
           <option value="PENDING">Chờ duyệt</option>
           <option value="CONFIRMED">Đã xác nhận</option>
@@ -101,10 +99,10 @@ export default function AdminDealsPage() {
           <option value="CANCELLED">Đã huỷ</option>
         </select>
         {hasFilters && (
-          <button onClick={() => { setFilterCompany(''); setFilterStatus(''); }}
+          <button onClick={() => { setFilterCompany(''); setFilterStatus(''); setPage(1); }}
             className="px-3 py-2 text-sm text-stone-500 hover:text-stone-700">Xoá bộ lọc</button>
         )}
-        <span className="self-center text-sm text-stone-400 ml-auto">{filtered.length}/{deals.length} giao dịch</span>
+        <span className="self-center text-sm text-stone-400 ml-auto">{pagination?.total ?? deals.length} giao dịch</span>
       </div>
 
       <div className="card overflow-hidden">

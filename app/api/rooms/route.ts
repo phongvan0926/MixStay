@@ -64,7 +64,8 @@ export async function GET(req: NextRequest) {
     if (foreignerOk === 'true') propertyWhere.foreignerOk = true;
     if (evCharging === 'true') propertyWhere.evCharging = true;
     if (petAllowed === 'true') propertyWhere.petAllowed = true;
-    if (companyId) propertyWhere.companyId = companyId;
+    if (companyId === '__none__') propertyWhere.companyId = null;   // tin thuộc tòa CHƯA gán công ty
+    else if (companyId) propertyWhere.companyId = companyId;
     if (landlordId) propertyWhere.landlordId = landlordId;
 
     if (Object.keys(propertyWhere).length > 0) {
