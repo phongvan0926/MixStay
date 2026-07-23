@@ -24,6 +24,9 @@ export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const roomTypeId = url.searchParams.get('roomTypeId');
+    // Chế độ kho công ty (?kho= trên /tin): CHỈ gợi ý tin cùng công ty — không để khách
+    // thấy sản phẩm công ty khác rồi rời đi (công ty mất khách).
+    const companyId = url.searchParams.get('companyId');
 
     if (!roomTypeId) {
       return NextResponse.json({ error: 'Thiếu roomTypeId' }, { status: 400 });
@@ -50,7 +53,7 @@ export async function GET(req: NextRequest) {
       id: { not: roomTypeId },
       isApproved: true,
       status: { in: ['AVAILABLE', 'UPCOMING'] as ('AVAILABLE' | 'UPCOMING')[] },
-      property: { status: 'APPROVED' as const, isActive: true },
+      property: { status: 'APPROVED' as const, isActive: true, ...(companyId ? { companyId } : {}) },
     };
 
     // Điều kiện: cùng phân khúc GIÁ (±30%) và cùng QUẬN — 2 tab đều yêu cầu CẢ HAI theo yêu cầu.

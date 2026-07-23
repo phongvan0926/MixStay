@@ -22,10 +22,11 @@ const DEPOSIT_LABELS: Record<string, string> = {
 };
 
 // ==================== Related Room Card ====================
-function RelatedRoomCard({ rt }: { rt: any }) {
+function RelatedRoomCard({ rt, khoId }: { rt: any; khoId?: string | null }) {
   const cover = rt.images?.[0] || rt.property?.images?.[0] || null;
-  // Luôn dẫn tới trang chi tiết công khai theo id (khách xem không cần đăng nhập)
-  const href = `/tin/${rt.id}`;
+  // Luôn dẫn tới trang chi tiết công khai theo id (khách xem không cần đăng nhập).
+  // Chế độ kho công ty: giữ ?kho= để tin tiếp theo vẫn khóa trong công ty đó.
+  const href = `/tin/${rt.id}${khoId ? `?kho=${khoId}` : ''}`;
 
   const Wrapper: any = href ? Link : 'div';
   const wrapperProps = href ? { href } : {};
@@ -57,19 +58,20 @@ function RelatedRoomCard({ rt }: { rt: any }) {
 }
 
 // ==================== Related Rooms Section ====================
-function RelatedSection({ roomTypeId }: { roomTypeId: string }) {
+function RelatedSection({ roomTypeId, khoId }: { roomTypeId: string; khoId?: string | null }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'sameBuilding' | 'samePrice' | 'sameDistrict'>('samePrice');
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/rooms/related?roomTypeId=${roomTypeId}`)
+    // Chế độ kho công ty: chỉ gợi ý tin CÙNG công ty (không dẫn khách sang công ty khác)
+    fetch(`/api/rooms/related?roomTypeId=${roomTypeId}${khoId ? `&companyId=${khoId}` : ''}`)
       .then(res => res.ok ? res.json() : null)
       .then(setData)
       .catch(() => setData(null))
       .finally(() => setLoading(false));
-  }, [roomTypeId]);
+  }, [roomTypeId, khoId]);
 
   // Khi có dữ liệu: nếu tab đang chọn rỗng thì nhảy sang tab đầu tiên có tin (đỡ hiện tab trống).
   useEffect(() => {
@@ -134,7 +136,7 @@ function RelatedSection({ roomTypeId }: { roomTypeId: string }) {
       ) : (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {bucket.map((rt: any) => <RelatedRoomCard key={rt.id} rt={rt} />)}
+            {bucket.map((rt: any) => <RelatedRoomCard key={rt.id} rt={rt} khoId={khoId} />)}
           </div>
           {!showAll && shuffled.length > 6 && (
             <div className="text-center mt-4">
@@ -158,6 +160,13 @@ export default function ShareViewClient() {
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // ?kho=<companyId> — khách đến từ trang kho công ty (/share/company/[id]).
+  // Đọc từ window (không dùng useSearchParams để khỏi cần Suspense boundary).
+  const [khoParam, setKhoParam] = useState<string | null>(null);
+  useEffect(() => {
+    setKhoParam(new URLSearchParams(window.location.search).get('kho'));
+  }, []);
 
   // /share/[token] + /p/[token] → theo share token (gắn cộng tác viên). /tin/[id] → công khai theo id.
   const fetchUrl = token ? `/api/share-links?token=${token}` : `/api/rooms/public/${id}`;
@@ -220,13 +229,27 @@ export default function ShareViewClient() {
   const hasPropertyFeatures = property?.parkingCar || property?.parkingBike || property?.evCharging || property?.petAllowed || property?.foreignerOk;
   const hasPropertyAmenities = property?.amenities?.length > 0;
 
+  // CHẾ ĐỘ KHO CÔNG TY: /tin/[id]?kho=<companyId> — khách đến từ trang kho của công ty.
+  // Chỉ kích hoạt khi id khớp đúng công ty của tin (chống gắn ?kho= bừa) và KHÔNG phải link CTV.
+  const company = property?.company;
+  const companyMode = !token && !!khoParam && !!company?.id && khoParam === company.id;
+  const landlordDigits = (property?.landlord?.phone || '').replace(/\D/g, '');
+  // Liên hệ trong chế độ kho: CHỈ về công ty hoặc chủ tòa (quản lý) — TUYỆT ĐỐI không fallback
+  // Zalo/hotline hệ thống MixStay, để công ty không mất khách.
+  const companyZalo = companyMode
+    ? (company?.zaloGroupLink || (landlordDigits ? `https://zalo.me/${landlordDigits}` : null))
+    : null;
+  const companyCallPhone = companyMode
+    ? ((company?.phone || '').replace(/\D/g, '') || landlordDigits || null)
+    : null;
+
   const contactPhone: string | null = data.broker?.phone || null;
   const brokerName: string = data.broker?.name?.trim() || '';
   // Pass the link creator (data.broker) so broker-created links deeplink Zalo to the broker.
   const zaloLink = getZaloLink(roomType, data.broker);
 
-  // Công cụ bài đăng: chia sẻ / copy nội dung / tải ảnh.
-  const shareUrl = token ? `/share/${token}` : `/tin/${id}`;
+  // Công cụ bài đăng: chia sẻ / copy nội dung / tải ảnh (chế độ kho giữ ?kho= khi chia sẻ tiếp).
+  const shareUrl = token ? `/share/${token}` : `/tin/${id}${companyMode ? `?kho=${khoParam}` : ''}`;
   const absShareUrl = (typeof window !== 'undefined' ? window.location.origin : '') + shareUrl;
   const listingLocation = [property?.publicAddress || property?.streetName, property?.district].filter(Boolean).join(', ');
   // Mã tin HIỂN THỊ = ghép mã công ty (nếu tòa thuộc công ty có mã): MS-010-XXXXXX
@@ -242,8 +265,9 @@ export default function ShareViewClient() {
     <div className="min-h-screen bg-stone-50">
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-stone-200/60">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
-          {token ? (
-            // Trang link chia sẻ: KHÔNG cho về trang chủ — giữ khách trong trang để chỉ liên hệ chính chủ link.
+          {token || companyMode ? (
+            // Trang link chia sẻ / chế độ kho công ty: KHÔNG cho về trang chủ — giữ khách trong
+            // trang để chỉ liên hệ chính chủ link / chính công ty đó.
             <span className="flex items-center" aria-label="MixStay">
               <Logo variant="light" className="h-7 w-auto" />
             </span>
@@ -254,6 +278,11 @@ export default function ShareViewClient() {
           )}
           {brokerName ? (
             <span className="text-xs text-stone-500">Cộng tác viên: <span className="font-medium text-stone-700">{brokerName}</span></span>
+          ) : companyMode ? (
+            // Chế độ kho công ty: KHÔNG hiện hotline MixStay — chỉ đường về kho của công ty
+            <Link href={`/share/company/${company.id}`} className="text-xs font-semibold bg-brand-600 text-white px-3 py-1.5 rounded-lg hover:bg-brand-700 transition-colors">
+              🏢 Kho phòng {company.name}
+            </Link>
           ) : (
             <a href="tel:0379838222" className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors">📞 Hotline: 0379 838 222</a>
           )}
@@ -440,7 +469,7 @@ export default function ShareViewClient() {
             </svg>
           </Link>
         ) : (
-          roomType.id && <RelatedSection roomTypeId={roomType.id} />
+          roomType.id && <RelatedSection roomTypeId={roomType.id} khoId={companyMode ? khoParam : null} />
         )}
 
         <p className="text-center text-xs text-stone-400 mt-4 mb-20">
@@ -448,10 +477,14 @@ export default function ShareViewClient() {
         </p>
       </div>
 
-      {/* Floating Zalo button (shortcut khi user scroll xa Section 7) — định tuyến broker/chủ nhà */}
-      <ZaloFab href={zaloLink} />
-      {/* Nút gọi nổi: link cộng tác viên/chủ nhà → gọi đúng người đó; trang công khai /tin → hotline công ty */}
-      {contactPhone ? (
+      {/* Floating Zalo button (shortcut khi user scroll xa Section 7) — định tuyến broker/chủ nhà.
+          Chế độ kho công ty: chỉ Zalo công ty/chủ tòa, KHÔNG fallback Zalo hệ thống. */}
+      {companyMode ? (companyZalo && <ZaloFab href={companyZalo} />) : <ZaloFab href={zaloLink} />}
+      {/* Nút gọi nổi: link CTV/chủ nhà → gọi đúng người đó; chế độ kho công ty → SĐT công ty/chủ tòa
+          (không có thì ẨN — tuyệt đối không hiện hotline MixStay); trang công khai /tin thường → hotline */}
+      {companyMode ? (
+        companyCallPhone && <CallFab phone={companyCallPhone} label="Gọi ngay" showNumber={false} stacked={!!companyZalo} />
+      ) : contactPhone ? (
         <CallFab phone={contactPhone.replace(/\D/g, '')} display={contactPhone} label="Gọi ngay" showNumber={false} />
       ) : (
         <CallFab label="Gọi ngay" showNumber={false} />

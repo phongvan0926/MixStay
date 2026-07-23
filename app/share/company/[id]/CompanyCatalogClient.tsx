@@ -112,7 +112,8 @@ export default function CompanyCatalogClient({ id }: { id: string }) {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {rooms.map(room => (
-              <Link key={room.id} href={`/tin/${room.id}`}
+              // ?kho= → trang tin lẻ vào "chế độ kho công ty": không link ra ngoài, gợi ý + liên hệ chỉ trong công ty
+              <Link key={room.id} href={`/tin/${room.id}?kho=${company.id}`}
                 className="group rounded-2xl border border-stone-200/60 bg-white overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-stone-300/60">
                 <div className="relative">
                   <ListingImageMosaic images={room.images} videos={room.videos} videoLinks={room.videoLinks} alt={room.name} className="h-44" />
@@ -145,10 +146,9 @@ export default function CompanyCatalogClient({ id }: { id: string }) {
 
       {/* Nút liên hệ nổi — gọi/Zalo trực tiếp công ty, khách xem phòng nào ổn gọi luôn */}
       {zalo && <ZaloFab href={zalo} />}
-      {companyDigits ? (
+      {/* KHÔNG fallback hotline MixStay — trang kho công ty chỉ liên hệ về CHÍNH công ty đó */}
+      {companyDigits && (
         <CallFab phone={companyDigits} display={company.phone || companyDigits} label="Gọi ngay" showNumber={false} stacked={!!zalo} />
-      ) : (
-        <CallFab label="Gọi ngay" showNumber={false} stacked={!!zalo} />
       )}
     </div>
   );

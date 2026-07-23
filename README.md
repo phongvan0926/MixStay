@@ -234,6 +234,15 @@ mixstay/
 
 ## Changelog
 
+### v9.23 — 2026-07-23 (kho công ty: khóa khách trong hệ sinh thái công ty — không link/hotline ra ngoài)
+- **Chế độ kho công ty trên trang tin lẻ:** thẻ phòng ở `/share/company/[id]` dẫn sang `/tin/[id]?kho=<companyId>` — trang tin nhận `?kho=` (chỉ hiệu lực khi đúng công ty của tin, không hiệu lực trên link CTV) và: logo KHÔNG dẫn về trang chủ; nav thay hotline MixStay bằng nút "🏢 Kho phòng {công ty}" quay về kho; **Tin đăng liên quan chỉ gợi ý tin CÙNG công ty** (`/api/rooms/related?companyId=`) và các thẻ liên quan giữ nguyên `?kho=` khi bấm tiếp; nút chia sẻ cũng giữ `?kho=`.
+- **Liên hệ chỉ về công ty/quản lý tòa:** FAB Zalo = link nhóm Zalo công ty → SĐT chủ tòa (KHÔNG fallback Zalo hệ thống); FAB Gọi = SĐT công ty → SĐT chủ tòa, không có thì ẨN (không hiện hotline MixStay). API `rooms/public/[id]` trả thêm `company.phone` cho việc này. Trang kho `/share/company` cũng bỏ fallback hotline MixStay khi công ty thiếu SĐT.
+- Trang `/tin` thường (không `?kho=`) + link chia sẻ CTV giữ nguyên hành vi cũ.
+
+### v9.22 — 2026-07-23 (hoàn tất mô tả tin: 760/760 tin đủ mô tả, gỡ cron)
+- **219 tin còn thiếu mô tả đã được Claude viết trực tiếp** (6 luồng song song, chỉ dùng dữ kiện thật của tin, cấm số nhà/SĐT, văn phong đa dạng) + guard khi ghi DB: chỉ ghi tin mô tả còn <40 ký tự, chặn mô tả lộ dãy số giống SĐT. Kết quả: **0/760 tin thiếu mô tả**.
+- **Gỡ cron 15:30** (không cần nữa, đỡ tốn tài nguyên/quota); `scripts/ai-fill-descriptions.js` vẫn giữ trong repo — chạy tay khi có tin mới thiếu mô tả.
+
 ### v9.21 — 2026-07-23 (đợt chuẩn hóa dữ liệu: tách số nhà, sửa tiêu đề, AI viết mô tả ngắn)
 - **Backup trước khi sửa:** toàn bộ bản gốc lưu `~/.mixstay-backups/backup-chuanhoa-2026-07-23.json` (hoàn tác được).
 - **③ Tách số nhà viết nhầm vào ô ngõ/đường:** 101/101 tòa — thuật toán từ `lib/address.ts` (redact/extract), 100 tự động + 1 sửa tay ("55/55/78"); chuẩn hóa luôn ô số nhà bị nhét cả địa chỉ.
