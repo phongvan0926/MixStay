@@ -234,6 +234,12 @@ mixstay/
 
 ## Changelog
 
+### v9.21 — 2026-07-23 (đợt chuẩn hóa dữ liệu: tách số nhà, sửa tiêu đề, AI viết mô tả ngắn)
+- **Backup trước khi sửa:** toàn bộ bản gốc lưu `~/.mixstay-backups/backup-chuanhoa-2026-07-23.json` (hoàn tác được).
+- **③ Tách số nhà viết nhầm vào ô ngõ/đường:** 101/101 tòa — thuật toán từ `lib/address.ts` (redact/extract), 100 tự động + 1 sửa tay ("55/55/78"); chuẩn hóa luôn ô số nhà bị nhét cả địa chỉ.
+- **① Tiêu đề không dấu:** 4/4 tin sửa bằng AI + soát tay ("cho thuee mat bang kim giang"→"Cho thuê mặt bằng Kim Giang" — giữ đúng loại hình).
+- **② Mô tả quá ngắn (<40 ký tự):** script mới `scripts/ai-fill-descriptions.js` — AI viết mô tả CHỈ từ dữ liệu thật của tin (cấm bịa/số nhà/SĐT), idempotent. Đã ghi 6/286, HẾT QUOTA Gemini ngày (1 key); chạy lại `node scripts/ai-fill-descriptions.js` khi quota reset (hoặc thêm GEMINI_API_KEY_2… để nhanh hơn) — tự làm nốt 280 tin còn lại.
+
 ### v9.20 — 2026-07-23 (AI chuẩn hóa: giữ đúng loại hình tiêu đề gốc + user sửa được kết quả)
 - **Giữ ý chính tiêu đề gốc:** prompt yêu cầu GIỮ NGUYÊN loại hình trong tiêu đề gốc — "mặt bằng"/"kho"/"văn phòng"/"nhà nguyên căn" không bị đổi thành loại phòng lấy từ trường Kiểu phòng; chỉ sửa chính tả + thêm dấu + làm gọn. Verify: "cho thuee mat bang kim giang" (typeName=don) → "Cho thuê mặt bằng Kim Giang 30m² có bãi đỗ ô tô" ✓.
 - **User tham gia sửa kết quả AI:** preview trong "✨ AI chuẩn hóa tiêu đề + mô tả" đổi thành Ô NHẬP SỬA ĐƯỢC (input tiêu đề + textarea mô tả) — chỉnh xong bấm "Dùng bản này (đã gồm chỉnh sửa của bạn)" mới áp vào form, rồi vẫn phải bấm Lưu tin như thường.
