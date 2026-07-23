@@ -1,8 +1,17 @@
 #!/usr/bin/env node
-// Re-pin CHÍNH XÁC toàn bộ: (1) thử "Ngõ N + phố" trước (OSM Hà Nội có map từng ngõ),
-// (2) lùi về tên phố. MỌI kết quả phải: display_name CHỨA ĐÚNG TÊN PHỐ (norm, bỏ dấu)
-// + nằm trong 7km tâm quận. Sửa lỗi audit cũ nhận mỏ neo không kiểm tên (Đông Quan → pin lạc Đống Đa).
-// Chỉ ghi khi pin mới lệch pin cũ >0.25km. Backup mọi thay đổi.
+/**
+ * geocode-audit-pins.js — Rà + sửa pin theo TUYẾN ĐƯỜNG (chiến lược chốt với chủ dự án:
+ * đúng tuyến đường là đạt; không chắc vị trí cụ thể → đặt 1 điểm TRÊN tuyến).
+ *
+ * Cách tìm "mỏ neo tuyến đường" cho từng tòa:
+ *  1. Thử "Ngõ N <phố>" (đúng cửa ngõ nếu OSM có), rồi "Phố <phố>" / "Đường <phố>" / "<phố>".
+ *  2. Tên phố rút dần từ phải (bỏ chữ thừa kiểu "đối diện Five Star", "cuối đường X").
+ *  3. CHỈ TIN kết quả mà ĐOẠN ĐẦU TIÊN display_name chứa đúng tên phố (chống Nominatim
+ *     trả ngõ khác cùng phường — "Ngõ 64 Kim Giang" khi hỏi "Ngõ 236 Khương Đình").
+ *  4. Kết quả phải nằm trong 7km tâm quận.
+ * Pin lệch quá ngưỡng (0.3km nếu neo là cửa ngõ, 1km nếu neo là tuyến phố) → kéo về neo.
+ * Backup mọi thay đổi vào ~/.mixstay-backups/backup-fix-pins-<ngày>.json
+ */
 const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
 for (const f of ['.env.local', '.env']) {
@@ -40,30 +49,53 @@ function bareStreet(input) {
   s = s.replace(/\b(?:kdt|khu\s*đô\s*thị|liền\s*kề|lk)\s*\d*\b/gi, ' ');
   s = s.replace(/^\s*\d+[a-zA-Z]?(?:[\s./-]*\d+[a-zA-Z]?)*\b/i, ' ');
   s = s.replace(/\b(?:đường|duong|phố|pho)\b/gi, ' ');
-  return s.replace(/["',;.:]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
+  return s.replace(/["',;.:-]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
 }
-// Lấy số NGÕ đầu tiên: "Số 10 ngõ 144/4 Quan Nhân" → "144"
 function alleyNumber(input) {
   const m = (input || '').match(/\b(?:ngõ|ngo)\s*(\d+[a-zA-Z]?)/i);
   return m ? m[1] : null;
 }
+// Ứng viên tên phố: rút dần chữ thừa từ PHẢI ("Khương Đình đối diện Five Star" → "Khương Đình")
+function candidates(street) {
+  const words = street.split(/\s+/).filter(Boolean);
+  const out = [];
+  for (let len = words.length; len >= 1; len--) {
+    const c = words.slice(0, len).join(' ');
+    if (norm(c).length >= 4) out.push(c);
+  }
+  return out.slice(0, 5);
+}
 const cache = new Map();
-async function geocodeValidated(q, streetCore, center) {
-  const key = q;
-  if (cache.has(key)) return cache.get(key);
+async function query(q) {
+  if (cache.has(q)) return cache.get(q);
   const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=vn&q=${encodeURIComponent(q)}`, { headers: { 'User-Agent': UA } });
   await sleep(1100);
-  let out = null;
-  if (r.ok) {
-    const arr = (await r.json()) || [];
-    for (const h of arr) {
-      const lat = parseFloat(h.lat), lng = parseFloat(h.lon);
-      // BẮT BUỘC: tên phố nằm trong display_name + trong 7km tâm quận
-      if (norm(h.display_name).includes(streetCore) && km({ lat, lng }, center) <= 7) { out = { lat, lng, dn: h.display_name }; break; }
+  const out = r.ok ? ((await r.json()) || []) : [];
+  cache.set(q, out);
+  return out;
+}
+// Kết quả hợp lệ: ĐOẠN ĐẦU display_name chứa tên phố + trong 7km tâm quận
+function pickValid(hits, cand, center) {
+  const c = norm(cand);
+  for (const h of hits) {
+    const first = norm((h.display_name || '').split(',')[0]);
+    const lat = parseFloat(h.lat), lng = parseFloat(h.lon);
+    if (first.includes(c) && km({ lat, lng }, center) <= 7) return { lat, lng, dn: h.display_name };
+  }
+  return null;
+}
+async function findAnchor(street, alley, center) {
+  for (const cand of candidates(street)) {
+    if (alley) {
+      const hit = pickValid(await query(`Ngõ ${alley} ${cand}, Hà Nội, Việt Nam`), cand, center);
+      if (hit) return { ...hit, level: 'ngõ' };
+    }
+    for (const prefix of ['Phố ', 'Đường ', '']) {
+      const hit = pickValid(await query(`${prefix}${cand}, Hà Nội, Việt Nam`), cand, center);
+      if (hit) return { ...hit, level: 'phố' };
     }
   }
-  cache.set(key, out);
-  return out;
+  return null;
 }
 (async () => {
   const props = await prisma.property.findMany({
@@ -71,30 +103,28 @@ async function geocodeValidated(q, streetCore, center) {
     select: { id: true, name: true, fullAddress: true, streetName: true, district: true, latitude: true, longitude: true },
   });
   console.log('Tổng:', props.length);
-  let fixed = 0, checkedQ = 0; const backup = [];
+  let fixed = 0, noAnchor = 0, i = 0; const backup = [];
   for (const p of props) {
+    i++;
     const center = CENTERS[norm(p.district)];
     if (!center) continue;
-    const src = [p.streetName, p.fullAddress].filter(Boolean).join(' | ');
     const street = bareStreet(p.streetName || '') || bareStreet(p.fullAddress || '');
-    const core = norm(street);
-    if (core.length < 4) continue;
+    if (norm(street).length < 4) continue;
     const alley = alleyNumber(p.streetName || '') || alleyNumber(p.fullAddress || '');
-    let hit = null;
-    if (alley) hit = await geocodeValidated(`Ngõ ${alley} ${street}, Hà Nội, Việt Nam`, core, center);
-    if (!hit) hit = await geocodeValidated(`${street}, Hà Nội, Việt Nam`, core, center);
-    checkedQ++;
-    if (!hit) continue;
-    const d = km({ lat: p.latitude, lng: p.longitude }, hit);
-    if (d > 0.25) {
+    const anchor = await findAnchor(street, alley, center);
+    if (!anchor) { noAnchor++; continue; }
+    // Đúng cửa ngõ → bám ngõ (lệch >0.3km kéo về); chỉ có tuyến phố → lệch >1km mới kéo
+    const limit = anchor.level === 'ngõ' ? 0.3 : 1.0;
+    const d = km({ lat: p.latitude, lng: p.longitude }, anchor);
+    if (d > limit) {
       backup.push({ id: p.id, latitude: p.latitude, longitude: p.longitude });
-      await prisma.property.update({ where: { id: p.id }, data: { latitude: hit.lat, longitude: hit.lng } });
+      await prisma.property.update({ where: { id: p.id }, data: { latitude: anchor.lat, longitude: anchor.lng } });
       fixed++;
-      console.log(` 🔧 ${(p.streetName || p.fullAddress || '').slice(0, 38).padEnd(40)} dời ${d.toFixed(1)}km → ${hit.dn.slice(0, 55)}`);
+      console.log(` 🔧 ${(p.streetName || p.fullAddress || '').slice(0, 36).padEnd(38)} dời ${d.toFixed(1)}km → [${anchor.level}] ${anchor.dn.slice(0, 50)}`);
     }
-    if (checkedQ % 50 === 0) console.log(`  ...${checkedQ}/${props.length}, đã sửa ${fixed}`);
+    if (i % 50 === 0) console.log(`  ...${i}/${props.length}, sửa ${fixed}`);
   }
   if (backup.length) fs.appendFileSync(process.env.HOME + '/.mixstay-backups/backup-fix-pins-2026-07-23.json', JSON.stringify(backup) + '\n');
-  console.log(`\n== XONG == dời lại ${fixed} pin (trong ${props.length} tòa)`);
+  console.log(`\n== XONG == kéo về tuyến đúng: ${fixed} | không tìm được tuyến (giữ nguyên): ${noAnchor}`);
   await prisma.$disconnect();
 })().catch(e => { console.error('LỖI:', e.message); process.exit(1); });

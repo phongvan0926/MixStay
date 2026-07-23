@@ -234,6 +234,10 @@ mixstay/
 
 ## Changelog
 
+### v9.28 — 2026-07-24 (rà pin lần cuối theo chuẩn "đúng tuyến đường": kéo thêm 97+7 pin về đúng phố)
+- **Chốt chiến lược với chủ dự án:** đúng TUYẾN ĐƯỜNG là đạt (~95% yêu cầu); không chắc vị trí cụ thể → đặt 1 điểm TRÊN tuyến. `scripts/geocode-audit-pins.js` bản cuối: (1) chỉ tin kết quả mà **đoạn đầu display_name chứa đúng tên phố** — chặn hẳn Nominatim gạ "ngõ khác cùng phường" (Ngõ 64 Kim Giang khi hỏi Ngõ 236 Khương Đình); (2) tên phố **tự rút chữ thừa từ phải** ("Khương Đình đối diện Five Star" → "Khương Đình"); (3) thử "Phố X"/"Đường X" trước tên trần; (4) neo cửa ngõ lệch >0,3km / neo tuyến phố lệch >1km mới kéo về.
+- Chạy toàn bộ: **kéo 97 pin về đúng tuyến** + xử tay nhóm Khương Đình/Khương Trung/Phú Đô chủ dự án báo.
+
 ### v9.27 — 2026-07-23 (re-pin chính xác 224 tòa: tra tới CỬA NGÕ + bắt buộc kết quả chứa đúng tên phố)
 - **Chủ dự án soát thấy nhiều pin vẫn sai** (Đông Quan lạc sang Đống Đa, cụm Quan Nhân/Nguyễn Ngọc Vũ chụm 1 điểm...). 2 lỗi gốc: audit v9.26 nhận mỏ neo Nominatim mà KHÔNG kiểm display_name có chứa tên phố; và các vòng backfill cắt số ngõ nên pin rơi về giữa phố thay vì đúng ngõ (OSM Hà Nội thực ra có map từng ngõ).
 - **`scripts/geocode-audit-pins.js` viết lại:** thử "Ngõ N + tên phố" trước (ra đúng cửa ngõ), lùi về tên phố; MỌI kết quả phải chứa tên phố trong display_name + trong 7km tâm quận; chỉ ghi khi lệch >0,25km. Chạy toàn bộ: **dời lại 224 pin**.
