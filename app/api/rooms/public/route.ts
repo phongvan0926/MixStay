@@ -3,6 +3,14 @@ import prisma from '@/lib/prisma';
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { redactName, redactHouseNumber } from '@/lib/address';
+import { HANOI_UNIVERSITIES } from '@/lib/hanoi-locations';
+
+// Khoảng cách km giữa 2 tọa độ (haversine) — dùng cho lọc "gần trường ĐH"
+function kmBetween(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  const R = 6371, dLat = ((bLat - aLat) * Math.PI) / 180, dLng = ((bLng - aLng) * Math.PI) / 180;
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos((aLat * Math.PI) / 180) * Math.cos((bLat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
 
 export async function GET(req: NextRequest) {
   const rateLimited = await applyRateLimit(req, 'api');
@@ -65,6 +73,11 @@ export async function GET(req: NextRequest) {
 
     const { page, limit, skip } = getPaginationParams(url);
 
+    // Lọc "gần trường ĐH": ?uni=<short name> — tính khoảng cách SERVER-SIDE từ tọa độ tòa
+    // (tọa độ KHÔNG trả về client, chỉ trả distanceKm) rồi sắp gần nhất trước.
+    const uniParam = url.searchParams.get('uni');
+    const uni = uniParam ? HANOI_UNIVERSITIES.find(u => u.short === uniParam) : null;
+
     const [roomTypes, total] = await Promise.all([
       prisma.roomType.findMany({
         where,
@@ -96,6 +109,9 @@ export async function GET(req: NextRequest) {
               evCharging: true,
               petAllowed: true,
               foreignerOk: true,
+              // CHỈ dùng server-side tính khoảng cách tới trường — bị xoá trước khi trả response
+              latitude: true,
+              longitude: true,
             },
           },
         },
@@ -105,15 +121,31 @@ export async function GET(req: NextRequest) {
           { expectedAvailableDate: { sort: 'asc', nulls: 'last' } },
           { createdAt: 'desc' },
         ],
-        skip,
-        take: limit,
+        // Chế độ gần trường: lấy rộng rồi sort theo khoảng cách + tự cắt trang (distance không sort được trong SQL)
+        skip: uni ? 0 : skip,
+        take: uni ? 500 : limit,
       }),
       prisma.roomType.count({ where }),
     ]);
 
+    // Sắp theo khoảng cách tới trường rồi cắt trang thủ công
+    let pageRows = roomTypes;
+    const distanceById = new Map<string, number>();
+    if (uni) {
+      const withDist = roomTypes
+        .filter(rt => rt.property?.latitude != null && rt.property?.longitude != null)
+        .map(rt => {
+          const d = kmBetween(uni.lat, uni.lng, rt.property!.latitude!, rt.property!.longitude!);
+          distanceById.set(rt.id, d);
+          return { rt, d };
+        })
+        .sort((a, b) => a.d - b.d);
+      pageRows = withDist.slice(skip, skip + limit).map(x => x.rt);
+    }
+
     // Scope the share-link lookup to only the rooms on this page (≤ limit rows),
     // instead of scanning every active broker share link in the system.
-    const roomIds = roomTypes.map(rt => rt.id);
+    const roomIds = pageRows.map(rt => rt.id);
     const activeShareLinks = roomIds.length > 0
       ? await prisma.shareLink.findMany({
           where: { isActive: true, isSystem: false, roomTypeId: { in: roomIds } },
@@ -129,10 +161,14 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const withShareToken = roomTypes.map(rt => {
+    const withShareToken = pageRows.map(rt => {
       const images = [...(rt.images || []), ...(rt.property?.images || [])].slice(0, 3);
       const hasVideo = (rt.videos?.length || 0) + (rt.videoLinks?.length || 0) > 0;
+      // Tách tọa độ ra khỏi property — TUYỆT ĐỐI không trả lat/lng cho client (chống dò vị trí)
+      const { latitude: _lat, longitude: _lng, ...safeProp } = (rt.property || {}) as any;
+      const distanceKm = distanceById.has(rt.id) ? Math.round(distanceById.get(rt.id)! * 10) / 10 : undefined;
       return {
+        ...(distanceKm !== undefined ? { distanceKm, uniShort: uni?.short } : {}),
         id: rt.id,
         name: rt.name,
         listingCode: rt.listingCode,
@@ -152,7 +188,7 @@ export async function GET(req: NextRequest) {
         shortTermAllowed: rt.shortTermAllowed,
         // Ẩn số nhà: redact tên tòa + tên đường (vài bản ghi nhồi cả số nhà vào streetName).
         property: rt.property
-          ? { ...rt.property, name: redactName(rt.property.name), streetName: redactHouseNumber(rt.property.streetName) }
+          ? { ...safeProp, name: redactName(rt.property.name), streetName: redactHouseNumber(rt.property.streetName) }
           : rt.property,
         shareToken: tokenByRoomType.get(rt.id) || null,
       };

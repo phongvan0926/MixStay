@@ -234,6 +234,14 @@ mixstay/
 
 ## Changelog
 
+### v9.30 — 2026-07-24 (6 tính năng mới: AI tìm phòng, săn phòng, gần trường ĐH, tiền-duyệt, cron vòng đời, thống kê CTV)
+- **① Tìm phòng bằng NGÔN NGỮ TỰ NHIÊN:** ô "✨ Mô tả phòng bạn cần…" trên /phong — khách gõ 1 câu ("phòng dưới 4 triệu gần ĐH Thương Mại có gác, nuôi mèo") → Gemini bóc thành bộ lọc (`/api/ai/search`, structured output, rate-limit chặt) đổ vào form (khách sửa được) rồi tìm luôn.
+- **② Săn phòng (lead):** khách để lại SĐT + tiêu chí đang lọc (không cần tài khoản) — bảng mới `saved_searches`. Tin mới được DUYỆT khớp tiêu chí → notification cho ADMIN kèm SĐT khách để gọi chào phòng. Trang quản lý `/admin/leads` (gọi/Zalo 1 chạm, bật/tắt khi khách xong nhu cầu).
+- **③ Lọc "🎓 Gần trường ĐH":** chọn 1 trong 18 trường → sort theo khoảng cách thật (tính server-side từ tọa độ tòa, KHÔNG trả lat/lng cho client), thẻ phòng hiện "Cách Bách Khoa ~0.3km".
+- **④ Tiền-duyệt tin chờ duyệt (admin/rooms):** cờ đỏ tự động trên tin PENDING — lộ SĐT/số nhà trong tin, giá bất thường theo m², thiếu ảnh, mô tả ngắn (rule-based client-side, không tốn AI).
+- **⑤ Cron vòng đời phòng** (`/api/cron/lifecycle`, Vercel Cron 8h VN): UPCOMING đến ngày trống dự kiến → tự chuyển 🟢 AVAILABLE + báo chủ nhà; tin 30 ngày không cập nhật → nhắc chủ nhà xác nhận còn phòng (chạm mốc mới nhắc, không spam). Chạy thử thật: 4 tin quá hạn được tự chuyển.
+- **⑧ Thống kê CTV** (`/broker/stats` + `/api/broker/stats`): hoa hồng lũy kế, hạng tháng này (so mọi CTV theo hoa hồng chốt, ẩn danh người khác), biểu đồ 6 tháng, tổng views link chia sẻ. Sidebar CTV thêm mục "📈 Thống kê"; sidebar admin thêm "🔔 Khách săn phòng".
+
 ### v9.29 — 2026-07-24 (chuẩn hóa 104 tiêu đề tòa nhà + tin đăng)
 - **Claude tự soát và viết lại từng dòng** (không AI tự động mù): 51 tên tòa + 53 tiêu đề tin bị viết thường toàn bộ ("ccmn trần cung siêu thoáng" → "CCMN Trần Cung siêu thoáng"), sai chính tả (nghách→ngách, gác xếp→gác xép, dhoc→ĐH, STIU→Studio, vimcom→Vincom), thừa tab/ngoặc kép/khoảng trắng, tiêu đề dính cả đoạn mô tả rác. KHÔNG đổi nội dung/loại hình. Backup: `~/.mixstay-backups/backup-fix-titles-2026-07-24.json`.
 

@@ -372,6 +372,41 @@ export async function PUT(req: NextRequest) {
       },
     });
 
+    // "SĂN PHÒNG": tin vừa được DUYỆT (false→true) → match tiêu chí khách đang săn
+    // → notification cho ADMIN kèm SĐT khách để gọi lại chào phòng. Lỗi không chặn response.
+    if (canSetApproval && data.isApproved === true && existing.isApproved === false) {
+      (async () => {
+        const rt = await prisma.roomType.findUnique({
+          where: { id },
+          select: { name: true, priceMonthly: true, typeName: true, listingCode: true, property: { select: { district: true } } },
+        });
+        if (!rt) return;
+        const searches = await prisma.savedSearch.findMany({ where: { isActive: true } });
+        const matched = searches.filter(s => {
+          if (s.district && rt.property?.district && !s.district.toLowerCase().includes(rt.property.district.toLowerCase())) return false;
+          if (s.typeName && s.typeName !== rt.typeName) return false;
+          if (s.minPrice && rt.priceMonthly < s.minPrice) return false;
+          if (s.maxPrice && rt.priceMonthly > s.maxPrice) return false;
+          return true;
+        });
+        if (!matched.length) return;
+        const admins = await prisma.user.findMany({ where: { role: 'ADMIN', isActive: true }, select: { id: true } });
+        await prisma.notification.createMany({
+          data: matched.flatMap(s => admins.map(a => ({
+            userId: a.id,
+            type: 'saved_search',
+            title: '🎯 Tin mới khớp khách săn phòng',
+            message: `"${rt.name}" (${rt.listingCode || ''}) khớp nhu cầu của ${s.name || 'khách'} ${s.phone} — gọi chào phòng ngay!`,
+            link: '/admin/leads',
+          }))),
+        });
+        await prisma.savedSearch.updateMany({
+          where: { id: { in: matched.map(s => s.id) } },
+          data: { lastMatchedAt: new Date() },
+        });
+      })().catch(e => console.error('saved-search match error:', e));
+    }
+
     return NextResponse.json(roomType);
   } catch (error: any) {
     console.error('PUT /api/rooms error:', error);

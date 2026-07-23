@@ -19,6 +19,27 @@ const ROOM_TYPE_LABELS: Record<string, string> = {
 };
 
 // Ngày mặc định khi chuyển "Sắp trống" mà chưa chọn: 1 của THÁNG SAU.
+// TIỀN-DUYỆT tin chờ duyệt (rule-based, chạy client — không tốn AI): trả danh sách cảnh báo
+// để admin liếc là biết tin có vấn đề gì trước khi bấm duyệt.
+function getModerationFlags(r: any): string[] {
+  const flags: string[] = [];
+  const text = `${r.name || ''} ${r.description || ''}`;
+  // Lộ SĐT trong tiêu đề/mô tả (khách xem công khai sẽ thấy → mất kiểm soát lead)
+  if (/0\d{9}\b|0\d{2}[\s.]\d{3}[\s.]\d{4}/.test(text.replace(/[()+-]/g, ''))) flags.push('📵 Lộ SĐT trong tin');
+  // Lộ số nhà cụ thể trong mô tả (app chủ trương ẩn số nhà với khách)
+  if (/(?:số nhà|sn)\s*\d+[a-z]?\b/i.test(r.description || '')) flags.push('🏠 Lộ số nhà trong mô tả');
+  // Giá bất thường theo m² (CCMN Hà Nội thường 100k–400k/m²/tháng)
+  if (r.priceMonthly && r.areaSqm > 0) {
+    const perM2 = r.priceMonthly / r.areaSqm;
+    if (perM2 < 50_000) flags.push('💸 Giá thấp bất thường');
+    if (perM2 > 1_000_000) flags.push('💰 Giá cao bất thường');
+  }
+  if ((r.images?.length || 0) === 0) flags.push('🖼️ Chưa có ảnh');
+  else if ((r.images?.length || 0) < 3) flags.push('🖼️ Ít ảnh (<3)');
+  if ((r.description || '').trim().length < 40) flags.push('📝 Mô tả quá ngắn');
+  return flags;
+}
+
 function firstOfNextMonthISO(): string {
   const n = new Date();
   return new Date(n.getFullYear(), n.getMonth() + 1, 1).toISOString();
@@ -643,6 +664,19 @@ export default function AdminRoomsPage() {
                           {r.isApproved ? '✓ Đã duyệt' : 'Chờ duyệt'}
                         </button>
                       </div>
+                      {/* Cờ tiền-duyệt: chỉ hiện với tin CHỜ DUYỆT — liếc là biết tin có vấn đề gì */}
+                      {!r.isApproved && (() => {
+                        const flags = getModerationFlags(r);
+                        return flags.length > 0 ? (
+                          <div className="mt-1 max-w-[160px] space-y-0.5">
+                            {flags.map(f => (
+                              <p key={f} className="text-[9px] leading-tight font-medium text-red-600 bg-red-50 border border-red-100 rounded px-1 py-0.5">{f}</p>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="mt-1 text-[9px] font-medium text-emerald-600">✓ Không thấy vấn đề</p>
+                        );
+                      })()}
                     </td>
                     <td className="table-cell">
                       <div className="flex items-center gap-2">

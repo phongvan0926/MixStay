@@ -337,6 +337,25 @@ model Notification {
   @@map("notifications")
 }
 
+// "Săn phòng" — khách để lại TIÊU CHÍ + SĐT (không cần tài khoản). Khi tin mới được duyệt
+// khớp tiêu chí → notification cho admin kèm SĐT khách để gọi lại chào phòng (lead nóng).
+model SavedSearch {
+  id            String    @id @default(cuid())
+  name          String? // tên khách (tuỳ chọn)
+  phone         String // SĐT/Zalo khách — kênh liên hệ chính
+  district      String? // 1 quận (khách chọn nhiều → lưu chuỗi "A,B")
+  typeName      String? // loại phòng mong muốn
+  minPrice      Float?
+  maxPrice      Float?
+  note          String? // ghi chú thêm của khách
+  isActive      Boolean   @default(true) // admin gọi xong/khách thuê rồi → tắt
+  lastMatchedAt DateTime? // lần gần nhất có tin khớp (đã báo admin)
+  createdAt     DateTime  @default(now())
+
+  @@index([isActive])
+  @@map("saved_searches")
+}
+
 // Tin đã lưu (bookmark) — Cộng tác viên lưu tin để xem lại sau.
 model SavedListing {
   id         String   @id @default(cuid())

@@ -5,6 +5,7 @@ import ListingImageMosaic from '@/components/ui/ListingImageMosaic';
 import { formatCurrency } from '@/lib/utils';
 import DistrictPills from '@/components/ui/DistrictPills';
 import PriceRangeSlider from '@/components/ui/PriceRangeSlider';
+import { HANOI_UNIVERSITIES } from '@/lib/hanoi-locations';
 
 const ROOM_TYPES: { value: string; label: string }[] = [
   { value: 'studio', label: 'Studio' },
@@ -56,6 +57,8 @@ type PublicRoom = {
     foreignerOk: boolean;
   } | null;
   shareToken: string | null;
+  distanceKm?: number; // có khi lọc "gần trường ĐH"
+  uniShort?: string;
 };
 
 type Filters = {
@@ -64,6 +67,7 @@ type Filters = {
   typeName: string;
   minPrice: string;
   maxPrice: string;
+  uni: string; // lọc "gần trường ĐH" (short name trong HANOI_UNIVERSITIES)
   features: Record<FeatureKey, boolean>;
 };
 
@@ -71,10 +75,10 @@ const EMPTY_FEATURES: Record<FeatureKey, boolean> = {
   parkingCar: false, parkingBike: false, evCharging: false, petAllowed: false, foreignerOk: false,
 };
 const EMPTY_FILTERS: Filters = {
-  keyword: '', district: [], typeName: '', minPrice: '', maxPrice: '', features: EMPTY_FEATURES,
+  keyword: '', district: [], typeName: '', minPrice: '', maxPrice: '', uni: '', features: EMPTY_FEATURES,
 };
 const FEATURE_KEYS = Object.keys(EMPTY_FEATURES) as FeatureKey[];
-const URL_KEYS = ['q', 'district', 'typeName', 'minPrice', 'maxPrice', 'p', ...FEATURE_KEYS];
+const URL_KEYS = ['q', 'district', 'typeName', 'minPrice', 'maxPrice', 'uni', 'p', ...FEATURE_KEYS];
 
 // Bộ lọc -> query string (dùng cho cả URL trình duyệt lẫn gọi API)
 const filtersToQuery = (f: Filters) => {
@@ -84,6 +88,7 @@ const filtersToQuery = (f: Filters) => {
   if (f.typeName) p.set('typeName', f.typeName);
   if (f.minPrice) p.set('minPrice', f.minPrice);
   if (f.maxPrice) p.set('maxPrice', f.maxPrice);
+  if (f.uni) p.set('uni', f.uni);
   FEATURE_KEYS.forEach(k => { if (f.features[k]) p.set(k, 'true'); });
   return p;
 };
@@ -98,6 +103,7 @@ const queryToFilters = (search: string) => {
     typeName: sp.get('typeName') || '',
     minPrice: sp.get('minPrice') || '',
     maxPrice: sp.get('maxPrice') || '',
+    uni: sp.get('uni') || '',
     features,
   };
   const pagesLoaded = Math.max(1, parseInt(sp.get('p') || '1', 10) || 1);
@@ -112,6 +118,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
   const [typeName, setTypeName] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [uni, setUni] = useState('');
   const [features, setFeatures] = useState<Record<FeatureKey, boolean>>({
     parkingCar: false,
     parkingBike: false,
@@ -119,6 +126,17 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
     petAllowed: false,
     foreignerOk: false,
   });
+
+  // Tìm bằng AI (ngôn ngữ tự nhiên) — AI chỉ ĐỔ BỘ LỌC, khách thấy và sửa được rồi mới tìm
+  const [aiText, setAiText] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+
+  // Săn phòng — khách để lại SĐT + tiêu chí hiện tại, có phòng mới khớp sẽ được gọi lại
+  const [huntOpen, setHuntOpen] = useState(false);
+  const [huntPhone, setHuntPhone] = useState('');
+  const [huntName, setHuntName] = useState('');
+  const [huntState, setHuntState] = useState<'' | 'sending' | 'done' | 'error'>('');
 
   const toggleFeature = (key: FeatureKey) =>
     setFeatures(prev => ({ ...prev, [key]: !prev[key] }));
@@ -129,6 +147,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
     setTypeName('');
     setMinPrice('');
     setMaxPrice('');
+    setUni('');
     setFeatures(EMPTY_FEATURES);
     // Đang có kết quả → tìm lại không lọc (URL cũng được dọn theo) để URL luôn khớp danh sách đang hiện
     if (searched) runSearch(EMPTY_FILTERS, 1);
@@ -147,7 +166,63 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
   // API kẹp limit ở 100 → khôi phục tối đa 8 trang (96 tin) trong 1 lần gọi, "Xem thêm" chạy tiếp từ đó
   const MAX_RESTORE_PAGES = 8;
 
-  const currentFilters = (): Filters => ({ keyword, district, typeName, minPrice, maxPrice, features });
+  const currentFilters = (): Filters => ({ keyword, district, typeName, minPrice, maxPrice, uni, features });
+
+  // Gọi AI bóc câu mô tả nhu cầu → đổ vào bộ lọc rồi tìm luôn (khách vẫn chỉnh lại được)
+  const runAiSearch = async () => {
+    const text = aiText.trim();
+    if (text.length < 5 || aiLoading) return;
+    setAiLoading(true);
+    setAiError('');
+    try {
+      const res = await fetch('/api/ai/search', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'AI đang bận, thử lại nhé');
+      const f: Filters = {
+        keyword: json.keyword || '',
+        district: json.districts || [],
+        typeName: json.typeName || '',
+        minPrice: json.minPrice ? String(json.minPrice) : '',
+        maxPrice: json.maxPrice ? String(json.maxPrice) : '',
+        uni: json.uni || '',
+        features: {
+          ...EMPTY_FEATURES,
+          parkingCar: !!json.parkingCar, petAllowed: !!json.petAllowed,
+          foreignerOk: !!json.foreignerOk, evCharging: !!json.evCharging,
+        },
+      };
+      setKeyword(f.keyword); setDistrict(f.district); setTypeName(f.typeName);
+      setMinPrice(f.minPrice); setMaxPrice(f.maxPrice); setUni(f.uni); setFeatures(f.features);
+      runSearch(f, 1);
+    } catch (err: any) {
+      setAiError(err.message || 'Có lỗi, dùng bộ lọc thường nhé');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // Gửi yêu cầu "săn phòng" với tiêu chí đang lọc
+  const submitHunt = async () => {
+    const phone = huntPhone.replace(/\D/g, '');
+    if (!/^0\d{9}$/.test(phone)) { setHuntState('error'); return; }
+    setHuntState('sending');
+    try {
+      const res = await fetch('/api/saved-searches', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone, name: huntName.trim(),
+          district: district.join(','), typeName,
+          minPrice: minPrice ? Number(minPrice) : null,
+          maxPrice: maxPrice ? Number(maxPrice) : null,
+          note: [uni ? `gần ${uni}` : '', keyword].filter(Boolean).join(' · '),
+        }),
+      });
+      if (!res.ok) throw new Error();
+      setHuntState('done');
+    } catch { setHuntState('error'); }
+  };
 
   // Ghi bộ lọc + số trang đã tải vào URL (replaceState: không tạo history entry mới, không cuộn trang).
   // Nhờ vậy khi khách bấm vào 1 phòng rồi Back, URL vẫn còn bộ lọc → khôi phục lại được kết quả.
@@ -260,6 +335,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
       setTypeName(filters.typeName);
       setMinPrice(filters.minPrice);
       setMaxPrice(filters.maxPrice);
+      setUni(filters.uni);
       setFeatures(filters.features);
       runSearch(filters, Math.min(MAX_RESTORE_PAGES, pagesLoaded));
     } else if (autoLoad) {
@@ -305,6 +381,26 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
           onSubmit={handleSearch}
           className="rounded-2xl bg-white/40 border border-white/50 shadow-md p-3 sm:p-4 mb-6"
         >
+          {/* ✨ TÌM BẰNG AI — khách mô tả nhu cầu 1 câu, AI đổ vào bộ lọc bên dưới (sửa được) */}
+          <div className="mb-3 rounded-xl bg-gradient-to-r from-violet-50 to-brand-50 border border-violet-100 p-2.5">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={aiText}
+                onChange={e => setAiText(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); runAiSearch(); } }}
+                placeholder="✨ Mô tả phòng bạn cần… VD: phòng dưới 4 triệu gần ĐH Thương Mại, nuôi mèo được"
+                aria-label="Tìm phòng bằng AI"
+                className="input-field text-sm flex-1 bg-white/80"
+              />
+              <button type="button" onClick={runAiSearch} disabled={aiLoading || aiText.trim().length < 5}
+                className="shrink-0 px-4 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-brand-600 disabled:opacity-50 hover:shadow-md transition-all">
+                {aiLoading ? 'AI đang đọc…' : 'Tìm bằng AI'}
+              </button>
+            </div>
+            {aiError && <p className="text-xs text-red-500 mt-1.5">{aiError}</p>}
+          </div>
+
           {/* Ô TÌM THEO TỪ KHÓA — trên cùng, có nút Tìm ngay (thấy được khi vừa vào, không cần cuộn) */}
           <div className="flex gap-2 mb-3">
             <div className="relative flex-1">
@@ -336,8 +432,8 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
             <DistrictPills value={district} onChange={setDistrict} />
           </div>
 
-          {/* Row 1: Kiểu phòng (1/3) + Slider giá (2/3) — mobile stack */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
+          {/* Row 1: Kiểu phòng + Gần trường ĐH (sắp theo khoảng cách) + Slider giá — mobile stack */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-start">
             <div className="md:col-span-1">
               <label className="block text-xs font-medium text-stone-500 mb-1">Kiểu phòng</label>
               <select
@@ -347,6 +443,18 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
               >
                 <option value="">Tất cả kiểu</option>
                 {ROOM_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+            </div>
+
+            <div className="md:col-span-1">
+              <label className="block text-xs font-medium text-stone-500 mb-1">🎓 Gần trường ĐH</label>
+              <select
+                className="input-field text-sm"
+                value={uni}
+                onChange={e => setUni(e.target.value)}
+              >
+                <option value="">Không chọn</option>
+                {HANOI_UNIVERSITIES.map(u => <option key={u.short} value={u.short}>{u.name}</option>)}
               </select>
             </div>
 
@@ -426,6 +534,48 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
           </div>
         )}
 
+        {/* 🔔 SĂN PHÒNG: khách để lại SĐT + tiêu chí đang lọc — có phòng mới khớp sẽ được gọi lại.
+            Hiện sau khi đã tìm (đặc biệt hữu ích khi 0 kết quả). */}
+        {searched && !loading && (
+          <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
+            {huntState === 'done' ? (
+              <p className="text-sm text-amber-800 text-center font-medium">
+                ✅ Đã nhận yêu cầu săn phòng! Khi có phòng khớp tiêu chí, MixStay sẽ gọi/Zalo cho bạn ngay.
+              </p>
+            ) : !huntOpen ? (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+                <p className="text-sm text-amber-800">
+                  <span className="font-semibold">🔔 Chưa ưng phòng nào?</span> Để lại SĐT — có phòng mới đúng tiêu chí này, chúng tôi chủ động báo bạn.
+                </p>
+                <button type="button" onClick={() => setHuntOpen(true)}
+                  className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-colors">
+                  Săn phòng giúp tôi
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-end">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-amber-700 mb-1">Tên bạn (tuỳ chọn)</label>
+                  <input type="text" value={huntName} onChange={e => setHuntName(e.target.value)}
+                    className="input-field text-sm" placeholder="VD: Anh Nam" />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-amber-700 mb-1">SĐT/Zalo *</label>
+                  <input type="tel" value={huntPhone} onChange={e => { setHuntPhone(e.target.value); if (huntState === 'error') setHuntState(''); }}
+                    className="input-field text-sm" placeholder="09xxxxxxxx" />
+                </div>
+                <button type="button" onClick={submitHunt} disabled={huntState === 'sending'}
+                  className="shrink-0 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 disabled:opacity-60 transition-colors">
+                  {huntState === 'sending' ? 'Đang gửi…' : 'Đăng ký'}
+                </button>
+              </div>
+            )}
+            {huntState === 'error' && huntOpen && (
+              <p className="text-xs text-red-500 mt-1.5">SĐT chưa đúng (10 số, bắt đầu bằng 0) hoặc lỗi mạng — thử lại nhé.</p>
+            )}
+          </div>
+        )}
+
         {results && results.length > 0 && (
           <>
             <p className="text-sm text-stone-500 mb-4">
@@ -480,6 +630,9 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
                         <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                         {rt.property?.district || '—'}{rt.property?.streetName ? ` • ${rt.property.streetName}` : ''}
                       </p>
+                      {rt.distanceKm != null && (
+                        <p className="text-xs font-medium text-violet-600 mt-1">🎓 Cách {rt.uniShort || 'trường'} ~{rt.distanceKm}km</p>
+                      )}
 
                       <div className="mt-3 flex items-baseline justify-between gap-2">
                         <span className="text-xl font-bold text-brand-600">
