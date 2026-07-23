@@ -46,3 +46,4 @@ backups/
 
 # Claude Code local settings (machine-specific, untracked)
 .claude/
+.env*
