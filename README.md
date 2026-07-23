@@ -234,6 +234,11 @@ mixstay/
 
 ## Changelog
 
+### v9.25 — 2026-07-23 (geocode nấc 4 bằng AI: địa chỉ bẩn vẫn tự ghim gần đúng lên bản đồ)
+- **`lib/geocode.ts` thêm bước 4 (AI):** khi 3 nấc thường trượt, Gemini BÓC TÁCH địa chỉ bẩn thành `{phố chuẩn, phường, mốc lân cận}` (VD "Nhà 66 ven hồ Hạ Đình, ngay trường tiểu học Hạ Đình" → mốc "Trường tiểu học Hạ Đình") rồi geocode từng phần qua Nominatim. Gemini KHÔNG bao giờ tự trả tọa độ (chống bịa) — Nominatim định vị + chốt chặn 7km quanh tâm quận vẫn giữ nguyên. Ghim gần đúng khu vực là đạt (theo yêu cầu chủ dự án — người đăng lớn tuổi không cần biết dùng bản đồ). Fail-soft: không có key/AI lỗi → trả null, không chặn lưu tòa.
+- **`lib/gemini.ts`:** xoay key cả khi Google trả 5xx (503 quá tải thoáng qua) — trước chỉ xoay khi 429.
+- **Backfill nốt dữ liệu cũ** (AI + xử tay từng ca qua Nominatim có kiểm vùng): phủ tọa độ **465/466 tòa (99,8%)**. Còn đúng 1 tòa "Hoà Bình 6 Minh Khai" ghi quận Hai Bà Trưng nhưng phố Hòa Bình 6 thật nằm ở Bắc Từ Liêm — mâu thuẫn dữ liệu, cần admin xác nhận đúng quận rồi sửa.
+
 ### v9.24 — 2026-07-23 (bản đồ: gọn attribution + phủ pin 96% + vá geocode theo hệ phường mới OSM)
 - **Ẩn hộp attribution mặc định của Leaflet** (chữ "Leaflet" + cờ) trên `/ban-do`; giữ dòng **© OpenStreetMap** thu nhỏ, mờ ở góc (bắt buộc theo giấy phép tile OSM — không được bỏ hẳn).
 - **Tìm ra gốc rễ tòa không hiện pin:** OSM Hà Nội đã chuyển sang HỆ PHƯỜNG MỚI (bỏ cấp quận) → query Nominatim kèm tên quận cũ ("X, Hai Bà Trưng") trượt hàng loạt; cộng thêm streetName chứa "ngõ 91/1..." Nominatim không biết. 172/466 tòa thiếu tọa độ.

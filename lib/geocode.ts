@@ -98,6 +98,68 @@ export async function geocodeAddress(input: {
       const geo = hits.find(h => kmBetween(h, center) <= DISTRICT_RADIUS_KM);
       if (geo) return geo;
     }
+
+    // Bước 4 (AI): địa chỉ quá bẩn regex bó tay ("Nhà 66 ven hồ Hạ Đình, ngay trường tiểu học...")
+    // → nhờ Gemini BÓC TÁCH văn bản thành {phố chuẩn, phường, mốc lân cận} rồi geocode từng phần.
+    // Gemini KHÔNG được trả tọa độ (LLM đoán tọa độ hay bịa) — chỉ trả TEXT, Nominatim mới là
+    // người định vị, và vẫn phải qua chốt chặn 7km quanh tâm quận. Không cần chính xác tuyệt đối,
+    // ghim đúng khu lân cận là đạt (yêu cầu chủ dự án). Fail → null, không chặn lưu tòa.
+    const ai = await aiExtractAddress(input.fullAddress || input.streetName || '', input.district || '');
+    if (ai) {
+      const parts: string[] = [];
+      if (ai.street && ai.ward) parts.push(`${ai.street}, ${ai.ward}`);
+      if (ai.street) parts.push(ai.street);
+      for (const lm of ai.landmarks || []) parts.push(lm);
+      if (ai.ward) parts.push(ai.ward);
+      for (const q of parts.slice(0, 5)) {
+        const hits = await query(`${q}, ${city}, Việt Nam`, 3);
+        const geo = hits.find(h => kmBetween(h, center) <= DISTRICT_RADIUS_KM);
+        if (geo) return geo;
+      }
+    }
   }
   return null;
+}
+
+/** Gemini bóc địa chỉ bẩn thành phần chuẩn hóa (server-only, fail-soft trả null). */
+async function aiExtractAddress(
+  raw: string,
+  district: string
+): Promise<{ street?: string; ward?: string; landmarks?: string[] } | null> {
+  if (!raw.trim()) return null;
+  try {
+    // Import động: tránh kéo lib/gemini vào mọi nơi import lib/geocode khi không dùng tới
+    const { getGeminiKeys, callGemini } = await import('./gemini');
+    if (!getGeminiKeys().length) return null;
+    const result = await callGemini({
+      contents: [{ parts: [{ text:
+`Bóc tách địa chỉ nhà ở Hà Nội (nhập tay, rất bẩn) thành phần chuẩn để tra bản đồ.
+CHỈ dùng thông tin CÓ trong địa chỉ — không bịa. Sửa chính tả, thêm dấu tiếng Việt nếu thiếu.
+- street: TÊN ĐƯỜNG/PHỐ chính (bỏ số nhà, bỏ "ngõ 91/1", giữ tên ngõ là tên phố thật như "Ngõ Quỳnh").
+- ward: tên phường/xã/khu đô thị nếu nhận ra được.
+- landmarks: mốc CÓ TÊN gần đó (trường học, hồ, tòa chung cư lớn, TTTM...), mỗi mốc kèm loại, VD "Trường tiểu học Hạ Đình".
+
+Địa chỉ: "${raw}" (quận/huyện: ${district})` }] }],
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 1500,
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'OBJECT',
+          properties: {
+            street: { type: 'STRING' },
+            ward: { type: 'STRING' },
+            landmarks: { type: 'ARRAY', items: { type: 'STRING' } },
+          },
+        },
+      },
+    });
+    if (!result.ok) return null;
+    const parsed = JSON.parse(result.text);
+    return {
+      street: typeof parsed?.street === 'string' ? parsed.street.trim() : undefined,
+      ward: typeof parsed?.ward === 'string' ? parsed.ward.trim() : undefined,
+      landmarks: Array.isArray(parsed?.landmarks) ? parsed.landmarks.filter((x: any) => typeof x === 'string' && x.trim()).slice(0, 3) : [],
+    };
+  } catch { return null; }
 }

@@ -41,8 +41,12 @@ export async function callGemini(payload: object): Promise<GeminiResult> {
     }
     lastStatus = res.status;
     if (res.status === 429) { quotaHit = true; continue; } // hết lượt key này → thử key khác
+    if (res.status >= 500) { // 503 quá tải/5xx phía Google — thoáng qua, key khác có thể vẫn chạy
+      console.error('Gemini', res.status, '— thử key kế tiếp');
+      continue;
+    }
     console.error('Gemini error', res.status, (await res.text()).slice(0, 300));
-    break; // lỗi khác (400/500...) không phải quota → không xoay tiếp
+    break; // lỗi khác (400...) là lỗi request → không xoay tiếp
   }
   return { ok: false, status: lastStatus, quotaHit };
 }
