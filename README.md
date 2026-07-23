@@ -234,6 +234,9 @@ mixstay/
 
 ## Changelog
 
+### v9.29 — 2026-07-24 (chuẩn hóa 104 tiêu đề tòa nhà + tin đăng)
+- **Claude tự soát và viết lại từng dòng** (không AI tự động mù): 51 tên tòa + 53 tiêu đề tin bị viết thường toàn bộ ("ccmn trần cung siêu thoáng" → "CCMN Trần Cung siêu thoáng"), sai chính tả (nghách→ngách, gác xếp→gác xép, dhoc→ĐH, STIU→Studio, vimcom→Vincom), thừa tab/ngoặc kép/khoảng trắng, tiêu đề dính cả đoạn mô tả rác. KHÔNG đổi nội dung/loại hình. Backup: `~/.mixstay-backups/backup-fix-titles-2026-07-24.json`.
+
 ### v9.28 — 2026-07-24 (rà pin lần cuối theo chuẩn "đúng tuyến đường": kéo thêm 97+7 pin về đúng phố)
 - **Chốt chiến lược với chủ dự án:** đúng TUYẾN ĐƯỜNG là đạt (~95% yêu cầu); không chắc vị trí cụ thể → đặt 1 điểm TRÊN tuyến. `scripts/geocode-audit-pins.js` bản cuối: (1) chỉ tin kết quả mà **đoạn đầu display_name chứa đúng tên phố** — chặn hẳn Nominatim gạ "ngõ khác cùng phường" (Ngõ 64 Kim Giang khi hỏi Ngõ 236 Khương Đình); (2) tên phố **tự rút chữ thừa từ phải** ("Khương Đình đối diện Five Star" → "Khương Đình"); (3) thử "Phố X"/"Đường X" trước tên trần; (4) neo cửa ngõ lệch >0,3km / neo tuyến phố lệch >1km mới kéo về.
 - Chạy toàn bộ: **kéo 97 pin về đúng tuyến** + xử tay nhóm Khương Đình/Khương Trung/Phú Đô chủ dự án báo.
