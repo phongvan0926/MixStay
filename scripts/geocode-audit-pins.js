@@ -1,9 +1,8 @@
 #!/usr/bin/env node
-// Audit pin bản đồ: pin phải nằm gần TUYẾN PHỐ của chính tòa đó.
-// - Geocode mỗi (phố, quận) duy nhất 1 lần (validate trong 7km tâm quận).
-// - Tòa nào pin lệch >3km khỏi điểm phố → nghi sai (kiểu Tân Ấp pin về Hồ Gươm) → ghim lại về điểm phố.
-// - Phố không geocode được → bỏ qua (không đủ căn cứ phán).
-// Backup mọi dòng bị sửa vào ~/.mixstay-backups/backup-fix-pins-2026-07-23.json
+// Re-pin CHÍNH XÁC toàn bộ: (1) thử "Ngõ N + phố" trước (OSM Hà Nội có map từng ngõ),
+// (2) lùi về tên phố. MỌI kết quả phải: display_name CHỨA ĐÚNG TÊN PHỐ (norm, bỏ dấu)
+// + nằm trong 7km tâm quận. Sửa lỗi audit cũ nhận mỏ neo không kiểm tên (Đông Quan → pin lạc Đống Đa).
+// Chỉ ghi khi pin mới lệch pin cũ >0.25km. Backup mọi thay đổi.
 const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
 for (const f of ['.env.local', '.env']) {
@@ -17,7 +16,7 @@ for (const f of ['.env.local', '.env']) {
 const prisma = new PrismaClient();
 const UA = 'MixStay/1.0 (contact@mixstay.vn)';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'd').toLowerCase().trim();
+const norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'd').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
 const km = (a, b) => {
   const R = 6371, dLa = (b.lat - a.lat) * Math.PI / 180, dLo = (b.lng - a.lng) * Math.PI / 180;
   return 2 * R * Math.asin(Math.sqrt(Math.sin(dLa / 2) ** 2 + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLo / 2) ** 2));
@@ -36,56 +35,66 @@ function bareStreet(input) {
   let s = input.trim();
   s = s.replace(/\(.*?\)/g, ' ');
   s = s.replace(/^\s*["':]*\s*(?:địa\s*chỉ|đ\/c|dc)?\s*[:.]?\s*/i, '');
-  s = s.replace(/\b(?:ngách|ngach|hẻm|hem|số\s*nhà|nhà\s*số|số|sn|nhà|tổ|to)\s*\d+[a-zA-Z0-9]*(?:\s*\/\s*\d+[a-zA-Z]?)*\b/gi, ' ');
+  s = s.replace(/\b(?:ngách|ngach|hẻm|hem|số\s*nhà|nhà\s*số|số|sn|nhà|tổ|to|dãy)\s*\d+[a-zA-Z0-9]*(?:\s*\/\s*\d+[a-zA-Z]?)*\b/gi, ' ');
   s = s.replace(/\b(?:ngõ|ngo)\s*\d+[a-zA-Z]?(?:\s*\/\s*\d+[a-zA-Z]?)*\b/gi, ' ');
   s = s.replace(/\b(?:kdt|khu\s*đô\s*thị|liền\s*kề|lk)\s*\d*\b/gi, ' ');
   s = s.replace(/^\s*\d+[a-zA-Z]?(?:[\s./-]*\d+[a-zA-Z]?)*\b/i, ' ');
-  s = s.replace(/\b(?:đường|duong)\b/gi, ' ');
+  s = s.replace(/\b(?:đường|duong|phố|pho)\b/gi, ' ');
   return s.replace(/["',;.:]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
 }
-async function geocode(q) {
-  const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=3&countrycodes=vn&q=${encodeURIComponent(q)}`, { headers: { 'User-Agent': UA } });
-  if (!r.ok) return [];
-  return ((await r.json()) || []).map(h => ({ lat: parseFloat(h.lat), lng: parseFloat(h.lon) }));
+// Lấy số NGÕ đầu tiên: "Số 10 ngõ 144/4 Quan Nhân" → "144"
+function alleyNumber(input) {
+  const m = (input || '').match(/\b(?:ngõ|ngo)\s*(\d+[a-zA-Z]?)/i);
+  return m ? m[1] : null;
+}
+const cache = new Map();
+async function geocodeValidated(q, streetCore, center) {
+  const key = q;
+  if (cache.has(key)) return cache.get(key);
+  const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=vn&q=${encodeURIComponent(q)}`, { headers: { 'User-Agent': UA } });
+  await sleep(1100);
+  let out = null;
+  if (r.ok) {
+    const arr = (await r.json()) || [];
+    for (const h of arr) {
+      const lat = parseFloat(h.lat), lng = parseFloat(h.lon);
+      // BẮT BUỘC: tên phố nằm trong display_name + trong 7km tâm quận
+      if (norm(h.display_name).includes(streetCore) && km({ lat, lng }, center) <= 7) { out = { lat, lng, dn: h.display_name }; break; }
+    }
+  }
+  cache.set(key, out);
+  return out;
 }
 (async () => {
   const props = await prisma.property.findMany({
-    where: { latitude: { not: null }, longitude: { not: null } },
+    where: { latitude: { not: null } },
     select: { id: true, name: true, fullAddress: true, streetName: true, district: true, latitude: true, longitude: true },
   });
-  // Gom theo (phố trần, quận)
-  const groups = new Map();
+  console.log('Tổng:', props.length);
+  let fixed = 0, checkedQ = 0; const backup = [];
   for (const p of props) {
+    const center = CENTERS[norm(p.district)];
+    if (!center) continue;
+    const src = [p.streetName, p.fullAddress].filter(Boolean).join(' | ');
     const street = bareStreet(p.streetName || '') || bareStreet(p.fullAddress || '');
-    if (street.length < 4) continue;
-    const key = norm(street) + '|' + norm(p.district);
-    if (!groups.has(key)) groups.set(key, { street, district: p.district, items: [] });
-    groups.get(key).items.push(p);
-  }
-  console.log(`Tòa có pin: ${props.length} | cụm (phố,quận) cần tra: ${groups.size}`);
-  let checked = 0, flagged = 0, fixed = 0, unknown = 0;
-  const backup = [];
-  for (const [key, g] of groups) {
-    const center = CENTERS[norm(g.district)];
-    if (!center) { unknown++; continue; }
-    const hits = await geocode(`${g.street}, Hà Nội, Việt Nam`);
-    await sleep(1100);
-    const anchor = hits.find(h => km(h, center) <= 7);
-    if (!anchor) { unknown++; continue; } // phố không tra được → không phán
-    checked++;
-    for (const p of g.items) {
-      const d = km({ lat: p.latitude, lng: p.longitude }, anchor);
-      if (d > 3) {
-        flagged++;
-        backup.push({ id: p.id, fullAddress: p.fullAddress, streetName: p.streetName, latitude: p.latitude, longitude: p.longitude });
-        await prisma.property.update({ where: { id: p.id }, data: { latitude: anchor.lat, longitude: anchor.lng } });
-        fixed++;
-        console.log(` 🔧 ${(p.fullAddress || p.name).slice(0, 45).padEnd(47)} lệch ${d.toFixed(1)}km khỏi "${g.street}" (${g.district}) → ghim lại`);
-      }
+    const core = norm(street);
+    if (core.length < 4) continue;
+    const alley = alleyNumber(p.streetName || '') || alleyNumber(p.fullAddress || '');
+    let hit = null;
+    if (alley) hit = await geocodeValidated(`Ngõ ${alley} ${street}, Hà Nội, Việt Nam`, core, center);
+    if (!hit) hit = await geocodeValidated(`${street}, Hà Nội, Việt Nam`, core, center);
+    checkedQ++;
+    if (!hit) continue;
+    const d = km({ lat: p.latitude, lng: p.longitude }, hit);
+    if (d > 0.25) {
+      backup.push({ id: p.id, latitude: p.latitude, longitude: p.longitude });
+      await prisma.property.update({ where: { id: p.id }, data: { latitude: hit.lat, longitude: hit.lng } });
+      fixed++;
+      console.log(` 🔧 ${(p.streetName || p.fullAddress || '').slice(0, 38).padEnd(40)} dời ${d.toFixed(1)}km → ${hit.dn.slice(0, 55)}`);
     }
-    if (checked % 40 === 0) console.log(`  ...đã tra ${checked}/${groups.size} cụm, sửa ${fixed}`);
+    if (checkedQ % 50 === 0) console.log(`  ...${checkedQ}/${props.length}, đã sửa ${fixed}`);
   }
   if (backup.length) fs.appendFileSync(process.env.HOME + '/.mixstay-backups/backup-fix-pins-2026-07-23.json', JSON.stringify(backup) + '\n');
-  console.log(`\n== AUDIT XONG == cụm tra được: ${checked} | không tra được (bỏ qua): ${unknown} | pin sửa lại: ${fixed}`);
+  console.log(`\n== XONG == dời lại ${fixed} pin (trong ${props.length} tòa)`);
   await prisma.$disconnect();
 })().catch(e => { console.error('LỖI:', e.message); process.exit(1); });

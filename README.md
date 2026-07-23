@@ -234,6 +234,11 @@ mixstay/
 
 ## Changelog
 
+### v9.27 — 2026-07-23 (re-pin chính xác 224 tòa: tra tới CỬA NGÕ + bắt buộc kết quả chứa đúng tên phố)
+- **Chủ dự án soát thấy nhiều pin vẫn sai** (Đông Quan lạc sang Đống Đa, cụm Quan Nhân/Nguyễn Ngọc Vũ chụm 1 điểm...). 2 lỗi gốc: audit v9.26 nhận mỏ neo Nominatim mà KHÔNG kiểm display_name có chứa tên phố; và các vòng backfill cắt số ngõ nên pin rơi về giữa phố thay vì đúng ngõ (OSM Hà Nội thực ra có map từng ngõ).
+- **`scripts/geocode-audit-pins.js` viết lại:** thử "Ngõ N + tên phố" trước (ra đúng cửa ngõ), lùi về tên phố; MỌI kết quả phải chứa tên phố trong display_name + trong 7km tâm quận; chỉ ghi khi lệch >0,25km. Chạy toàn bộ: **dời lại 224 pin**.
+- Xử tay nhóm chủ dự án báo (Yên Hòa/Nguyễn Phúc Lai/Quan Nhân — tên phố trùng tên phường nên máy dễ lẫn) + sửa 2 ô tên đường ghi bậy ("Ô Chợ Dừa" → "Ngõ 16 Nguyễn Phúc Lai", "Yên Hòa" → "Ngõ 125 Nguyễn Ngọc Vũ").
+
 ### v9.26 — 2026-07-23 (audit pin toàn bộ + gộp quận trùng hoa-thường — phủ pin 100%)
 - **Audit pin theo tuyến phố** (`scripts/geocode-audit-pins.js` mới): đối chiếu pin từng tòa với vị trí TUYẾN PHỐ của chính nó (geocode mỗi cụm phố+quận 1 lần) — pin lệch >3km khỏi phố mình thì ghim lại. Sửa **43 pin sai** (Yên Xá lệch 8,9km, Chùa Láng 7,1km, Tân Ấp/Phú Lương pin nhầm về Hồ Gươm...) + 4 ca chủ dự án báo + ca Bạch Mai bị ô tên đường ghi bậy "Pháo Đài Láng". Backup: `~/.mixstay-backups/backup-fix-pins-2026-07-23.json`.
 - **Ghim nốt "Ngõ Hòa Bình 6 Minh Khai"** (chủ dự án xác nhận thuộc Hai Bà Trưng) → phủ pin **466/466 tòa (100%)**.
