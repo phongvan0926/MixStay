@@ -234,6 +234,9 @@ mixstay/
 
 ## Changelog
 
+### v9.31 — 2026-07-24 (nút Tải ảnh: tải từng ảnh rời, bỏ file zip)
+- **⬇️ Tải ảnh không còn nén zip:** `components/ui/ListingActionBar.tsx` tải TỪNG ẢNH RỜI về máy (fetch blob → `<a download>` tuần tự, cách 350ms/ảnh) — khỏi giải nén, ảnh rơi thẳng vào thư mục Tải xuống, tên file `anh-<mã tin>-01.jpg`… Chrome chỉ hỏi "Cho phép tải nhiều tệp?" đúng 1 lần. Gỡ dependency `jszip` (không còn chỗ nào dùng).
+
 ### v9.30 — 2026-07-24 (6 tính năng mới: AI tìm phòng, săn phòng, gần trường ĐH, tiền-duyệt, cron vòng đời, thống kê CTV)
 - **① Tìm phòng bằng NGÔN NGỮ TỰ NHIÊN:** ô "✨ Mô tả phòng bạn cần…" trên /phong — khách gõ 1 câu ("phòng dưới 4 triệu gần ĐH Thương Mại có gác, nuôi mèo") → Gemini bóc thành bộ lọc (`/api/ai/search`, structured output, rate-limit chặt) đổ vào form (khách sửa được) rồi tìm luôn.
 - **② Săn phòng (lead):** khách để lại SĐT + tiêu chí đang lọc (không cần tài khoản) — bảng mới `saved_searches`. Tin mới được DUYỆT khớp tiêu chí → notification cho ADMIN kèm SĐT khách để gọi chào phòng. Trang quản lý `/admin/leads` (gọi/Zalo 1 chạm, bật/tắt khi khách xong nhu cầu).

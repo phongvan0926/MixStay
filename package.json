@@ -20,7 +20,6 @@
     "@supabase/supabase-js": "^2.101.0",
     "bcryptjs": "^2.4.3",
     "date-fns": "^4.1.0",
-    "jszip": "^3.10.1",
     "leaflet": "^1.9.4",
     "nanoid": "^5.0.8",
     "next": "^14.2.35",

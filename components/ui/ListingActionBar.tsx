@@ -7,12 +7,12 @@ interface Props {
   shareUrl: string;   // link bài đăng để chia sẻ
   copyText: string;   // toàn bộ nội dung bài đăng (để copy sang nền tảng khác)
   title?: string;
-  fileBase?: string;  // tên file zip ảnh
+  fileBase?: string;  // tiền tố tên file ảnh khi tải về
   className?: string;
 }
 
 /**
- * Thanh công cụ cho 1 bài đăng: Tải tất cả ảnh (.zip), Copy toàn bộ nội dung,
+ * Thanh công cụ cho 1 bài đăng: Tải tất cả ảnh (từng file rời, không nén zip), Copy toàn bộ nội dung,
  * và Chia sẻ ra ngoài (Web Share API trên mobile → Zalo/Messenger/Facebook;
  * fallback menu Facebook/Zalo/Messenger/Copy link trên desktop).
  */
@@ -31,8 +31,8 @@ export default function ListingActionBar({ images = [], shareUrl, copyText, titl
     if (!list.length) { toast.error('Bài đăng chưa có ảnh'); return; }
     setDownloading(true);
     try {
-      const JSZip = (await import('jszip')).default;
-      const zip = new JSZip();
+      // Tải TỪNG ẢNH RỜI (không nén zip — khỏi giải nén): fetch về blob rồi kích
+      // <a download> tuần tự. Chrome sẽ hỏi "Cho phép tải nhiều tệp?" đúng 1 lần.
       let ok = 0;
       for (let i = 0; i < list.length; i++) {
         try {
@@ -40,21 +40,21 @@ export default function ListingActionBar({ images = [], shareUrl, copyText, titl
           if (!res.ok) continue;
           const blob = await res.blob();
           const ext = ((blob.type.split('/')[1] || 'jpg').split('+')[0]).slice(0, 5);
-          zip.file(`anh-${String(i + 1).padStart(2, '0')}.${ext}`, blob);
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${fileBase}-${String(i + 1).padStart(2, '0')}.${ext}`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          // Chờ 1 nhịp giữa các lượt click — kích liên tiếp 0ms dễ bị trình duyệt nuốt bớt lượt tải
+          await new Promise(r => setTimeout(r, 350));
+          URL.revokeObjectURL(url);
           ok++;
         } catch { /* bỏ ảnh lỗi */ }
       }
       if (ok === 0) { toast.error('Không tải được ảnh, thử lại sau'); return; }
-      const content = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(content);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${fileBase}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      toast.success(`Đã tải ${ok} ảnh (.zip)`);
+      toast.success(`Đã tải ${ok} ảnh về máy`);
     } catch {
       toast.error('Lỗi khi tải ảnh');
     } finally {
