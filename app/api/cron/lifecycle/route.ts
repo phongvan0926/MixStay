@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { applyRateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -9,12 +10,30 @@ export const maxDuration = 60;
  *  1. Phòng 🟡 UPCOMING đã đến ngày trống dự kiến → tự chuyển 🟢 AVAILABLE + báo chủ nhà kiểm tra.
  *  2. Tin 🟢 AVAILABLE quá 30 ngày không cập nhật → nhắc chủ nhà xác nhận còn phòng
  *     (chỉ nhắc 1 lần khi vừa chạm mốc 30–31 ngày — cron ngày nào cũng chạy nên không spam).
- * Bảo mật: có CRON_SECRET thì yêu cầu Bearer khớp; Vercel Cron tự gắn header này khi env tồn tại.
+ * Bảo mật 2 lớp:
+ *  - CRON_SECRET (khuyến nghị): có env này thì bắt buộc Bearer khớp — Vercel Cron tự gắn header.
+ *  - Khi CHƯA đặt CRON_SECRET: vẫn chặn gọi hàng loạt bằng rate limit + chỉ nhận lời gọi mang
+ *    dấu vết Vercel Cron (user-agent vercel-cron hoặc header x-vercel-cron mà Vercel tự chèn).
+ *    Đây là hàng rào tạm; đặt CRON_SECRET vẫn là cách chuẩn.
  */
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
-  if (secret && req.headers.get('authorization') !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (secret) {
+    if (req.headers.get('authorization') !== `Bearer ${secret}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  } else {
+    const limited = await applyRateLimit(req, 'auth');
+    if (limited) return limited;
+    const fromVercelCron =
+      req.headers.get('x-vercel-cron') !== null ||
+      (req.headers.get('user-agent') || '').includes('vercel-cron');
+    if (!fromVercelCron) {
+      return NextResponse.json(
+        { error: 'Unauthorized', hint: 'Đặt CRON_SECRET để bảo vệ endpoint này' },
+        { status: 401 },
+      );
+    }
   }
 
   try {

@@ -234,6 +234,11 @@ mixstay/
 
 ## Changelog
 
+### v9.33 — 2026-07-27 (backup kho ảnh/video + siết endpoint cron)
+- **💾 `scripts/backup-storage.js` — backup kho Storage về máy:** backup hằng ngày của Supabase CHỈ gồm database, **KHÔNG gồm file Storage** (4.499 file / ~4 GB ảnh + video tin đăng trước nay chỉ có 1 bản duy nhất trên cloud). Script tải toàn bộ về `~/.mixstay-backups/storage`, **tăng dần** (file đã đủ dung lượng thì bỏ qua → chạy lại chỉ tải ảnh mới), chỉ đọc (không xoá/sửa gì trên cloud), ghi `manifest.json` để đối chiếu. `--check` xem chênh lệch mà không tải, `--dest` đổi thư mục đích.
+- **⏰ `scripts/install-backup-cron.sh`:** cài lịch chạy backup 3h sáng Chủ nhật hằng tuần (`--remove` để gỡ). Chạy: `bash scripts/install-backup-cron.sh`.
+- **🔐 Siết `/api/cron/lifecycle` khi chưa đặt CRON_SECRET:** trước đây không có secret thì endpoint mở cho mọi người gọi. Nay nếu thiếu secret, endpoint chặn bằng rate limit + chỉ nhận lời gọi mang dấu vết Vercel Cron (`x-vercel-cron` / user-agent `vercel-cron`). Đặt `CRON_SECRET` vẫn là cách chuẩn và sẽ được ưu tiên khi có.
+
 ### v9.32 — 2026-07-27 (tối ưu hạ tầng Vercel + Supabase: analytics, index FK, nâng compute miễn phí)
 - **📊 Vercel Web Analytics:** bật gói Analytics đã gồm trong Pro (không phải bản Plus $10) + `<Analytics />` trong `app/layout.tsx` — biết tin nào được xem nhiều, khách vào từ đâu, thoát ở đâu. Speed Insights KHÔNG bật (add-on $10/tháng/project, không nằm trong Pro).
 - **⚡ Nâng compute Supabase NANO → MICRO (0đ):** project chạy phần cứng Nano (0.5 GB RAM, CPU dùng chung) trong khi hoá đơn đã tính theo giá Micro — nâng lên 1 GB RAM + CPU riêng 2 nhân, hoá đơn giữ nguyên $9.68/tháng (`shared_buffers` 128MB → 256MB).
