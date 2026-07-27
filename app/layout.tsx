@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Toaster } from 'react-hot-toast';
+import { Analytics } from '@vercel/analytics/next';
 import AuthProvider from '@/components/layout/AuthProvider';
 import InstallPWA from '@/components/ui/InstallPWA';
 import './globals.css';
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }}
           />
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );

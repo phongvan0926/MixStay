@@ -234,6 +234,13 @@ mixstay/
 
 ## Changelog
 
+### v9.32 — 2026-07-27 (tối ưu hạ tầng Vercel + Supabase: analytics, index FK, nâng compute miễn phí)
+- **📊 Vercel Web Analytics:** bật gói Analytics đã gồm trong Pro (không phải bản Plus $10) + `<Analytics />` trong `app/layout.tsx` — biết tin nào được xem nhiều, khách vào từ đâu, thoát ở đâu. Speed Insights KHÔNG bật (add-on $10/tháng/project, không nằm trong Pro).
+- **⚡ Nâng compute Supabase NANO → MICRO (0đ):** project chạy phần cứng Nano (0.5 GB RAM, CPU dùng chung) trong khi hoá đơn đã tính theo giá Micro — nâng lên 1 GB RAM + CPU riêng 2 nhân, hoá đơn giữ nguyên $9.68/tháng (`shared_buffers` 128MB → 256MB).
+- **🔑 Thêm index cho 4 khoá ngoại thiếu** (`accounts.userId`, `sessions.userId`, `deals.customerId`, `saved_listings.roomTypeId`) — Performance Advisor về 0 lỗi/0 cảnh báo. Thuần thêm mới, không đụng dữ liệu.
+- **🔒 Gỡ policy `anon SELECT` trên bucket `videos`** (Security Advisor cảnh báo cho liệt kê toàn bộ file): bucket này rỗng và không dùng — app upload tất cả vào bucket `images`. Ảnh/video vẫn phục vụ qua URL public như cũ (đã kiểm chứng HTTP 206 sau khi gỡ).
+- Đã rà và giữ nguyên: pooler 6543 (`pgbouncer=true`) + DIRECT_URL 5432 đúng chuẩn serverless, region `sin1` khớp Supabase ap-southeast-1, cache ảnh 31 ngày, spend cap Supabase BẬT (chặn hoá đơn bất ngờ), backup hằng ngày 7 ngày đang chạy, mọi add-on trả phí Vercel đều TẮT.
+
 ### v9.31 — 2026-07-24 (nút Tải ảnh: tải từng ảnh rời, bỏ file zip)
 - **⬇️ Tải ảnh không còn nén zip:** `components/ui/ListingActionBar.tsx` tải TỪNG ẢNH RỜI về máy (fetch blob → `<a download>` tuần tự, cách 350ms/ảnh) — khỏi giải nén, ảnh rơi thẳng vào thư mục Tải xuống, tên file `anh-<mã tin>-01.jpg`… Chrome chỉ hỏi "Cho phép tải nhiều tệp?" đúng 1 lần. Gỡ dependency `jszip` (không còn chỗ nào dùng).
 

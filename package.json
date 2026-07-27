@@ -18,6 +18,7 @@
     "@auth/prisma-adapter": "^2.11.1",
     "@prisma/client": "^5.22.0",
     "@supabase/supabase-js": "^2.101.0",
+    "@vercel/analytics": "^2.0.1",
     "bcryptjs": "^2.4.3",
     "date-fns": "^4.1.0",
     "leaflet": "^1.9.4",
