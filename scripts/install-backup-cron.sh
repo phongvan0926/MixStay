@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
-# Cài lịch tự động backup kho ảnh/video Supabase — chạy 3h sáng Chủ nhật hằng tuần.
+# Cài lịch tự động backup kho ảnh/video Supabase — chạy 3h sáng HẰNG NGÀY.
 #
 #   Cài:  bash scripts/install-backup-cron.sh
 #   Gỡ:   bash scripts/install-backup-cron.sh --remove
 #
 # Vì sao cần: backup của Supabase CHỈ gồm database, KHÔNG gồm file Storage.
-# Script backup chạy tăng dần nên lần chạy sau chỉ tải ảnh mới, rất nhanh.
+# Script backup chạy tăng dần nên lần chạy sau chỉ tải ảnh mới (thường ~30 giây).
+#
+# Vì sao HẰNG NGÀY chứ không hằng tuần: crontab của user KHÔNG được anacron chạy bù —
+# máy tắt đúng lúc hẹn giờ là mất luôn lượt đó, không chạy lại. Chạy hằng ngày thì lỡ
+# vài hôm cũng không sao, và dữ liệu chậm nhất chỉ cũ 1 ngày thay vì 7 ngày.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -13,7 +17,7 @@ NODE="$(command -v node)"
 DRIVE="/srv/data/MixStay"   # ổ SSD Samsung 120GB gắn trong máy, dành riêng cho backup
 LOG="$DRIVE/backup-storage.log"
 MARK="# MixStay backup storage"
-LINE="0 3 * * 0 cd $REPO && $NODE scripts/backup-storage.js >> $LOG 2>&1 $MARK"
+LINE="0 3 * * * cd $REPO && $NODE scripts/backup-storage.js >> $LOG 2>&1 $MARK"
 
 current="$(crontab -l 2>/dev/null || true)"
 cleaned="$(printf '%s\n' "$current" | grep -vF "$MARK" || true)"
@@ -32,7 +36,7 @@ fi
 
 mkdir -p "$DRIVE"
 { printf '%s\n' "$cleaned" | grep -v '^$' || true; echo "$LINE"; } | crontab -
-echo "✔ Đã cài lịch backup: 3h sáng Chủ nhật hằng tuần"
+echo "✔ Đã cài lịch backup: 3h sáng hằng ngày"
 echo "  Repo:    $REPO"
 echo "  Log:     $LOG"
 echo "  Kho lưu: $DRIVE/storage"
