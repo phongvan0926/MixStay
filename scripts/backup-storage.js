@@ -7,7 +7,7 @@
  * tồn tại đúng 1 bản trên cloud — xoá nhầm hoặc sự cố là mất trắng.
  *
  * Cách chạy:
- *   node scripts/backup-storage.js                 # backup vào ~/.mixstay-backups/storage
+ *   node scripts/backup-storage.js                 # backup vào ổ Samsung: /srv/data/MixStay/storage
  *   node scripts/backup-storage.js --dest <thư mục>
  *   node scripts/backup-storage.js --check         # chỉ đối chiếu, không tải
  *
@@ -20,7 +20,6 @@
  */
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
 
 // Nạp .env thủ công (script chạy bằng node thuần, không tự đọc .env)
 const envPath = path.join(__dirname, '..', '.env');
@@ -43,9 +42,29 @@ if (!SUPABASE_URL || !SERVICE_KEY) {
 const args = process.argv.slice(2);
 const CHECK_ONLY = args.includes('--check');
 const destIdx = args.indexOf('--dest');
-const DEST = destIdx >= 0 && args[destIdx + 1]
-  ? path.resolve(args[destIdx + 1])
-  : path.join(os.homedir(), '.mixstay-backups', 'storage');
+
+// Đích mặc định: ổ SSD Samsung 120GB gắn trong máy, mount tại /srv/data (dành riêng cho backup).
+// Thư mục MixStay nằm CẠNH repo restic /srv/data/backup của hệ thống — không đụng vào nhau.
+const BACKUP_DRIVE = '/srv/data';
+const DEFAULT_DEST = path.join(BACKUP_DRIVE, 'MixStay', 'storage');
+const DEST = destIdx >= 0 && args[destIdx + 1] ? path.resolve(args[destIdx + 1]) : DEFAULT_DEST;
+
+/**
+ * Chốt an toàn: nếu ổ backup CHƯA mount thì /srv/data chỉ là thư mục rỗng trên ổ hệ thống —
+ * ghi 4GB vào đó sẽ âm thầm làm đầy ổ chính mà tưởng là đã backup. Thà dừng hẳn còn hơn.
+ */
+function assertDriveMounted() {
+  if (DEST !== DEFAULT_DEST) return; // người dùng tự chỉ định đích thì tự chịu trách nhiệm
+  const { execSync } = require('child_process');
+  try {
+    execSync(`mountpoint -q ${BACKUP_DRIVE}`, { stdio: 'ignore' });
+  } catch {
+    console.error(`✖ Ổ backup chưa được mount tại ${BACKUP_DRIVE} — DỪNG để khỏi ghi nhầm vào ổ hệ thống.`);
+    console.error(`  Kiểm tra: lsblk | grep sda   —   mount lại rồi chạy lại script.`);
+    console.error(`  Hoặc chỉ định đích khác: node scripts/backup-storage.js --dest <thư mục>`);
+    process.exit(1);
+  }
+}
 
 const headers = { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` };
 
@@ -88,6 +107,7 @@ async function download(objPath, destFile) {
 const mb = (b) => (b / 1024 / 1024).toFixed(1);
 
 (async () => {
+  assertDriveMounted();
   console.log(`Kho:  ${SUPABASE_URL}/storage/v1 (bucket "${BUCKET}", chỉ đọc)`);
   console.log(`Đích: ${DEST}\n`);
 

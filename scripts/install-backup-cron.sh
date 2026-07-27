@@ -10,7 +10,8 @@ set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 NODE="$(command -v node)"
-LOG="$HOME/.mixstay-backups/backup-storage.log"
+DRIVE="/srv/data/MixStay"   # ổ SSD Samsung 120GB gắn trong máy, dành riêng cho backup
+LOG="$DRIVE/backup-storage.log"
 MARK="# MixStay backup storage"
 LINE="0 3 * * 0 cd $REPO && $NODE scripts/backup-storage.js >> $LOG 2>&1 $MARK"
 
@@ -23,12 +24,18 @@ if [[ "${1:-}" == "--remove" ]]; then
   exit 0
 fi
 
-mkdir -p "$HOME/.mixstay-backups"
+if ! mountpoint -q /srv/data; then
+  echo "✖ Ổ backup chưa mount tại /srv/data — cài lịch bây giờ sẽ ghi nhầm vào ổ hệ thống."
+  echo "  Mount ổ rồi chạy lại lệnh này."
+  exit 1
+fi
+
+mkdir -p "$DRIVE"
 { printf '%s\n' "$cleaned" | grep -v '^$' || true; echo "$LINE"; } | crontab -
 echo "✔ Đã cài lịch backup: 3h sáng Chủ nhật hằng tuần"
 echo "  Repo:    $REPO"
 echo "  Log:     $LOG"
-echo "  Kho lưu: $HOME/.mixstay-backups/storage"
+echo "  Kho lưu: $DRIVE/storage"
 echo
 echo "Lịch hiện tại:"
 crontab -l | grep -F "$MARK"
