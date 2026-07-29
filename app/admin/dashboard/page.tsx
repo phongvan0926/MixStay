@@ -15,6 +15,9 @@ import Avatar from '@/components/ui/Avatar';
  * rất dễ đọc nhầm. Tách hẳn ra đây, và xếp theo thứ tự VIỆC GẤP TRƯỚC, SỐ ĐỂ NGẮM SAU.
  */
 
+/** Chiều cao vùng vẽ cột của biểu đồ (px) — cột cao nhất chiếm trọn chừng này. */
+const BAR_AREA = 140;
+
 /** Ô "việc cần làm": =0 thì làm mờ để không tranh chú ý với việc đang thật sự tồn đọng. */
 function TodoCard({ href, icon, label, value, tone = 'brand' }: {
   href: string; icon: string; label: string; value: number | null; tone?: 'brand' | 'amber' | 'red';
@@ -169,12 +172,16 @@ export default function AdminDashboardPage() {
             {pulse.weekly.length === 0 ? (
               <p className="text-sm text-stone-400">Chưa có tin nào trong 8 tuần qua.</p>
             ) : (
-              <div className="flex items-end gap-2 h-40">
+              // Chiều cao tính bằng PIXEL, không dùng %: cột con nằm trong flex nên % không
+              // có mốc chiều cao để quy chiếu → trước đó biểu đồ ra trắng trơn, không cột nào.
+              <div className="flex items-end gap-2" style={{ height: BAR_AREA + 34 }}>
                 {pulse.weekly.map((w: any) => (
                   <div key={w.tuan} className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
                     <span className="text-xs font-medium text-stone-600">{w.tin}</span>
-                    <div className="w-full bg-brand-500 rounded-t-md transition-all"
-                      style={{ height: `${Math.max((w.tin / maxWeek) * 100, w.tin > 0 ? 6 : 2)}%` }} />
+                    <div
+                      className="w-full bg-brand-500 rounded-t-md transition-all"
+                      style={{ height: Math.max(Math.round((w.tin / maxWeek) * BAR_AREA), w.tin > 0 ? 6 : 2) }}
+                    />
                     <span className="text-[10px] text-stone-400 truncate w-full text-center">{w.tuan}</span>
                   </div>
                 ))}
