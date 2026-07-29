@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { applyRateLimit } from '@/lib/rate-limit';
+import { requirePermission } from '@/lib/permissions-server';
 
 export async function GET(req: NextRequest) {
   const rateLimited = await applyRateLimit(req, 'api');
@@ -83,27 +84,56 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Landlord replies to inquiry
+/**
+ * Trả lời câu hỏi của CTV — CHỦ NHÀ (tin của mình) hoặc ADMIN (mọi tin).
+ *
+ * Trước đây chỉ LANDLORD trả lời được, nên câu nào chủ nhà bỏ quên là treo vĩnh viễn:
+ * admin nhìn thấy trên /admin/dashboard mà không có cách nào xử lý. Nay admin trả lời hộ được.
+ *
+ * Hai hành động:
+ *  - { id, reply: 'CÒN' | 'HẾT' } → lưu câu trả lời + BÁO CTV. 'HẾT' đồng thời gỡ tin khỏi thị trường.
+ *  - { id, dismiss: true }        → chỉ ẩn khỏi danh sách việc cần làm của admin, KHÔNG báo CTV.
+ */
 export async function PUT(req: NextRequest) {
   const rateLimited = await applyRateLimit(req, 'api');
   if (rateLimited) return rateLimited;
 
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'LANDLORD') {
-      return NextResponse.json({ error: 'Chỉ Chủ nhà mới trả lời được' }, { status: 403 });
+    const role = session?.user?.role;
+    const isAdminFamily = role === 'ADMIN' || role === 'ADMIN_STAFF';
+    if (!session || (role !== 'LANDLORD' && !isAdminFamily)) {
+      return NextResponse.json({ error: 'Không có quyền trả lời' }, { status: 403 });
+    }
+    // Trả lời "HẾT" sẽ gỡ tin khỏi thị trường → với staff phải có quyền duyệt tin.
+    if (role === 'ADMIN_STAFF') {
+      const denial = requirePermission(session, 'APPROVE_LISTINGS');
+      if (denial) return denial;
     }
 
-    const { id, reply } = await req.json();
+    const { id, reply, dismiss } = await req.json();
+    if (!id) return NextResponse.json({ error: 'Thiếu id' }, { status: 400 });
 
-    // Chỉ chủ nhà SỞ HỮU tin đăng của câu hỏi mới được trả lời
-    // (tránh chủ nhà khác sửa inquiry + ép phòng người khác thành HẾT)
-    const owned = await prisma.roomInquiry.findFirst({
-      where: { id, roomType: { property: { landlordId: session.user.id } } },
-      select: { id: true },
-    });
+    // Chủ nhà chỉ đụng được câu hỏi về tin CỦA MÌNH (tránh ép phòng người khác thành HẾT).
+    const where = isAdminFamily
+      ? { id }
+      : { id, roomType: { property: { landlordId: session.user.id } } };
+    const owned = await prisma.roomInquiry.findFirst({ where, select: { id: true } });
     if (!owned) {
       return NextResponse.json({ error: 'Không có quyền với câu hỏi này' }, { status: 403 });
+    }
+
+    // Bỏ qua: chỉ dọn hộp việc của admin, CTV không nhận thông báo gì.
+    if (dismiss) {
+      const skipped = await prisma.roomInquiry.update({
+        where: { id },
+        data: { dismissedAt: new Date() },
+      });
+      return NextResponse.json(skipped);
+    }
+
+    if (reply !== 'CÒN' && reply !== 'HẾT') {
+      return NextResponse.json({ error: 'Câu trả lời phải là CÒN hoặc HẾT' }, { status: 400 });
     }
 
     const inquiry = await prisma.roomInquiry.update({
@@ -112,18 +142,19 @@ export async function PUT(req: NextRequest) {
       include: { roomType: true, broker: true },
     });
 
-    // Notify broker of reply
+    // Báo CTV — nói rõ ai trả lời để CTV biết độ tin cậy của thông tin.
+    const answerer = isAdminFamily ? 'Quản trị viên' : 'Chủ nhà';
     await prisma.notification.create({
       data: {
         userId: inquiry.brokerId,
         type: 'reply',
-        title: `Chủ nhà trả lời: ${reply}`,
+        title: `${answerer} trả lời: ${reply}`,
         message: `${inquiry.roomType.name}: "${reply}"`,
         link: `/broker/inventory`,
       },
     });
 
-    // If reply is "HẾT", auto-update room type availability
+    // "HẾT" → gỡ tin khỏi thị trường ngay, khỏi để CTV khác dẫn khách tới phòng đã cho thuê.
     if (reply === 'HẾT') {
       await prisma.roomType.update({
         where: { id: inquiry.roomTypeId },
@@ -133,6 +164,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(inquiry);
   } catch (error) {
+    console.error('PUT /api/inquiries error:', error);
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
   }
 }

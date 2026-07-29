@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
       prisma.property.count({ where: { status: 'PENDING' } }),
       prisma.company.count({ where: { isApproved: false } }),
       prisma.savedSearch.count({ where: { isActive: true } }),
-      prisma.roomInquiry.count({ where: { reply: null } }),
+      prisma.roomInquiry.count({ where: { reply: null, dismissedAt: null } }),
 
       prisma.roomType.count({ where: { images: { isEmpty: true } } }),
       prisma.property.count({ where: { companyId: null } }),
@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
       // Chỉ 3–5 câu hỏi chưa trả lời → hiện thẳng danh sách trên dashboard,
       // khỏi phải dựng thêm một trang admin riêng chỉ để xem vài dòng.
       prisma.roomInquiry.findMany({
-        where: { reply: null },
+        where: { reply: null, dismissedAt: null },
         orderBy: { createdAt: 'desc' },
         take: 5,
         select: {

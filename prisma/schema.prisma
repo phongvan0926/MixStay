@@ -313,6 +313,10 @@ model RoomInquiry {
   message     String    @default("Còn phòng không?")
   reply       String?   // "CÒN" / "HẾT" / custom message
   repliedAt   DateTime?
+  // Admin bấm "Bỏ qua" ở /admin/dashboard: ẩn khỏi danh sách việc cần làm mà KHÔNG trả lời
+  // (không tạo thông báo cho CTV). Tách riêng khỏi `reply` để không lẫn "đã bỏ qua" với
+  // "đã trả lời" — CTV chỉ nhận thông báo khi thật sự có câu trả lời.
+  dismissedAt DateTime?
   createdAt   DateTime  @default(now())
 
   roomType    RoomType  @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)

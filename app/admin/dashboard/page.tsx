@@ -1,6 +1,8 @@
 'use client';
+import { useState } from 'react';
 import Link from 'next/link';
 import useSWR from 'swr';
+import toast from 'react-hot-toast';
 import { fetcher } from '@/lib/fetcher';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { formatListingCode } from '@/lib/listing-code';
@@ -62,10 +64,40 @@ function HealthRow({ label, bad, good, href, unit = 'tin' }: {
 }
 
 export default function AdminDashboardPage() {
-  const { data, error, isLoading } = useSWR('/api/admin/overview', fetcher, {
+  const { data, error, isLoading, mutate } = useSWR('/api/admin/overview', fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 30_000,
   });
+  const [busyInquiry, setBusyInquiry] = useState<string | null>(null);
+
+  /**
+   * Trả lời hộ chủ nhà (CTV nhận thông báo ngay) hoặc bỏ qua (chỉ dọn danh sách này).
+   * Trả lời xong / bỏ qua xong thì mục tự biến mất vì API chỉ trả câu chưa xử lý.
+   */
+  const handleInquiry = async (id: string, action: 'CÒN' | 'HẾT' | 'dismiss') => {
+    if (action === 'HẾT' && !confirm('Trả lời HẾT sẽ gỡ tin này khỏi thị trường (chuyển 🔴 Hết phòng). Tiếp tục?')) return;
+    setBusyInquiry(id);
+    try {
+      const res = await fetch('/api/inquiries', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(action === 'dismiss' ? { id, dismiss: true } : { id, reply: action }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(body.error || 'Không lưu được');
+        return;
+      }
+      toast.success(
+        action === 'dismiss'
+          ? 'Đã bỏ qua — cộng tác viên không nhận thông báo'
+          : `Đã trả lời "${action}" — đã báo cho cộng tác viên`,
+      );
+      mutate();
+    } finally {
+      setBusyInquiry(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -135,6 +167,33 @@ export default function AdminDashboardPage() {
                         {q.roomType.listingCode ? ` · ${formatListingCode(q.roomType.listingCode)}` : ''} ↗
                       </Link>
                     )}
+
+                    {/* Trả lời hộ chủ nhà — CTV nhận thông báo ngay; hoặc bỏ qua để dọn danh sách */}
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      <button
+                        onClick={() => handleInquiry(q.id, 'CÒN')}
+                        disabled={busyInquiry === q.id}
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+                      >
+                        🟢 Còn phòng
+                      </button>
+                      <button
+                        onClick={() => handleInquiry(q.id, 'HẾT')}
+                        disabled={busyInquiry === q.id}
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                      >
+                        🔴 Hết phòng
+                      </button>
+                      <button
+                        onClick={() => handleInquiry(q.id, 'dismiss')}
+                        disabled={busyInquiry === q.id}
+                        className="px-3 py-1.5 text-xs rounded-lg text-stone-500 hover:bg-stone-100 disabled:opacity-50"
+                        title="Ẩn khỏi danh sách này, không gửi thông báo cho cộng tác viên"
+                      >
+                        Bỏ qua
+                      </button>
+                      {busyInquiry === q.id && <span className="text-xs text-stone-400">Đang lưu…</span>}
+                    </div>
                   </div>
                 </div>
               ))}
