@@ -30,7 +30,7 @@ export default function AuthCallbackPage() {
     if (session && needsRoleSetup === false) {
       // Already has role — redirect based on it
       const role = (session.user as any)?.role;
-      if (role === 'ADMIN') router.push('/admin/properties');
+      if (role === 'ADMIN') router.push('/admin/dashboard');
       else if (role === 'BROKER') router.push('/broker/inventory');
       else if (role === 'LANDLORD') router.push('/landlord/properties');
       else router.push('/');

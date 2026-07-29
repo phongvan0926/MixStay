@@ -63,7 +63,7 @@ export default function LoginPage() {
         const sessionRes = await fetch('/api/auth/session');
         const session = await sessionRes.json();
         const role = session?.user?.role;
-        if (role === 'ADMIN' || role === 'ADMIN_STAFF') router.push('/admin/properties');
+        if (role === 'ADMIN' || role === 'ADMIN_STAFF') router.push('/admin/dashboard');
         else if (role === 'BROKER') router.push('/broker/inventory');
         else if (role === 'LANDLORD') router.push('/landlord/properties');
         else router.push('/');

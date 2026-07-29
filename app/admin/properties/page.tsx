@@ -3,15 +3,15 @@ import { useState, useMemo, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
-import { formatCurrency, getStatusColor, getStatusLabel } from '@/lib/utils';
+import { getStatusColor, getStatusLabel } from '@/lib/utils';
 import { hasPermission } from '@/lib/permissions';
 import PropertyForm from '@/components/forms/PropertyForm';
 import Pagination from '@/components/ui/Pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/fetcher';
-import { useProperties, useCompanies, useDashboardStats, useUsers } from '@/hooks/useData';
-import { SkeletonStats, SkeletonTable } from '@/components/ui/Skeleton';
+import { useProperties, useCompanies, useUsers } from '@/hooks/useData';
+import { SkeletonTable } from '@/components/ui/Skeleton';
 import Link from 'next/link';
 import Avatar from '@/components/ui/Avatar';
 
@@ -20,6 +20,7 @@ function AdminPropertiesInner() {
   // điều hướng nội bộ, window.location CHƯA kịp cập nhật lúc khởi tạo state → lọc bị rỗng.
   const searchParams = useSearchParams();
   const companyIdParam = searchParams.get('companyId') || '';
+  const statusParam = searchParams.get('status') || '';
   const { data: session } = useSession();
   const canApprove = hasPermission(session?.user as any, 'APPROVE_LISTINGS');
   const canDelete = hasPermission(session?.user as any, 'DELETE_PROPERTY');
@@ -27,14 +28,12 @@ function AdminPropertiesInner() {
 
   const [page, setPage] = useState(1);
 
-  const { stats } = useDashboardStats();
-
   // Bộ lọc chạy SERVER-SIDE (dò toàn nền tảng, dồn về trang 1) — không lọc client trên 20 dòng nữa.
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [filterCompany, setFilterCompany] = useState(companyIdParam);
   const [filterLandlord, setFilterLandlord] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStatus, setFilterStatus] = useState(statusParam);
 
   useEffect(() => {
     const t = setTimeout(() => { setSearch(searchInput.trim()); setPage(1); }, 350);
@@ -133,7 +132,7 @@ function AdminPropertiesInner() {
     mutate();
   };
 
-  if (loading) return <div className="p-8"><SkeletonStats count={4} /><div className="mt-6"><SkeletonTable rows={5} cols={6} /></div></div>;
+  if (loading) return <div className="p-8"><SkeletonTable rows={6} cols={6} /></div>;
 
   const hasFilters = search || filterCompany || filterLandlord || filterStatus;
 
@@ -141,32 +140,11 @@ function AdminPropertiesInner() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="font-display text-2xl font-bold">Tổng quan</h1>
-          <p className="text-sm text-stone-500 mt-1">Quản lý toàn bộ hệ thống</p>
+          <h1 className="font-display text-2xl font-bold">Tòa nhà</h1>
+          <p className="text-sm text-stone-500 mt-1">Danh sách và duyệt tòa nhà toàn hệ thống</p>
         </div>
         <button onClick={openCreate} className="btn-primary w-full sm:w-auto">+ Thêm tòa nhà</button>
       </div>
-
-      {/* Stats */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: 'Tổng tòa nhà', value: stats.totalProperties, color: 'text-brand-600', icon: '🏢' },
-            { label: 'Phòng trống', value: `${stats.availableRooms}/${stats.totalRooms}`, color: 'text-emerald-600', icon: '🚪' },
-            { label: 'Chờ duyệt', value: stats.pendingProperties, color: 'text-amber-600', icon: '⏳' },
-            { label: 'Doanh thu HH', value: stats.totalRevenue == null ? '—' : formatCurrency(stats.totalRevenue), color: 'text-purple-600', icon: '💰' },
-            { label: 'Giao dịch', value: `${stats.confirmedDeals}/${stats.totalDeals}`, color: 'text-blue-600', icon: '📋' },
-            { label: 'Cộng tác viên', value: stats.totalBrokers, color: 'text-orange-600', icon: '🤝' },
-            { label: 'Chủ nhà', value: stats.totalLandlords, color: 'text-amber-600', icon: '🏠' },
-            { label: 'Tổng HH', value: stats.totalCommission == null ? '—' : formatCurrency(stats.totalCommission), color: 'text-emerald-600', icon: '💵' },
-          ].map(s => (
-            <div key={s.label} className="stat-card">
-              <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">{s.label}</p>
-              <p className={`text-lg sm:text-xl font-bold mt-1 ${s.color} truncate`}>{s.value}</p>
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* Đang xem kho của MỘT công ty (vào từ trang Quản lý công ty) — nói rõ đang lọc theo ai
           và mở sẵn lối sang tin đăng của đúng công ty đó, khỏi phải chọn lại bộ lọc. */}

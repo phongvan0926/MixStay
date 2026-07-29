@@ -39,7 +39,7 @@ export default withAuth(
       ];
       const blocked = staffPageGuards.find(g => pathname.startsWith(g.prefix) && !permissions.includes(g.perm));
       if (blocked) {
-        return NextResponse.redirect(new URL('/admin/properties', req.url));
+        return NextResponse.redirect(new URL('/admin/dashboard', req.url));
       }
     }
 

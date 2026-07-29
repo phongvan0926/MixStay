@@ -176,6 +176,8 @@ function AdminRoomsInner() {
   const searchParams = useSearchParams();
   const companyIdParam = searchParams.get('companyId') || '';
   const propertyIdParam = searchParams.get('propertyId') || '';
+  const approvedParam = searchParams.get('approved') || '';
+  const statusParam = searchParams.get('status') || '';
   const { data: session } = useSession();
   const canExport = hasPermission(session?.user as any, 'EXPORT_DATA');
   const canApprove = hasPermission(session?.user as any, 'APPROVE_LISTINGS');
@@ -192,8 +194,8 @@ function AdminRoomsInner() {
   const [filterCompany, setFilterCompany] = useState(companyIdParam);
   const [filterProperty, setFilterProperty] = useState(propertyIdParam);
   const [filterRoomType, setFilterRoomType] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
-  const [filterApproved, setFilterApproved] = useState(''); // '' | 'false' (chờ duyệt) | 'true' (đã duyệt)
+  const [filterStatus, setFilterStatus] = useState(statusParam);
+  const [filterApproved, setFilterApproved] = useState(approvedParam); // '' | 'false' (chờ duyệt) | 'true' (đã duyệt)
 
   const roomParams: Record<string, string> = { page: String(page), limit: '20' };
   if (search) roomParams.search = search;

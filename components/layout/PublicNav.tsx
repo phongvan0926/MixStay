@@ -6,8 +6,8 @@ import Avatar from '@/components/ui/Avatar';
 
 // Trang dashboard tương ứng từng vai trò (mirror app/auth/callback + DashboardLayout menu).
 const ROLE_HOME: Record<string, string> = {
-  ADMIN: '/admin/properties',
-  ADMIN_STAFF: '/admin/properties',
+  ADMIN: '/admin/dashboard',
+  ADMIN_STAFF: '/admin/dashboard',
   BROKER: '/broker/inventory',
   LANDLORD: '/landlord/properties',
 };

@@ -14,7 +14,7 @@ type MenuItem = { label: string; href: string; icon: string; perm?: AdminPermiss
 
 const menuItems: Record<string, MenuItem[]> = {
   ADMIN: [
-    { label: 'Tổng quan', href: '/admin/properties', icon: '📊' },
+    { label: 'Tổng quan', href: '/admin/dashboard', icon: '📊' },
     { label: 'Công ty', href: '/admin/companies', icon: '🏛️', perm: 'MANAGE_COMPANIES' },
     { label: 'Tòa nhà', href: '/admin/properties', icon: '🏢' },
     { label: 'Tin đăng', href: '/admin/rooms', icon: '📝' },
@@ -90,7 +90,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Which menu item gets the badge
   const badgeHref: Record<string, string> = {
     LANDLORD: '/landlord/properties',
-    ADMIN: '/admin/properties',
+    ADMIN: '/admin/dashboard',
   };
 
   return (
