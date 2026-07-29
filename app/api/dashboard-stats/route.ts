@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { applyRateLimit } from '@/lib/rate-limit';
-import { hasPermission } from '@/lib/permissions';
 
 export async function GET(req: NextRequest) {
   const rateLimited = await applyRateLimit(req, 'api');
@@ -15,52 +14,15 @@ export async function GET(req: NextRequest) {
 
     const role = session.user.role;
 
+    // ADMIN/ADMIN_STAFF: số liệu quản trị đã chuyển hẳn sang GET /api/admin/overview
+    // (trang /admin/dashboard). Nhánh cũ ở đây từng tính thêm recentDeals — 5 giao dịch gần
+    // nhất kèm 3 phép join — mà KHÔNG màn hình nào hiển thị, tốn truy vấn mỗi lần tải trang.
+    // Trả 501 thay vì {} để nếu có chỗ nào lỡ gọi lại thì lộ ra ngay, không âm thầm ra số 0.
     if (role === 'ADMIN' || role === 'ADMIN_STAFF') {
-      const canSeeFinancials = hasPermission(session.user as any, 'VIEW_FINANCIAL_REPORTS');
-      const [totalProperties, totalRoomTypes, availableRoomTypes, totalDeals, confirmedDeals, totalBrokers, totalLandlords, pendingProperties] = await Promise.all([
-        prisma.property.count(),
-        prisma.roomType.count(),
-        prisma.roomType.count({ where: { status: 'AVAILABLE', isApproved: true } }),
-        prisma.deal.count(),
-        prisma.deal.count({ where: { status: 'CONFIRMED' } }),
-        prisma.user.count({ where: { role: 'BROKER' } }),
-        prisma.user.count({ where: { role: 'LANDLORD' } }),
-        prisma.property.count({ where: { status: 'PENDING' } }),
-      ]);
-
-      const revenueResult = await prisma.deal.aggregate({
-        where: { status: { in: ['CONFIRMED', 'PAID'] } },
-        _sum: { commissionCompany: true, commissionTotal: true },
-      });
-
-      const recentDeals = await prisma.deal.findMany({
-        take: 5,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          broker: { select: { name: true } },
-          roomType: { include: { property: { select: { name: true } } } },
-        },
-      });
-
-      // Field-strip cho staff không có VIEW_FINANCIAL_REPORTS: giữ key, set null
-      const strippedDeals = canSeeFinancials
-        ? recentDeals
-        : recentDeals.map(d => ({
-            ...d,
-            commissionTotal: null,
-            commissionBroker: null,
-            commissionCompany: null,
-            dealPrice: null,
-          }));
-
-      return NextResponse.json({
-        totalProperties, totalRooms: totalRoomTypes, availableRooms: availableRoomTypes,
-        totalDeals, confirmedDeals,
-        totalBrokers, totalLandlords, pendingProperties,
-        totalRevenue: canSeeFinancials ? (revenueResult._sum.commissionCompany || 0) : null,
-        totalCommission: canSeeFinancials ? (revenueResult._sum.commissionTotal || 0) : null,
-        recentDeals: strippedDeals,
-      });
+      return NextResponse.json(
+        { error: 'Dùng /api/admin/overview cho số liệu quản trị' },
+        { status: 501 },
+      );
     }
 
     if (role === 'BROKER') {

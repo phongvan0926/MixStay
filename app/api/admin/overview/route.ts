@@ -39,9 +39,9 @@ export async function GET(req: NextRequest) {
   try {
     const [
       // ① Việc cần làm
-      pendingRooms, pendingProperties, pendingCompanies, activeLeads, openInquiries, unreadNotifs,
+      pendingRooms, pendingProperties, pendingCompanies, activeLeads, openInquiries,
       // ② Sức khoẻ kho hàng
-      roomsNoImage, roomsFewImages, propsNoCompany, propsNoGeo, staleRooms, overdueUpcoming,
+      roomsNoImage, propsNoCompany, propsNoGeo, staleRooms, overdueUpcoming,
       // ③ Nhịp + ④ số tổng
       totalProperties, totalRooms, availableRooms, totalCompanies, totalBrokers, totalLandlords,
       newRooms7d, newUsers7d, totalDeals, confirmedDeals,
@@ -51,10 +51,8 @@ export async function GET(req: NextRequest) {
       prisma.company.count({ where: { isApproved: false } }),
       prisma.savedSearch.count({ where: { isActive: true } }),
       prisma.roomInquiry.count({ where: { reply: null } }),
-      prisma.notification.count({ where: { userId: session.user.id, isRead: false } }),
 
       prisma.roomType.count({ where: { images: { isEmpty: true } } }),
-      prisma.roomType.count({ where: { NOT: { images: { isEmpty: true } } } }),
       prisma.property.count({ where: { companyId: null } }),
       prisma.property.count({ where: { OR: [{ latitude: null }, { longitude: null }] } }),
       prisma.roomType.count({ where: { status: 'AVAILABLE', isApproved: true, updatedAt: { lt: d30 } } }),
@@ -121,12 +119,10 @@ export async function GET(req: NextRequest) {
         pendingCompanies: canManageCompanies ? pendingCompanies : null,
         activeLeads,
         openInquiries,
-        unreadNotifs,
         inquiries: inquiryList,
       },
       health: {
         roomsNoImage,
-        roomsWithImages: roomsFewImages,
         propsNoCompany,
         propsNoGeo,
         staleRooms,
