@@ -33,6 +33,9 @@ app/auth/callback/  → Trang chọn vai trò sau OAuth login lần đầu
 app/api/            → API routes (companies, properties, properties/duplicate-check, rooms, rooms/public, rooms/related, rooms/import, rooms/map, deals, deals/stats, users, users/stats, geocode, ai/parse-listing, ai/listing, ai/search, share-links, share-links/system, inquiries, notifications, saved-searches, broker/stats, cron/lifecycle, settings, upload/signed-url)
 app/api/ai/search/  → Tìm phòng NGÔN NGỮ TỰ NHIÊN: câu khách gõ → Gemini bóc thành bộ lọc (district/type/giá/uni/flags) — client đổ vào form, KHÔNG tự tìm
 app/api/rooms/public → hỗ trợ ?uni=<short HANOI_UNIVERSITIES> — tính khoảng cách server-side (KHÔNG trả lat/lng), sort gần nhất, trả distanceKm
+app/api/me/company   → GET công ty của chủ nhà (kèm canEdit) + PUT cho chủ nhà TỰ sửa logo/liên hệ công ty DO MÌNH TẠO (createdById); tên/mã/duyệt vẫn của admin
+app/api/users/me     → GET/PUT hồ sơ cá nhân: name, phone, avatar (ảnh hiện ở topbar + đầu mọi link share)
+app/broker/profile + app/landlord/profile → trang hồ sơ (ảnh đại diện + SĐT); trang landlord kèm ô đổi LOGO CÔNG TY
 app/api/saved-searches → "Săn phòng": khách (không cần tài khoản) để lại tiêu chí + SĐT; tin mới DUYỆT khớp → notification cho ADMIN (xem PUT /api/rooms); admin quản lý ở /admin/leads
 app/api/cron/lifecycle → Vercel Cron 8h VN hằng ngày (vercel.json): UPCOMING đến hạn → tự AVAILABLE + báo chủ nhà; tin 30 ngày không cập nhật → nhắc chủ nhà xác nhận (chỉ nhắc 1 lần khi chạm mốc)
 app/api/broker/stats + app/broker/stats → thống kê cá nhân CTV: hoa hồng, hạng tháng (ẩn danh người khác), chuỗi 6 tháng, views share link

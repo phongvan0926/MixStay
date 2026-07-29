@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
 
     const landlord = await prisma.user.findUnique({
       where: { id: landlordId },
-      select: { name: true, phone: true }, // phone: nút "Gọi ngay"/Zalo trên catalog CHÍNH chủ nhà
+      select: { name: true, phone: true, avatar: true }, // phone: nút "Gọi ngay"/Zalo trên catalog CHÍNH chủ nhà; avatar: logo hiển thị đầu trang
     });
 
     // Ẩn SỐ NHÀ với khách (đồng bộ chính sách redact ở mọi endpoint công khai khác).

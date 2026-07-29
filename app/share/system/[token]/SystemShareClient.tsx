@@ -8,6 +8,7 @@ import VideoGallery from '@/components/ui/VideoGallery';
 import ZaloFab from '@/components/ui/ZaloFab';
 import CallFab from '@/components/ui/CallFab';
 import Logo from '@/components/ui/Logo';
+import Avatar from '@/components/ui/Avatar';
 import { getSystemZaloLink } from '@/lib/zalo';
 
 const roomTypeLabels: Record<string, string> = {
@@ -164,7 +165,11 @@ export default function SystemShareClient() {
           <span className="flex items-center" aria-label="MixStay">
             <Logo variant="light" className="h-7 w-auto" />
           </span>
-          <span className="text-xs text-stone-400">Kho phòng của {contactName}</span>
+          {/* Logo/ảnh của chính người chia sẻ (CTV hoặc chủ nhà) — nhận diện chủ kho hàng */}
+          <span className="flex items-center gap-2 text-xs text-stone-400">
+            <Avatar src={contact?.avatar} name={contactName} size={24} />
+            <span className="max-w-[46vw] truncate">Kho phòng của {contactName}</span>
+          </span>
         </div>
       </nav>
 

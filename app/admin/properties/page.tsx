@@ -11,6 +11,8 @@ import useSWR from 'swr';
 import { fetcher } from '@/lib/fetcher';
 import { useProperties, useCompanies, useDashboardStats, useUsers } from '@/hooks/useData';
 import { SkeletonStats, SkeletonTable } from '@/components/ui/Skeleton';
+import Link from 'next/link';
+import Avatar from '@/components/ui/Avatar';
 
 export default function AdminPropertiesPage() {
   const { data: session } = useSession();
@@ -25,7 +27,11 @@ export default function AdminPropertiesPage() {
   // Bộ lọc chạy SERVER-SIDE (dò toàn nền tảng, dồn về trang 1) — không lọc client trên 20 dòng nữa.
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
-  const [filterCompany, setFilterCompany] = useState('');
+  // ?companyId=... — mở từ trang Quản lý công ty (bấm logo/tên công ty) để xem ngay kho của
+  // riêng công ty đó. Đọc từ window.location thay vì useSearchParams để khỏi phải bọc Suspense.
+  const [filterCompany, setFilterCompany] = useState(() =>
+    typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('companyId') || '',
+  );
   const [filterLandlord, setFilterLandlord] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
 
@@ -155,6 +161,30 @@ export default function AdminPropertiesPage() {
           ))}
         </div>
       )}
+
+      {/* Đang xem kho của MỘT công ty (vào từ trang Quản lý công ty) — nói rõ đang lọc theo ai
+          và mở sẵn lối sang tin đăng của đúng công ty đó, khỏi phải chọn lại bộ lọc. */}
+      {filterCompany && filterCompany !== '__none__' && (() => {
+        const co: any = companies.find((c: any) => c.id === filterCompany);
+        if (!co) return null;
+        return (
+          <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-brand-200 bg-brand-50/60 px-4 py-3">
+            <Avatar src={co.logo} name={co.name} size={36} shape="rounded" />
+            <div className="min-w-0">
+              <p className="font-semibold text-stone-900 truncate">Kho của {co.name}</p>
+              <p className="text-xs text-stone-500">{pagination?.total ?? filtered.length} tòa nhà thuộc công ty này</p>
+            </div>
+            <div className="flex items-center gap-2 ml-auto">
+              <Link href={`/admin/rooms?companyId=${co.id}`}
+                className="text-xs font-semibold bg-brand-600 text-white px-3 py-2 rounded-lg hover:bg-brand-700 whitespace-nowrap">
+                📋 Tin đăng của công ty
+              </Link>
+              <button onClick={() => changeCompany('')}
+                className="text-xs text-stone-500 hover:text-stone-700 px-2 whitespace-nowrap">Xem tất cả</button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Filters */}
       <div className="mb-5 space-y-3">

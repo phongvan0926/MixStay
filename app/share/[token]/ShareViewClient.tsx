@@ -11,6 +11,7 @@ import { buildListingText } from '@/lib/listing-text';
 import { formatListingCode } from '@/lib/listing-code';
 import CallFab from '@/components/ui/CallFab';
 import Logo from '@/components/ui/Logo';
+import Avatar from '@/components/ui/Avatar';
 import { getZaloLink } from '@/lib/zalo';
 
 const roomTypeLabels: Record<string, string> = {
@@ -245,6 +246,7 @@ export default function ShareViewClient() {
 
   const contactPhone: string | null = data.broker?.phone || null;
   const brokerName: string = data.broker?.name?.trim() || '';
+  const brokerAvatar: string | null = data.broker?.avatar || null;
   // Pass the link creator (data.broker) so broker-created links deeplink Zalo to the broker.
   const zaloLink = getZaloLink(roomType, data.broker);
 
@@ -277,11 +279,17 @@ export default function ShareViewClient() {
             </Link>
           )}
           {brokerName ? (
-            <span className="text-xs text-stone-500">Cộng tác viên: <span className="font-medium text-stone-700">{brokerName}</span></span>
+            // Ảnh đại diện CTV đặt ở /broker/profile — khách thấy ngay đang xem hàng của ai.
+            <span className="flex items-center gap-2 text-xs text-stone-500">
+              <Avatar src={brokerAvatar} name={brokerName} size={24} />
+              <span className="hidden sm:inline">Cộng tác viên:</span>
+              <span className="font-medium text-stone-700 max-w-[38vw] truncate">{brokerName}</span>
+            </span>
           ) : companyMode ? (
             // Chế độ kho công ty: KHÔNG hiện hotline MixStay — chỉ đường về kho của công ty
-            <Link href={`/share/company/${company.id}`} className="text-xs font-semibold bg-brand-600 text-white px-3 py-1.5 rounded-lg hover:bg-brand-700 transition-colors">
-              🏢 Kho phòng {company.name}
+            <Link href={`/share/company/${company.id}`} className="flex items-center gap-1.5 text-xs font-semibold bg-brand-600 text-white px-3 py-1.5 rounded-lg hover:bg-brand-700 transition-colors">
+              {company.logo ? <Avatar src={company.logo} name={company.name} size={18} shape="rounded" /> : <span>🏢</span>}
+              <span className="max-w-[38vw] truncate">Kho phòng {company.name}</span>
             </Link>
           ) : (
             <a href="tel:0379838222" className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors">📞 Hotline: 0379 838 222</a>

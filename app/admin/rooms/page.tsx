@@ -183,8 +183,14 @@ export default function AdminRoomsPage() {
   const [search, setSearch] = useState('');
 
   // Filters (khai báo trước để đưa vào params gọi API — LỌC SERVER-SIDE, dò xuyên trang + dồn về trang 1)
-  const [filterCompany, setFilterCompany] = useState('');
-  const [filterProperty, setFilterProperty] = useState('');
+  // ?companyId=... — mở từ trang Quản lý công ty / trang Tòa nhà để lọc sẵn theo công ty.
+  // Dùng window.location thay useSearchParams để khỏi phải bọc Suspense cho cả trang.
+  const [filterCompany, setFilterCompany] = useState(() =>
+    typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('companyId') || '',
+  );
+  const [filterProperty, setFilterProperty] = useState(() =>
+    typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('propertyId') || '',
+  );
   const [filterRoomType, setFilterRoomType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterApproved, setFilterApproved] = useState(''); // '' | 'false' (chờ duyệt) | 'true' (đã duyệt)

@@ -136,6 +136,10 @@ export const authOptions: NextAuthOptions = {
         token.canViewContact = dbUser.canViewContact ?? false;
         token.canViewCommission = dbUser.canViewCommission ?? false;
         token.isActive = dbUser.isActive;
+        // Ảnh đại diện đổi ở /broker/profile hay /landlord/profile phải hiện ngay trên topbar —
+        // NextAuth map token.picture -> session.user.image.
+        token.picture = dbUser.avatar ?? null;
+        token.name = dbUser.name ?? token.name;
         token.refreshedAt = Math.floor(Date.now() / 1000);
       };
 
@@ -188,6 +192,8 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).canViewContact = token.canViewContact ?? false;
         (session.user as any).canViewCommission = token.canViewCommission ?? false;
         (session.user as any).isActive = token.isActive ?? true;
+        // Ảnh đại diện tự tải lên (User.avatar) — dùng cho topbar + thanh điều hướng công khai.
+        (session.user as any).image = (token as any).picture ?? null;
       }
       return session;
     },

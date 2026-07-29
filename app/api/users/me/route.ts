@@ -42,7 +42,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: validated.error }, { status: 400 });
     }
 
-    const { name, phone } = validated.data;
+    const { name, phone, avatar } = validated.data;
 
     // SĐT là field đăng nhập (lib/auth cho phép login bằng phone) → không cho trùng người khác.
     const taken = await prisma.user.findFirst({
@@ -55,8 +55,9 @@ export async function PUT(req: NextRequest) {
 
     const user = await prisma.user.update({
       where: { id: session.user.id },
-      data: { name, phone },
-      select: { id: true, name: true, email: true, phone: true, role: true },
+      // avatar: undefined = client không gửi (giữ nguyên); '' = người dùng bấm "Gỡ ảnh" → null.
+      data: { name, phone, ...(avatar !== undefined && { avatar: avatar || null }) },
+      select: { id: true, name: true, email: true, phone: true, role: true, avatar: true },
     });
 
     return NextResponse.json(user);

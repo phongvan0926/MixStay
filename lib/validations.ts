@@ -205,6 +205,23 @@ export const profileUpdateSchema = z.object({
     .string()
     .trim()
     .regex(/^(0\d{8,10}|\+84\d{8,9})$/, 'Số điện thoại không hợp lệ (VD: 0912345678)'),
+  // Ảnh đại diện / logo cá nhân — hiện trên topbar và trên MỌI link chia sẻ của người này.
+  // Chuỗi rỗng = gỡ ảnh (API quy về null).
+  avatar: z.string().url('Ảnh không hợp lệ').max(500).optional().or(z.literal('')),
+});
+
+/**
+ * Công ty TỰ sửa hồ sơ (chủ nhà tạo ra công ty đó) — chỉ logo + thông tin liên hệ.
+ * KHÔNG có name/code/isActive/isApproved: đổi tên hay tự duyệt là việc của admin.
+ */
+export const companySelfUpdateSchema = z.object({
+  id: z.string().min(1, 'Thiếu id'),
+  logo: z.string().url('Ảnh không hợp lệ').max(500).optional().or(z.literal('')),
+  phone: z.string().max(20).optional().or(z.literal('')),
+  email: z.string().email('Email không hợp lệ').optional().or(z.literal('')),
+  address: z.string().max(300).optional().or(z.literal('')),
+  description: z.string().max(1000).optional().or(z.literal('')),
+  zaloGroupLink: z.string().max(300).optional().or(z.literal('')),
 });
 
 // ===== Notification =====

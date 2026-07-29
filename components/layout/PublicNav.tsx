@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import Logo from '@/components/ui/Logo';
+import Avatar from '@/components/ui/Avatar';
 
 // Trang dashboard tương ứng từng vai trò (mirror app/auth/callback + DashboardLayout menu).
 const ROLE_HOME: Record<string, string> = {
@@ -49,9 +50,13 @@ export default function PublicNav() {
               </Link>
             )}
             <div className="flex items-center gap-2 text-white">
-              <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center font-semibold text-sm shrink-0">
-                {user.name?.charAt(0).toUpperCase() || 'U'}
-              </div>
+              {user.image ? (
+                <Avatar src={user.image} name={user.name} size={32} />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center font-semibold text-sm shrink-0">
+                  {user.name?.charAt(0).toUpperCase() || 'U'}
+                </div>
+              )}
               <span className="hidden sm:inline text-sm font-medium max-w-[140px] truncate">{user.name}</span>
             </div>
             <button onClick={() => signOut({ callbackUrl: '/' })}

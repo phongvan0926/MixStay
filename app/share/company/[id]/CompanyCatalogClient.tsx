@@ -79,7 +79,15 @@ export default function CompanyCatalogClient({ id }: { id: string }) {
       <nav className="sticky top-0 z-40 bg-brand-800/95 backdrop-blur-xl border-b border-brand-700/50">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           {/* Trang link chia sẻ: KHÔNG dẫn về trang chủ — giữ khách trong kho phòng công ty. */}
-          <span aria-label="MixStay"><Logo variant="light" className="h-7 w-auto" /></span>
+          <span className="flex items-center gap-2.5" aria-label="MixStay">
+            <Logo variant="light" className="h-7 w-auto" />
+            {company.logo && (
+              <>
+                <span className="text-white/25">|</span>
+                <img src={company.logo} alt={company.name} className="h-7 w-7 rounded-lg object-cover bg-white/10" />
+              </>
+            )}
+          </span>
           {zalo && (
             <a href={zalo} target="_blank" rel="noopener noreferrer"
               className="text-xs font-semibold bg-white text-brand-700 px-3 py-1.5 rounded-lg hover:bg-brand-50 transition-colors">

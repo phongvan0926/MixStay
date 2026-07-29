@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
       //  - LANDLORD → kho của chính chủ nhà đó (hành vi cũ)
       const creator = await prisma.user.findUnique({
         where: { id: link.brokerId },
-        select: { name: true, phone: true, role: true },
+        select: { name: true, phone: true, role: true, avatar: true },
       });
       const isBrokerLink = creator?.role === 'BROKER';
 
@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({
           link,
           isBrokerLink: true,
-          broker: { name: creator?.name, phone: creator?.phone },
+          broker: { name: creator?.name, phone: creator?.phone, avatar: creator?.avatar ?? null },
           properties,
         });
       }
@@ -140,7 +140,7 @@ export async function GET(req: NextRequest) {
               },
             },
           },
-          broker: { select: { name: true, phone: true, role: true } }, // role → biết link do BROKER tạo (đổi đích Zalo)
+          broker: { select: { name: true, phone: true, role: true, avatar: true } }, // role → biết link do BROKER tạo (đổi đích Zalo); avatar → logo trên đầu trang share
         },
       });
 

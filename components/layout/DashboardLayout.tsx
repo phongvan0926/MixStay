@@ -8,6 +8,7 @@ import useSWR from 'swr';
 import { fetcher } from '@/lib/fetcher';
 import { hasPermission, type AdminPermission } from '@/lib/permissions';
 import Logo from '@/components/ui/Logo';
+import Avatar from '@/components/ui/Avatar';
 
 type MenuItem = { label: string; href: string; icon: string; perm?: AdminPermission; staffHidden?: boolean };
 
@@ -33,6 +34,7 @@ const menuItems: Record<string, MenuItem[]> = {
   LANDLORD: [
     { label: 'Tòa nhà', href: '/landlord/properties', icon: '🏠' },
     { label: 'Link chia sẻ', href: '/landlord/share-links', icon: '🔗' },
+    { label: 'Hồ sơ', href: '/landlord/profile', icon: '👤' },
   ],
 };
 
@@ -110,7 +112,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {company && (
               <span className="hidden md:inline-flex items-center gap-1.5 ml-2 px-2.5 py-1 rounded-lg bg-brand-50 border border-brand-100 text-brand-700 text-xs font-medium">
                 {company.logo ? (
-                  <img src={company.logo} alt={company.name} className="w-4 h-4 rounded-sm object-cover" />
+                  <Avatar src={company.logo} name={company.name} size={16} shape="rounded" />
                 ) : (
                   <span>🏢</span>
                 )}
@@ -125,9 +127,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {company ? company.name : session.user?.email}
               </p>
             </div>
-            <div className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-semibold text-sm shrink-0">
-              {session.user?.name?.charAt(0).toUpperCase()}
-            </div>
+            <Avatar src={(session.user as { image?: string } | undefined)?.image} name={session.user?.name} size={36} />
             <button onClick={() => signOut({ callbackUrl: '/login' })} className="btn-ghost text-xs text-stone-500 px-2 sm:px-4" title="Đăng xuất">
               <span className="hidden sm:inline">Đăng xuất</span>
               <span className="sm:hidden text-base">⏻</span>

@@ -6,8 +6,11 @@ import { formatDate } from '@/lib/utils';
 import { fetcher } from '@/lib/fetcher';
 import { useCompanies } from '@/hooks/useData';
 import { SkeletonCardGrid } from '@/components/ui/Skeleton';
+import Link from 'next/link';
+import Avatar from '@/components/ui/Avatar';
+import AvatarUpload from '@/components/ui/AvatarUpload';
 
-const EMPTY_FORM = { name: '', description: '', phone: '', email: '', address: '', zaloGroupLink: '', code: '', isActive: true };
+const EMPTY_FORM = { name: '', description: '', phone: '', email: '', address: '', zaloGroupLink: '', code: '', logo: '', isActive: true };
 
 // Component ô nhập Mã công ty trực tiếp (Inline Edit) ngay ở thẻ thông tin công ty
 function CompanyCodeInlineInput({ company, onUpdated }: { company: any; onUpdated: () => void }) {
@@ -137,7 +140,7 @@ export default function AdminCompaniesPage() {
   const openAdd = () => { setEditItem(null); setForm({ ...EMPTY_FORM }); setShowModal(true); };
   const openEdit = (c: any) => {
     setEditItem(c);
-    setForm({ name: c.name, description: c.description || '', phone: c.phone || '', email: c.email || '', address: c.address || '', zaloGroupLink: c.zaloGroupLink || '', code: c.code || '', isActive: c.isActive });
+    setForm({ name: c.name, description: c.description || '', phone: c.phone || '', email: c.email || '', address: c.address || '', zaloGroupLink: c.zaloGroupLink || '', code: c.code || '', logo: c.logo || '', isActive: c.isActive });
     setShowModal(true);
   };
 
@@ -292,14 +295,25 @@ export default function AdminCompaniesPage() {
             <div key={c.id} className={`card hover:shadow-md transition-shadow ${c.isApproved === false ? 'ring-1 ring-amber-300 bg-amber-50/30' : ''}`}>
               <div className="p-5">
                 <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-brand-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-sm mt-0.5">
-                    {c.name.charAt(0).toUpperCase()}
-                  </div>
+                  {/* Bấm logo HOẶC tên công ty → mở kho riêng của công ty đó (tòa nhà + tin đăng) */}
+                  <Link
+                    href={`/admin/properties?companyId=${c.id}`}
+                    title={`Xem tòa nhà & tin đăng của ${c.name}`}
+                    className="shrink-0 mt-0.5 rounded-xl hover:ring-2 hover:ring-brand-300 transition-shadow"
+                  >
+                    <Avatar src={c.logo} name={c.name} size={48} shape="rounded" />
+                  </Link>
                   <div className="flex-1 min-w-0">
                     
                     {/* Thứ tự hiển thị: 1. Tên công ty -> 2. Trạng thái -> 3. Ô điền Mã công ty */}
                     <div className="flex items-center flex-wrap gap-2 mb-1.5">
-                      <h3 className="font-semibold text-stone-900 truncate max-w-[160px] sm:max-w-[190px]" title={c.name}>{c.name}</h3>
+                      <Link
+                        href={`/admin/properties?companyId=${c.id}`}
+                        className="font-semibold text-stone-900 truncate max-w-[160px] sm:max-w-[190px] hover:text-brand-700 hover:underline"
+                        title={`Xem tòa nhà & tin đăng của ${c.name}`}
+                      >
+                        {c.name}
+                      </Link>
 
                       {c.isApproved === false ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700 shrink-0">
@@ -443,6 +457,18 @@ export default function AdminCompaniesPage() {
                 <input type="text" value={form.zaloGroupLink} onChange={e => setForm(f => ({ ...f, zaloGroupLink: e.target.value }))}
                   className="input-field w-full" placeholder="Link nhóm zalo.me/g/... HOẶC số điện thoại Zalo cá nhân" />
                 <p className="text-[11px] text-stone-400 mt-1">Dán link nhóm Zalo, hoặc nhập số điện thoại (vd 0914344988) — hệ thống tự tạo link Zalo cá nhân.</p>
+              </div>
+              <div>
+                <AvatarUpload
+                  value={form.logo}
+                  onChange={url => setForm(f => ({ ...f, logo: url }))}
+                  folder="logos"
+                  name={form.name}
+                  shape="rounded"
+                  size={64}
+                  label="Logo công ty"
+                  hint="Hiện trên trang kho phòng của công ty và trên mọi tin đăng thuộc công ty này."
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-1">Mô tả</label>
