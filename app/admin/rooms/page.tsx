@@ -1,5 +1,6 @@
 'use client';
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
 import { formatCurrency, formatDate, formatDateTime, getRoleLabel } from '@/lib/utils';
@@ -169,7 +170,12 @@ function validateRow(row: Record<string, any>, idx: number): string[] {
   return errors;
 }
 
-export default function AdminRoomsPage() {
+function AdminRoomsInner() {
+  // Xem chú thích ở app/admin/properties/page.tsx: phải dùng useSearchParams, không dùng
+  // window.location (chưa cập nhật kịp khi Next điều hướng nội bộ).
+  const searchParams = useSearchParams();
+  const companyIdParam = searchParams.get('companyId') || '';
+  const propertyIdParam = searchParams.get('propertyId') || '';
   const { data: session } = useSession();
   const canExport = hasPermission(session?.user as any, 'EXPORT_DATA');
   const canApprove = hasPermission(session?.user as any, 'APPROVE_LISTINGS');
@@ -183,14 +189,8 @@ export default function AdminRoomsPage() {
   const [search, setSearch] = useState('');
 
   // Filters (khai báo trước để đưa vào params gọi API — LỌC SERVER-SIDE, dò xuyên trang + dồn về trang 1)
-  // ?companyId=... — mở từ trang Quản lý công ty / trang Tòa nhà để lọc sẵn theo công ty.
-  // Dùng window.location thay useSearchParams để khỏi phải bọc Suspense cho cả trang.
-  const [filterCompany, setFilterCompany] = useState(() =>
-    typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('companyId') || '',
-  );
-  const [filterProperty, setFilterProperty] = useState(() =>
-    typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('propertyId') || '',
-  );
+  const [filterCompany, setFilterCompany] = useState(companyIdParam);
+  const [filterProperty, setFilterProperty] = useState(propertyIdParam);
   const [filterRoomType, setFilterRoomType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterApproved, setFilterApproved] = useState(''); // '' | 'false' (chờ duyệt) | 'true' (đã duyệt)
@@ -921,5 +921,13 @@ export default function AdminRoomsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AdminRoomsPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminRoomsInner />
+    </Suspense>
   );
 }

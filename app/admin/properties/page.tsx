@@ -1,5 +1,6 @@
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
 import { formatCurrency, getStatusColor, getStatusLabel } from '@/lib/utils';
@@ -14,7 +15,11 @@ import { SkeletonStats, SkeletonTable } from '@/components/ui/Skeleton';
 import Link from 'next/link';
 import Avatar from '@/components/ui/Avatar';
 
-export default function AdminPropertiesPage() {
+function AdminPropertiesInner() {
+  // ?companyId=... đến từ trang Quản lý công ty. PHẢI đọc bằng useSearchParams: khi Next
+  // điều hướng nội bộ, window.location CHƯA kịp cập nhật lúc khởi tạo state → lọc bị rỗng.
+  const searchParams = useSearchParams();
+  const companyIdParam = searchParams.get('companyId') || '';
   const { data: session } = useSession();
   const canApprove = hasPermission(session?.user as any, 'APPROVE_LISTINGS');
   const canDelete = hasPermission(session?.user as any, 'DELETE_PROPERTY');
@@ -27,11 +32,7 @@ export default function AdminPropertiesPage() {
   // Bộ lọc chạy SERVER-SIDE (dò toàn nền tảng, dồn về trang 1) — không lọc client trên 20 dòng nữa.
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
-  // ?companyId=... — mở từ trang Quản lý công ty (bấm logo/tên công ty) để xem ngay kho của
-  // riêng công ty đó. Đọc từ window.location thay vì useSearchParams để khỏi phải bọc Suspense.
-  const [filterCompany, setFilterCompany] = useState(() =>
-    typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('companyId') || '',
-  );
+  const [filterCompany, setFilterCompany] = useState(companyIdParam);
   const [filterLandlord, setFilterLandlord] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
 
@@ -39,6 +40,11 @@ export default function AdminPropertiesPage() {
     const t = setTimeout(() => { setSearch(searchInput.trim()); setPage(1); }, 350);
     return () => clearTimeout(t);
   }, [searchInput]);
+
+  // Vào lại trang với ?companyId khác (bấm công ty khác) → cập nhật bộ lọc theo URL.
+  useEffect(() => {
+    if (companyIdParam) { setFilterCompany(companyIdParam); setPage(1); }
+  }, [companyIdParam]);
 
   const propParams: Record<string, string> = { page: String(page), limit: '20' };
   if (search) propParams.search = search;
@@ -371,5 +377,13 @@ export default function AdminPropertiesPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AdminPropertiesPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminPropertiesInner />
+    </Suspense>
   );
 }
