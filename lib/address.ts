@@ -21,11 +21,19 @@ const ADDR_LABEL = /^\s*(?:địa\s*chỉ|đ\/c|dc)\s*[:.]?\s*/i;
 function collapseDoubled(input: string): string {
   const s = input.trim();
   const words = s.split(/\s+/);
-  if (words.length < 4 || words.length % 2 !== 0) return s;
-  const half = words.length / 2;
+  if (words.length < 4) return s;
   const norm = (a: string[]) => a.join(' ').toLowerCase();
-  if (norm(words.slice(0, half)) !== norm(words.slice(half))) return s;
-  return words.slice(0, half).join(' ');
+  // Tìm CHU KỲ NGẮN NHẤT: có bản ghi bị dán 3 lần chứ không chỉ 2 lần.
+  for (let k = 2; k <= words.length / 2; k++) {
+    if (words.length % k !== 0) continue;
+    const first = norm(words.slice(0, k));
+    let periodic = true;
+    for (let i = k; i < words.length; i += k) {
+      if (norm(words.slice(i, i + k)) !== first) { periodic = false; break; }
+    }
+    if (periodic) return words.slice(0, k).join(' ');
+  }
+  return s;
 }
 
 function clean(s: string): string {
@@ -45,8 +53,17 @@ export function redactHouseNumber(input?: string | null): string {
   let s = input.trim().replace(/^["'""']+/, '').replace(/["'""']+$/, ''); // bỏ ngoặc kép bao ngoài
   s = collapseDoubled(s);                  // gộp địa chỉ dán 2 lần TRƯỚC khi cắt số nhà
   s = s.replace(ADDR_LABEL, '');           // bỏ nhãn "Địa chỉ:"
-  s = s.replace(HOUSE_MID, ' ');           // bỏ "nhà X" ở bất kỳ đâu
-  s = s.replace(HOUSE_LEAD_SO, '');        // bỏ "Số X" ở đầu
+
+  // Có gỡ được một cụm SỐ NHÀ TƯỜNG MINH ra khỏi chuỗi hay không — quyết định cách xử lý
+  // chuỗi ngõ/ngách bên dưới.
+  let removedHouseNumber = false;
+  const afterMid = s.replace(HOUSE_MID, ' ');           // "nhà 44" ở bất kỳ đâu
+  if (afterMid !== s) removedHouseNumber = true;
+  s = afterMid;
+  const afterSo = s.replace(HOUSE_LEAD_SO, '');         // "Số 4" ở đầu
+  if (afterSo !== s) removedHouseNumber = true;
+  s = afterSo;
+
   // Bỏ số nhà trần ở đầu CHỈ KHI không phải mở đầu bằng ngõ/ngách/phố/đường.
   // LẶP: rất nhiều bản ghi dán số nhà 2 lần ở mức TOKEN ("65B 65B Yên Hòa", "15 143 Quan Hoa",
   // "6 6 Ngõ 79 Thuỵ Khê") — cắt một lần thì bản thứ hai chính là số nhà và vẫn lọt ra ngoài.
@@ -56,7 +73,25 @@ export function redactHouseNumber(input?: string | null): string {
     const next = s.replace(HOUSE_LEAD_BARE, '');
     if (next === s) break;
     s = next;
+    removedHouseNumber = true;
   }
+
+  // Chuỗi ngõ/ngách nhiều cấp ("Ngõ 103/2/5"): đoạn CUỐI là số nhà hay số ngách?
+  // Quy tắc nghiệp vụ: nếu địa chỉ ĐÃ ghi số nhà tường minh ở chỗ khác ("Số 4 Ngõ 103/2/5")
+  // thì cả chuỗi là đường đi vào ngõ → GIỮ NGUYÊN. Nếu KHÔNG có số nhà nào khác
+  // ("Ngõ 103/2/5 Cổ Nhuế") thì đoạn cuối chính là số nhà → cắt bỏ đoạn cuối.
+  // Cắt MỌI chuỗi trong câu (cờ /g): có bản ghi nhắc lại địa chỉ nhiều lần không đều nhau
+  // nên collapseDoubled không gộp được — bỏ sót một chuỗi là lộ số nhà.
+  if (!removedHouseNumber) {
+    s = s.replace(
+      /\b(ngõ|ngo|ngách|ngach|hẻm|hem)\s+(\d+[a-zA-Z]?(?:\s*\/\s*\d+[a-zA-Z]?)+)/gi,
+      (_m, kw: string, chain: string) => {
+        const parts = chain.split('/').map(x => x.trim());
+        return `${kw} ${parts.slice(0, -1).join('/')}`;
+      }
+    );
+  }
+
   return clean(s);
 }
 

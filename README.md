@@ -234,6 +234,13 @@ mixstay/
 
 ## Changelog
 
+### v9.39 — 2026-07-31 (chốt quy tắc chuỗi ngõ nhiều cấp: `Ngõ 103/2/5` — khi nào đoạn cuối là số nhà)
+- **📐 Quy tắc nghiệp vụ do chủ dự án chốt:** nếu địa chỉ ĐÃ ghi số nhà tường minh ở chỗ khác (`Số 4 Ngõ 103/2/5 Cổ Nhuế`) thì cả chuỗi là đường đi vào ngõ → **giữ nguyên**. Nếu KHÔNG có số nhà nào khác (`Ngõ 103/2/5 Cổ Nhuế`) thì đoạn cuối chính là số nhà → **cắt đoạn cuối** (`Ngõ 103/2 Cổ Nhuế`).
+- **🩹 `redactHouseNumber` nay theo dõi biến `removedHouseNumber`:** chỉ cắt đuôi chuỗi ngõ khi KHÔNG gỡ được cụm số nhà tường minh nào (`Số X` đầu chuỗi / `nhà X` giữa chuỗi / số trần đầu chuỗi).
+- **🔁 Cắt MỌI chuỗi trong câu (cờ `/g`)** — có bản ghi nhắc lại địa chỉ nhiều lần không đều nhau, bỏ sót một chuỗi là lộ số nhà (`Ngõ 28/37 Ngõ 28/37 ngõ Văn Hương` từng chỉ cắt vế đầu).
+- **🔁 `collapseDoubled` xử lý lặp N lần, không chỉ 2 lần:** có địa chỉ bị dán **3 lần** (`Ngách 17/1, Đại Mỗ… ×3`) — tìm chu kỳ ngắn nhất thay vì chỉ chia đôi.
+- **✅ Kiểm thử 15 ca trên chính hàm sẽ ship, đối chiếu 466 tòa đang public:** đạt 15/15; địa chỉ còn chuỗi ngõ nhiều cấp 90 → 85 (85 ca còn lại đều đã có số nhà tường minh nên GIỮ theo đúng quy tắc); 7 địa chỉ đổi hiển thị. Số ngõ/ngách 1 cấp (`Ngõ 43 Trung Kính`, `ngách 52 ngõ 91 Nguyễn Chí Thanh`) không bị đụng.
+
 ### v9.38 — 2026-07-31 (vá rò rỉ SỐ NHÀ trên trang công khai + bỏ tiêu đề lặp "| MixStay | MixStay")
 - **🔒 Rò rỉ số nhà (phát hiện khi kiểm thử v9.35):** tiêu đề trang công khai `/tin/[id]` hiện `Kim giang 6/22/282 Kim giang` — đúng thứ hệ thống được thiết kế để giấu. Nguyên nhân: **địa chỉ bị dán 2 lần** (46/466 tòa), hàm ẩn số nhà chỉ cắt cụm số ở ĐẦU chuỗi nên bản lặp thứ hai giữ nguyên số nhà.
 - **🩹 `lib/address.ts` vá 2 lớp:** (1) `collapseDoubled()` gộp chuỗi bị dán 2 lần TRƯỚC khi cắt (áp dụng cho cả `redactHouseNumber` và `redactName`); (2) cắt LẶP số nhà ở đầu — nhiều bản ghi dán số nhà 2 lần ở mức token (`65B 65B Yên Hòa`, `15 143 Quan Hoa`, `6 6 Ngõ 79 Thuỵ Khê`), cắt một lần thì bản thứ hai chính là số nhà.
