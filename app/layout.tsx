@@ -33,10 +33,11 @@ export const metadata: Metadata = {
     siteName: 'MixStay',
   },
   // Xác minh quyền sở hữu mixstay.vn trong Google Search Console (để nộp sitemap + xem
-  // truy vấn tìm kiếm). KHÔNG được xoá: xoá là mất trạng thái xác minh.
+  // truy vấn tìm kiếm). Token gắn theo TÀI KHOẢN Google — token dưới đây của
+  // phongvan0926@gmail.com. KHÔNG được xoá: xoá là mất trạng thái xác minh.
   // Đây không phải khoá bí mật — Google yêu cầu công khai trong <head> của trang.
   verification: {
-    google: '7ry_JgLeNOq_rFIXdWtV62L0zSy9wrzHyPL7hl_okcs',
+    google: 'rrudC9KYNhfNkfbiKhw8wXYd3Hjg-8_AoiiaupfG1bE',
   },
 };
 
