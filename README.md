@@ -234,6 +234,16 @@ mixstay/
 
 ## Changelog
 
+### v9.40 — 2026-07-31 (Google Search Console: xác minh sở hữu + nộp sitemap 698 URL)
+- **✅ Đã xác minh `https://mixstay.vn/`** trong Search Console bằng tài khoản **phongvan0926@gmail.com** (phương thức: Tệp HTML). Có 2 phương thức đang hoạt động, giữ cả hai cho chắc:
+  - Thẻ meta `google-site-verification` trong `app/layout.tsx` → `metadata.verification.google`
+  - Tệp `public/google1b741701c683e2a6.html`
+  - **🚨 KHÔNG XOÁ 2 mục trên** — xoá là mất trạng thái xác minh, mất luôn dữ liệu Search Console.
+- **🗺️ Đã nộp `sitemap.xml` → trạng thái "Thành công", Google khám phá đủ 698 URL** (7 trang tĩnh + 12 quận + 18 trường + 661 tin đăng).
+- **⚡ Đã yêu cầu lập chỉ mục ưu tiên** cho 2 trang hub `/thue-phong-tro` và `/phong-tro-gan` — đây là 2 trang dẫn tới toàn bộ trang đích còn lại.
+- **📌 Lưu ý vận hành:** token xác minh gắn theo TÀI KHOẢN Google. Chrome trên máy đang đăng nhập 2 tài khoản (`phongvan0926@` và `doctorx0709@`); vào Search Console phải chọn đúng `phongvan0926@gmail.com` (đường dẫn `/u/1/`) mới thấy tài sản này.
+- **⏳ Kỳ vọng:** Google cần vài tuần để thu thập hết và lên thứ hạng — theo dõi ở mục **Hiệu suất** và **Lập chỉ mục › Trang**.
+
 ### v9.39 — 2026-07-31 (chốt quy tắc chuỗi ngõ nhiều cấp: `Ngõ 103/2/5` — khi nào đoạn cuối là số nhà)
 - **📐 Quy tắc nghiệp vụ do chủ dự án chốt:** nếu địa chỉ ĐÃ ghi số nhà tường minh ở chỗ khác (`Số 4 Ngõ 103/2/5 Cổ Nhuế`) thì cả chuỗi là đường đi vào ngõ → **giữ nguyên**. Nếu KHÔNG có số nhà nào khác (`Ngõ 103/2/5 Cổ Nhuế`) thì đoạn cuối chính là số nhà → **cắt đoạn cuối** (`Ngõ 103/2 Cổ Nhuế`).
 - **🩹 `redactHouseNumber` nay theo dõi biến `removedHouseNumber`:** chỉ cắt đuôi chuỗi ngõ khi KHÔNG gỡ được cụm số nhà tường minh nào (`Số X` đầu chuỗi / `nhà X` giữa chuỗi / số trần đầu chuỗi).
