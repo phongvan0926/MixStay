@@ -13,6 +13,7 @@ import SearchableSelect from '@/components/ui/SearchableSelect';
 import { useRoomTypes, useProperties, useCompanies } from '@/hooks/useData';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 import { formatListingCode } from '@/lib/listing-code';
+import PostExportModal from '@/components/ui/PostExportModal';
 
 const ROOM_TYPE_LABELS: Record<string, string> = {
   studio: 'Studio', gac_xep: 'Gác xép', don: 'Phòng đơn',
@@ -210,6 +211,8 @@ function AdminRoomsInner() {
   const { companies } = useCompanies();
 
   const [showModal, setShowModal] = useState(false);
+  // Tin đang mở gói "đăng Facebook/Zalo" (ảnh bìa + caption sẵn)
+  const [postRoom, setPostRoom] = useState<any>(null);
   const [editingRoom, setEditingRoom] = useState<any>(null);
   // Prefill từ luồng "Tạo tin nhanh AI" — chỉ dùng khi tạo mới (editingRoom null)
   const [aiPrefill, setAiPrefill] = useState<any>(null);
@@ -695,6 +698,11 @@ function AdminRoomsInner() {
                           </svg>
                           Sửa
                         </button>
+                        {/* Đăng lên fanpage/nhóm: ảnh bìa in sẵn giá + caption có hashtag theo quận */}
+                        <button onClick={() => setPostRoom(r)} title="Lấy ảnh bìa + nội dung đăng Facebook/Zalo"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-violet-50 text-violet-700 hover:bg-violet-100 transition-colors">
+                          📢 Đăng
+                        </button>
                         <button onClick={async () => {
                           if (confirm('Xoá phòng này?')) {
                             await fetch(`/api/rooms?id=${r.id}`, { method: 'DELETE' });
@@ -921,6 +929,32 @@ function AdminRoomsInner() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Gói đăng Facebook/Zalo — admin đăng lên fanpage/nhóm của công ty.
+          Link dùng trang công khai /tin/[id] (admin không gắn hoa hồng CTV). */}
+      {postRoom && (
+        <PostExportModal
+          open
+          onClose={() => setPostRoom(null)}
+          roomTypeId={postRoom.id}
+          post={{
+            name: postRoom.name,
+            typeName: postRoom.typeName,
+            areaSqm: postRoom.areaSqm,
+            priceMonthly: postRoom.priceMonthly,
+            deposit: postRoom.deposit,
+            district: postRoom.property?.district,
+            streetName: postRoom.property?.streetName,
+            amenities: postRoom.amenities,
+            parkingCar: postRoom.property?.parkingCar,
+            petAllowed: postRoom.property?.petAllowed,
+            foreignerOk: postRoom.property?.foreignerOk,
+            availableUnits: postRoom.availableUnits,
+            listingCode: formatListingCode(postRoom.listingCode, postRoom.property?.company?.code),
+            url: `${typeof window !== 'undefined' ? window.location.origin : ''}/tin/${postRoom.id}`,
+          }}
+        />
       )}
     </div>
   );

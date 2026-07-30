@@ -48,6 +48,9 @@ components/public/ViewingRequestForm.tsx → Ô "Đặt lịch xem phòng" gắn
 app/api/upload/signed-url/ → Tạo Supabase signed upload URL (upload video trực tiếp client → Storage, không qua Vercel serverless)
 app/api/ai/parse-listing/ → "Tạo tin nhanh AI": dán tin FB/Zalo → Gemini structured output bóc property+room+match tòa có sẵn (client đổ vào RoomTypeForm, KHÔNG auto-lưu)
 app/api/rooms/map/  → Dữ liệu bản đồ public (tòa APPROVED có toạ độ + tin hiệu lực; redactName/redactHouseNumber; cache 5 phút)
+app/api/poster/[id]/ → ẢNH BÌA đăng Facebook/Zalo 1080×1350 (next/og + font Be Vietnam Pro ở public/fonts) — in sẵn giá/diện tích/khu vực/mã tin lên ảnh. KHÁC /api/og/[id] (1200×630, không chữ, cho thumbnail link chat)
+lib/social-post.ts  → buildSocialPost(): caption mạng xã hội (tiêu đề bắt mắt + điểm nhấn + link + hashtag theo quận). Khác lib/listing-text.ts (bản copy đầy đủ, không hashtag)
+components/ui/PostExportModal.tsx → Modal "Đăng Facebook/Zalo": xem trước + tải ảnh bìa, caption sửa được rồi copy. Dùng ở /broker/inventory (tự tạo link share của CTV để lead ghi công đúng người) và /admin/rooms (dùng link công khai /tin/[id])
 app/api/geocode/    → Proxy Nominatim server-side cho ô ghim vị trí bản đồ (tránh CORS/rate-limit client; cache 24h; có applyRateLimit)
 app/api/properties/duplicate-check/ → Admin: mỗi tòa PENDING trả danh sách tòa APPROVED nghi trùng (tên gần giống cùng quận HOẶC toạ độ <150m) — cảnh báo trước khi duyệt
 app/api/users/stats/ + app/api/deals/stats/ → Số liệu TỔNG toàn nền tảng (groupBy) cho thẻ thống kê — KHÔNG cộng theo trang; deals/stats gate VIEW_FINANCIAL_REPORTS

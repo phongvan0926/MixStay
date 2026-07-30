@@ -234,6 +234,14 @@ mixstay/
 
 ## Changelog
 
+### v9.37 — 2026-07-31 (đăng Facebook/Zalo 1 chạm: ảnh bìa in sẵn giá + caption có hashtag)
+- **🎯 Vì sao:** thị trường này chạy trên nhóm Facebook/Zalo chứ không chạy trên web. Việc mất thời gian nhất khi đăng là gõ lại caption và tự ghép ảnh có giá — nay làm sẵn cả hai.
+- **🖼️ `/api/poster/[id]` (mới) — ẢNH BÌA 1080×1350** (khổ 4:5, chiếm nhiều diện tích nhất trên feed điện thoại): in sẵn **giá / diện tích / loại phòng / khu vực / mã tin** lên ảnh, dải tối dưới đáy để chữ luôn đọc được. Người lướt feed không cần mở bài vẫn biết giá.
+- **✍️ `lib/social-post.ts` (mới) — caption mạng xã hội:** dòng đầu bắt mắt (`🔥 CẦU GIẤY — STUDIO 26M² CHỈ 3.9 TRIỆU/THÁNG`), điểm nhấn (ô tô đỗ cửa / thú cưng / khách nước ngoài), khan hiếm (“chỉ còn N phòng”), link + SĐT + **hashtag theo quận** (`#phongtrocaugiay`) để lọt tìm kiếm trong nhóm. Khác `lib/listing-text.ts` (bản copy đầy đủ, không hashtag).
+- **📢 Modal “Đăng Facebook / Zalo”** (`components/ui/PostExportModal.tsx`): xem trước ảnh bìa → **Tải ảnh bìa** → **Copy nội dung** (sửa được trước khi copy) → mở Facebook. Gắn ở **`/broker/inventory`** (trong modal chi tiết tin) và **`/admin/rooms`** (nút 📢 Đăng mỗi dòng).
+- **🔗 Nối với v9.36:** CTV bấm đăng thì hệ thống **tự tạo link share riêng của CTV** và dùng chính link đó trong bài — khách bấm “Đặt lịch xem phòng” từ bài đăng sẽ ghi công đúng CTV đó. Admin đăng thì dùng link công khai `/tin/[id]`.
+- **🔤 Font:** vendor `public/fonts/BeVietnamPro-{Bold,SemiBold}.ttf` (giấy phép OFL, kèm `OFL.txt`). Ảnh bìa render bằng `next/og` (Satori) chứ không phải sharp/SVG — librsvg trên serverless thiếu font tiếng Việt nên dấu bị vỡ thành ô vuông.
+
 ### v9.36 — 2026-07-31 (bắt lead trên link share: khách để lại SĐT, ghi công đúng CTV)
 - **🎯 Vì sao:** link share trước nay là brochure cụt — 70 lượt xem link chỉ đổi lại 1 lượt lưu tin, khách xem xong không để lại gì nên CTV không có lý do gửi link.
 - **📅 Ô “Đặt lịch xem phòng” trên mọi trang tin** (`/share/[token]`, `/p/[token]`, `/tin/[id]`, chế độ kho công ty): khách nhập tên (tuỳ chọn) + SĐT + giờ muốn xem. Đặt ngay trước bản đồ — chỗ khách vừa xem xong ảnh/giá/tiện ích.

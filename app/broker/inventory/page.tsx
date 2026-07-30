@@ -10,6 +10,7 @@ import OptimizedImage from '@/components/ui/OptimizedImage';
 import { formatListingCode } from '@/lib/listing-code';
 import VideoGallery from '@/components/ui/VideoGallery';
 import ListingActionBar from '@/components/ui/ListingActionBar';
+import PostExportModal from '@/components/ui/PostExportModal';
 import { buildListingText } from '@/lib/listing-text';
 import { pickVideoCover } from '@/lib/video-utils';
 import { useRoomTypes, useActiveCompanies, useDashboardStats } from '@/hooks/useData';
@@ -142,11 +143,12 @@ function RoomImageCarousel({ room }: { room: any }) {
 
 // ==================== Room Detail Modal (broker view) ====================
 function RoomDetailModal({
-  room, onClose, onCreateLink, onSendInquiry, copied, asked, canViewContact, canViewCommission, saved, onToggleSave,
+  room, onClose, onCreateLink, onSendInquiry, onPostExport, copied, asked, canViewContact, canViewCommission, saved, onToggleSave,
 }: {
   room: any;
   onClose: () => void;
   onCreateLink: (id: string) => void;
+  onPostExport: (room: any) => void;
   onSendInquiry: (id: string) => void;
   copied: boolean;
   asked: boolean;
@@ -379,6 +381,15 @@ function RoomDetailModal({
             <SupportContactBlock room={room} />
           )}
 
+          {/* Đăng lên nhóm Facebook/Zalo — nơi khách thật sự ở. Nút to, đứng riêng phía trên
+              các công cụ lẻ vì đây là hành động sinh ra khách. */}
+          <div className="pt-3 border-t border-stone-100">
+            <button onClick={() => onPostExport(room)}
+              className="w-full py-3 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-violet-600 to-brand-600 hover:shadow-md transition-all">
+              📢 Đăng Facebook / Zalo (ảnh bìa + nội dung sẵn)
+            </button>
+          </div>
+
           {/* Công cụ bài đăng: tải ảnh / copy nội dung / chia sẻ ra ngoài */}
           <div className="pt-3 border-t border-stone-100">
             <ListingActionBar
@@ -514,6 +525,32 @@ export default function BrokerInventoryPage() {
       router.push('/broker/profile?need=phone');
     } else {
       toast.error(data.error || 'Không tạo được link');
+    }
+  };
+
+  // Mở gói "đăng Facebook/Zalo". Trước khi mở phải CÓ LINK RIÊNG CỦA CTV: bài đăng dùng link
+  // đó thì khách bấm "Đặt lịch xem phòng" mới ghi công cho chính mình (xem /broker/leads).
+  const [postRoom, setPostRoom] = useState<{ room: any; url: string } | null>(null);
+  const openPostExport = async (room: any) => {
+    const t = toast.loading('Đang chuẩn bị bài đăng…');
+    try {
+      const res = await fetch('/api/share-links', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomTypeId: room.id }),
+      });
+      const data = await res.json();
+      toast.dismiss(t);
+      if (res.ok && data.url) {
+        setPostRoom({ room, url: data.url });
+      } else if (data.code === 'PHONE_REQUIRED') {
+        toast.error(data.error);
+        router.push('/broker/profile?need=phone');
+      } else {
+        toast.error(data.error || 'Không tạo được link đăng bài');
+      }
+    } catch {
+      toast.dismiss(t);
+      toast.error('Lỗi mạng, thử lại nhé');
     }
   };
 
@@ -865,6 +902,7 @@ export default function BrokerInventoryPage() {
           room={selectedRoom}
           onClose={() => setSelectedRoom(null)}
           onCreateLink={createShareLink}
+          onPostExport={openPostExport}
           onSendInquiry={sendInquiry}
           copied={copiedLink === selectedRoom.id}
           asked={inquirySent.has(selectedRoom.id)}
@@ -872,6 +910,33 @@ export default function BrokerInventoryPage() {
           canViewCommission={canViewCommission}
           saved={savedSet.has(selectedRoom.id)}
           onToggleSave={() => toggleSave(selectedRoom.id)}
+        />
+      )}
+
+      {/* Gói đăng Facebook/Zalo: ảnh bìa in sẵn giá + caption có hashtag theo quận */}
+      {postRoom && (
+        <PostExportModal
+          open
+          onClose={() => setPostRoom(null)}
+          roomTypeId={postRoom.room.id}
+          post={{
+            name: postRoom.room.name,
+            typeName: postRoom.room.typeName,
+            areaSqm: postRoom.room.areaSqm,
+            priceMonthly: postRoom.room.priceMonthly,
+            deposit: postRoom.room.deposit,
+            district: postRoom.room.property?.district,
+            streetName: postRoom.room.property?.streetName,
+            amenities: postRoom.room.amenities,
+            parkingCar: postRoom.room.property?.parkingCar,
+            petAllowed: postRoom.room.property?.petAllowed,
+            foreignerOk: postRoom.room.property?.foreignerOk,
+            availableUnits: postRoom.room.availableUnits,
+            listingCode: formatListingCode(postRoom.room.listingCode, postRoom.room.property?.company?.code),
+            url: postRoom.url,
+            phone: (session?.user as any)?.phone || null,
+            contactName: session?.user?.name || null,
+          }}
         />
       )}
     </div>
