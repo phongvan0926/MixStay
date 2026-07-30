@@ -234,6 +234,15 @@ mixstay/
 
 ## Changelog
 
+### v9.35 — 2026-07-31 (trang đích SEO theo quận & theo trường đại học + sitemap đủ tin)
+- **🎯 Vì sao:** kho 758 tin trước nay chỉ nằm SAU ô tìm kiếm client-side, Google không có nội dung nào để index (toàn nền tảng chỉ đạt ~1.813 lượt xem tin, 70 lượt qua link share). Nay mỗi quận và mỗi trường có một trang riêng render sẵn phía server.
+- **📍 `/thue-phong-tro/[quận]` (mới):** ví dụ `/thue-phong-tro/cau-giay`. H1 + đoạn mở đầu dùng SỐ LIỆU THẬT (số phòng trống, số tòa, khoảng giá, giá phổ biến, diện tích TB, mức cọc quy ra số tháng), thẻ lọc nhanh theo giá/loại phòng, 24 tin render sẵn, khối trường ĐH gần đó, FAQ 4 câu trả lời bằng dữ liệu thật (bao nhiêu tin có chỗ đỗ ô tô / nuôi thú cưng / nhận khách nước ngoài). JSON-LD `BreadcrumbList` + `ItemList` + `FAQPage`.
+- **🎓 `/phong-tro-gan/[trường]` (mới):** ví dụ `/phong-tro-gan/bach-khoa`. Lọc tin trong bán kính 3km quanh trường (lọc thô bằng hộp toạ độ trong SQL rồi haversine), xếp gần nhất trước, mỗi thẻ ghi "cách trường ~X km". Toạ độ KHÔNG bao giờ ra HTML.
+- **🗂️ 2 trang hub `/thue-phong-tro` + `/phong-tro-gan`:** liệt kê mọi quận/trường kèm số tin — vừa là lối vào cho khách, vừa là đường cho Google tới từng trang đích. Khối liên kết `components/public/SeoLinks.tsx` gắn ở chân trang chủ, `/phong` và mọi trang đích.
+- **🗺️ `app/sitemap.ts` viết lại thành sitemap ĐỘNG:** trước chỉ khai báo 3 URL (trang chủ + login + register) nên **698 tin đăng không có đường vào từ Google**. Nay gồm trang tĩnh + 12 quận + 18 trường + từng tin `/tin/[id]` (kèm `lastModified` thật). `robots.ts` khai báo rõ các nhánh công khai.
+- **🚫 Chống trông-như-tin-rác:** kho nhập theo lô nên tin cùng tòa nằm liền nhau. Trang quận xen kẽ round-robin theo tòa; trang trường giới hạn 2 tin/tòa (vẫn giữ thứ tự gần→xa); cả hai đẩy tin TRÙNG TIÊU ĐỀ xuống dưới. Kết quả: 24/24 thẻ đầu trang Cầu Giấy có tiêu đề khác nhau (trước là 20/24, 3 thẻ đầu trùng hệt).
+- **⚡ ISR:** trang đích cache 30 phút, 12 quận nội thành + 18 trường dựng sẵn lúc build (`generateStaticParams`); sitemap cache 1 giờ. Toàn bộ dữ liệu công khai vẫn đi qua redact số nhà như `/api/rooms/public`.
+
 ### v9.34 — 2026-07-29 (logo tài khoản đồng bộ mọi nơi + admin bấm công ty xem kho riêng)
 - **🖼️ CTV / chủ nhà tự đặt ảnh đại diện, công ty tự đặt logo:** `components/ui/AvatarUpload.tsx` (tải 1 ảnh, tự thu nhỏ 512px + nén WebP ngay trên máy khách) + `components/ui/Avatar.tsx` (hiển thị dùng chung — có ảnh thì hiện ảnh, chưa có thì chữ cái đầu như cũ). Trang `/broker/profile` thêm ô ảnh; **`/landlord/profile` là trang MỚI** — trước đây chủ nhà không có màn hình nào tự sửa hồ sơ, phải nhờ admin.
 - **🔗 Đồng bộ hiển thị:** ảnh hiện ở topbar dashboard, thanh điều hướng công khai, và **đầu cả 3 loại link share** — tin đăng lẻ (`/share/[token]`: avatar CTV), kho hệ thống (`/share/system/[token]`: avatar người chia sẻ), kho công ty (`/share/company/[id]`: logo công ty cạnh logo MixStay). API share-links nay trả kèm `avatar`.

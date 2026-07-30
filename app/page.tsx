@@ -4,6 +4,7 @@ import FeaturedRooms from './FeaturedRooms';
 import Logo from '@/components/ui/Logo';
 import CallFab from '@/components/ui/CallFab';
 import PublicNav from '@/components/layout/PublicNav';
+import SeoLinks from '@/components/public/SeoLinks';
 
 export default function HomePage() {
   return (
@@ -92,6 +93,11 @@ export default function HomePage() {
                 </li>
               </ul>
             </div>
+          </div>
+
+          {/* Liên kết khu vực/trường: lối vào nhanh cho khách + đường cho Google tới các trang đích */}
+          <div className="border-t border-white/10 pt-8 pb-2">
+            <SeoLinks dark />
           </div>
 
           <div className="border-t border-white/10 pt-6 text-center text-sm">
