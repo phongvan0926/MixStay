@@ -32,6 +32,12 @@ export const metadata: Metadata = {
     locale: 'vi_VN',
     siteName: 'MixStay',
   },
+  // Xác minh quyền sở hữu mixstay.vn trong Google Search Console (để nộp sitemap + xem
+  // truy vấn tìm kiếm). KHÔNG được xoá: xoá là mất trạng thái xác minh.
+  // Đây không phải khoá bí mật — Google yêu cầu công khai trong <head> của trang.
+  verification: {
+    google: '7ry_JgLeNOq_rFIXdWtV62L0zSy9wrzHyPL7hl_okcs',
+  },
 };
 
 export const viewport: Viewport = {
