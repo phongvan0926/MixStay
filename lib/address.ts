@@ -11,6 +11,23 @@ const HOUSE_LEAD_SO = /^\s*(?:số\s*nhà|số|s\.)\s*\d+[a-zA-Z]?(?:\s*\/\s*\d+
 const HOUSE_LEAD_BARE = /^\s*\d+[a-zA-Z]?(?:\s*\/\s*\d+[a-zA-Z]?)*\b[\s,.\-]*/i; // "75", "69A", "136/43", "26a", "56"
 const ADDR_LABEL = /^\s*(?:địa\s*chỉ|đ\/c|dc)\s*[:.]?\s*/i;
 
+/**
+ * Gộp địa chỉ bị DÁN 2 LẦN ("6/22/282 Kim giang 6/22/282 Kim giang" → "6/22/282 Kim giang").
+ *
+ * 46/466 tòa đang public có địa chỉ lặp đôi (do form/import dán chồng). Việc ẩn số nhà chỉ
+ * cắt được cụm số ở ĐẦU chuỗi, nên bản lặp thứ hai giữ nguyên số nhà và lọt ra trang công
+ * khai — kể cả vào <title> mà Google index. Phải gộp TRƯỚC khi cắt.
+ */
+function collapseDoubled(input: string): string {
+  const s = input.trim();
+  const words = s.split(/\s+/);
+  if (words.length < 4 || words.length % 2 !== 0) return s;
+  const half = words.length / 2;
+  const norm = (a: string[]) => a.join(' ').toLowerCase();
+  if (norm(words.slice(0, half)) !== norm(words.slice(half))) return s;
+  return words.slice(0, half).join(' ');
+}
+
 function clean(s: string): string {
   return s
     .replace(/\s{2,}/g, ' ')
@@ -26,12 +43,19 @@ function clean(s: string): string {
 export function redactHouseNumber(input?: string | null): string {
   if (!input) return '';
   let s = input.trim().replace(/^["'""']+/, '').replace(/["'""']+$/, ''); // bỏ ngoặc kép bao ngoài
+  s = collapseDoubled(s);                  // gộp địa chỉ dán 2 lần TRƯỚC khi cắt số nhà
   s = s.replace(ADDR_LABEL, '');           // bỏ nhãn "Địa chỉ:"
   s = s.replace(HOUSE_MID, ' ');           // bỏ "nhà X" ở bất kỳ đâu
   s = s.replace(HOUSE_LEAD_SO, '');        // bỏ "Số X" ở đầu
-  // bỏ số nhà trần ở đầu CHỈ KHI không phải mở đầu bằng ngõ/ngách/phố/đường
-  if (!/^\s*(?:ngõ|ngách|hẻm|hem|ngo|ngach|phố|pho|đường|duong|tổ|to)\b/i.test(s)) {
-    s = s.replace(HOUSE_LEAD_BARE, '');
+  // Bỏ số nhà trần ở đầu CHỈ KHI không phải mở đầu bằng ngõ/ngách/phố/đường.
+  // LẶP: rất nhiều bản ghi dán số nhà 2 lần ở mức TOKEN ("65B 65B Yên Hòa", "15 143 Quan Hoa",
+  // "6 6 Ngõ 79 Thuỵ Khê") — cắt một lần thì bản thứ hai chính là số nhà và vẫn lọt ra ngoài.
+  // Địa chỉ hợp lệ không bao giờ mở đầu bằng hai cụm số liên tiếp, nên cắt hết là an toàn.
+  for (let i = 0; i < 4; i++) {
+    if (/^\s*(?:ngõ|ngách|hẻm|hem|ngo|ngach|phố|pho|đường|duong|tổ|to)\b/i.test(s)) break;
+    const next = s.replace(HOUSE_LEAD_BARE, '');
+    if (next === s) break;
+    s = next;
   }
   return clean(s);
 }
@@ -50,6 +74,7 @@ export function publicAddress(fullAddress?: string | null, streetName?: string |
 export function redactName(input?: string | null): string {
   if (!input) return '';
   let s = input.trim().replace(/^["'""']+/, '').replace(/["'""']+$/, '');
+  s = collapseDoubled(s);                  // tên tòa cũng bị dán 2 lần y như địa chỉ
   s = s.replace(HOUSE_MID, ' ');
   // bỏ cụm "Số X" / số trần đứng riêng trong tên (không nuốt "ngõ 2", "101/12" sau "ngõ")
   s = s.replace(/\b(?:số\s*nhà|số)\s*\d+[a-zA-Z]?(?:\s*\/\s*\d+[a-zA-Z]?)*\b/gi, ' ');

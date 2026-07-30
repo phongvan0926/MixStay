@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: { params: { token: string } }
     orderBy: { createdAt: 'desc' },
   });
 
-  const title = `Kho phòng của ${who} | MixStay`;
+  const title = `Kho phòng của ${who}`;
   const description = `Xem tất cả phòng trống cho thuê từ ${who}. Tìm phòng miễn phí trên MixStay.`;
   const images = [cover ? ogImage(cover.id, `Kho phòng của ${who}`) : ogDefaultImage(`Kho phòng của ${who}`)];
 

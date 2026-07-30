@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: { params: { token: string } }
 
   const rt = link.roomType;
   const prop = rt.property;
-  const title = `${prop?.name} - ${rt.name} | MixStay`;
+  const title = `${prop?.name} - ${rt.name}`;
   const description = `${rt.name} ${rt.areaSqm}m² tại ${prop?.district}. Giá từ ${(rt.priceMonthly / 1000000).toFixed(1)} triệu/tháng.`;
   // /api/og/[id] → JPEG 1200×630 (ảnh gốc .webp không hiện được trong chat Zalo).
   const images = [ogImage(rt.id, rt.name)];

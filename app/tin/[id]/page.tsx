@@ -16,7 +16,8 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 
   // Ẩn số nhà: tiêu đề dùng địa chỉ công khai (ngõ/ngách + đường), không dùng tên tòa (có thể chứa số nhà).
   const loc = publicAddress(rt.property?.fullAddress, rt.property?.streetName) || rt.property?.district || '';
-  const title = `${rt.name}${loc ? ` - ${loc}` : ''} | MixStay`;
+  // KHÔNG tự thêm "| MixStay": app/layout.tsx đã có title.template '%s | MixStay'
+  const title = `${rt.name}${loc ? ` - ${loc}` : ''}`;
   const description = `${rt.name} ${rt.areaSqm}m² tại ${rt.property?.district}. Giá từ ${(rt.priceMonthly / 1000000).toFixed(1)} triệu/tháng.`;
   const images = [ogImage(rt.id, rt.name)];
 

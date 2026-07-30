@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   });
   if (!company) return { title: 'Kho phòng không tồn tại' };
 
-  const title = `Kho phòng ${company.name} | MixStay`;
+  const title = `Kho phòng ${company.name}`;
   const description = `Toàn bộ phòng cho thuê của ${company.name} — xem nhanh, liên hệ trực tiếp.`;
   return {
     title,

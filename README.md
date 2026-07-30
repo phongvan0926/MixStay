@@ -234,6 +234,13 @@ mixstay/
 
 ## Changelog
 
+### v9.38 — 2026-07-31 (vá rò rỉ SỐ NHÀ trên trang công khai + bỏ tiêu đề lặp "| MixStay | MixStay")
+- **🔒 Rò rỉ số nhà (phát hiện khi kiểm thử v9.35):** tiêu đề trang công khai `/tin/[id]` hiện `Kim giang 6/22/282 Kim giang` — đúng thứ hệ thống được thiết kế để giấu. Nguyên nhân: **địa chỉ bị dán 2 lần** (46/466 tòa), hàm ẩn số nhà chỉ cắt cụm số ở ĐẦU chuỗi nên bản lặp thứ hai giữ nguyên số nhà.
+- **🩹 `lib/address.ts` vá 2 lớp:** (1) `collapseDoubled()` gộp chuỗi bị dán 2 lần TRƯỚC khi cắt (áp dụng cho cả `redactHouseNumber` và `redactName`); (2) cắt LẶP số nhà ở đầu — nhiều bản ghi dán số nhà 2 lần ở mức token (`65B 65B Yên Hòa`, `15 143 Quan Hoa`, `6 6 Ngõ 79 Thuỵ Khê`), cắt một lần thì bản thứ hai chính là số nhà.
+- **📉 Kết quả đo trên 466 tòa đang public:** địa chỉ công khai còn mở đầu bằng số **16 → 2** (2 ca còn lại là mã lô `15LK26`, không phải số nhà); 59 địa chỉ đổi kết quả hiển thị. Số ngõ/ngách KHÔNG bị đụng — đã kiểm thử `Ngõ 204 Trần Duy Hưng`, `ngách 52 ngõ 91 Nguyễn Chí Thanh`, `Ngõ 43 Trung Kính` giữ nguyên.
+- **🏷️ Tiêu đề lặp thương hiệu:** `/tin/[id]`, `/share/[token]`, `/share/system/[token]`, `/share/company/[id]` tự nối `| MixStay` trong khi `app/layout.tsx` đã có `title.template: '%s | MixStay'` → ra `… | MixStay | MixStay`. Đã bỏ phần nối tay.
+- **⚠️ Còn tồn:** một số địa chỉ vẫn chứa cụm ngõ đầy đủ kiểu `Ngõ 103/2/5` (đoạn cuối thường chính là số nhà). Chưa động vào vì cắt máy móc sẽ ăn nhầm số ngách hợp lệ — cần chốt quy tắc nghiệp vụ trước.
+
 ### v9.37 — 2026-07-31 (đăng Facebook/Zalo 1 chạm: ảnh bìa in sẵn giá + caption có hashtag)
 - **🎯 Vì sao:** thị trường này chạy trên nhóm Facebook/Zalo chứ không chạy trên web. Việc mất thời gian nhất khi đăng là gõ lại caption và tự ghép ảnh có giá — nay làm sẵn cả hai.
 - **🖼️ `/api/poster/[id]` (mới) — ẢNH BÌA 1080×1350** (khổ 4:5, chiếm nhiều diện tích nhất trên feed điện thoại): in sẵn **giá / diện tích / loại phòng / khu vực / mã tin** lên ảnh, dải tối dưới đáy để chữ luôn đọc được. Người lướt feed không cần mở bài vẫn biết giá.
