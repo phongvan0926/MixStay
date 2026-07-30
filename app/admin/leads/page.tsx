@@ -1,18 +1,84 @@
 'use client';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { fetcher } from '@/lib/fetcher';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
+import ViewingRequestTable from '@/components/leads/ViewingRequestTable';
 import toast from 'react-hot-toast';
 
 const TYPE_LABEL: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1N1K', '2k1n': '2N1K', studio: 'Studio', duplex: 'Duplex',
 };
 
-// Khách "săn phòng" (lead): tiêu chí + SĐT khách để gọi lại. Tin mới duyệt khớp → có notification.
-export default function AdminLeadsPage() {
+// Hai loại lead khách để lại, gộp về một trang:
+//  - "Xin xem phòng" (ViewingRequest): khách đã xem ĐÚNG một tin và muốn đi xem → lead nóng nhất.
+//  - "Săn phòng" (SavedSearch): khách mới nêu tiêu chí, chưa ưng tin nào.
+function AdminLeadsInner() {
+  // Thông báo trỏ tới ?tab=xem-phong → đọc bằng useSearchParams (KHÔNG dùng window.location.search:
+  // điều hướng nội bộ chưa cập nhật window.location khi component khởi tạo state).
+  const searchParams = useSearchParams();
+  const [tab, setTab] = useState<'xem-phong' | 'san-phong'>(
+    searchParams.get('tab') === 'san-phong' ? 'san-phong' : 'xem-phong'
+  );
+
+  return (
+    <DashboardLayout>
+      <div className="mb-6">
+        <h1 className="font-display text-2xl font-bold">📥 Khách để lại thông tin</h1>
+        <p className="text-sm text-stone-500 mt-1">
+          Toàn bộ số điện thoại khách để lại trên web — gọi càng sớm càng dễ chốt.
+        </p>
+      </div>
+
+      <div className="flex gap-2 mb-5">
+        {([
+          { key: 'xem-phong', label: '📅 Xin xem phòng' },
+          { key: 'san-phong', label: '🔔 Săn phòng' },
+        ] as const).map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
+              tab === t.key
+                ? 'bg-brand-600 text-white border-brand-600'
+                : 'bg-white text-stone-600 border-stone-200 hover:border-brand-300'
+            }`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'xem-phong' ? <ViewingRequestsTab /> : <SavedSearchesTab />}
+    </DashboardLayout>
+  );
+}
+
+function ViewingRequestsTab() {
+  const [page, setPage] = useState(1);
+  const { data, isLoading, mutate } = useSWR(
+    `/api/viewing-requests?page=${page}&limit=20`, fetcher, { revalidateOnFocus: false }
+  );
+  const rows = data?.data || [];
+  const pagination = data?.pagination;
+
+  return (
+    <>
+      <p className="text-sm text-stone-500 mb-3">
+        Khách bấm <strong>“Đặt lịch xem phòng”</strong> ngay trên tin đăng. Cột <strong>Nguồn</strong> cho biết
+        lead đến từ link của cộng tác viên nào — dùng để chia hoa hồng.
+      </p>
+      {isLoading
+        ? <p className="text-stone-400 text-sm py-10 text-center">Đang tải…</p>
+        : <ViewingRequestTable rows={rows} mutate={mutate} showBroker />}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="mt-4"><Pagination page={page} totalPages={pagination.totalPages} total={pagination.total} onPageChange={setPage} /></div>
+      )}
+    </>
+  );
+}
+
+function SavedSearchesTab() {
   const [page, setPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
   const { data, isLoading, mutate } = useSWR(
@@ -32,15 +98,12 @@ export default function AdminLeadsPage() {
   };
 
   return (
-    <DashboardLayout>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-        <div>
-          <h1 className="font-display text-2xl font-bold">🔔 Khách săn phòng</h1>
-          <p className="text-sm text-stone-500 mt-1">
-            Khách để lại tiêu chí + SĐT từ trang tìm phòng. Tin mới được duyệt khớp tiêu chí → bạn nhận thông báo, gọi chào phòng ngay.
-          </p>
-        </div>
-        <label className="inline-flex items-center gap-2 text-sm text-stone-600 cursor-pointer">
+    <>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+        <p className="text-sm text-stone-500">
+          Khách để lại tiêu chí + SĐT từ trang tìm phòng. Tin mới duyệt khớp tiêu chí → bạn nhận thông báo, gọi chào phòng ngay.
+        </p>
+        <label className="inline-flex items-center gap-2 text-sm text-stone-600 cursor-pointer shrink-0">
           <input type="checkbox" checked={showAll} onChange={e => { setShowAll(e.target.checked); setPage(1); }} className="rounded" />
           Hiện cả yêu cầu đã tắt
         </label>
@@ -108,6 +171,14 @@ export default function AdminLeadsPage() {
       {pagination && pagination.totalPages > 1 && (
         <div className="mt-4"><Pagination page={page} totalPages={pagination.totalPages} total={pagination.total} onPageChange={setPage} /></div>
       )}
-    </DashboardLayout>
+    </>
+  );
+}
+
+export default function AdminLeadsPage() {
+  return (
+    <Suspense fallback={<DashboardLayout><p className="text-stone-400 text-sm py-10 text-center">Đang tải…</p></DashboardLayout>}>
+      <AdminLeadsInner />
+    </Suspense>
   );
 }

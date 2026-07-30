@@ -120,7 +120,7 @@ export default function AdminDashboardPage() {
   const { todo, health, pulse, totals } = data;
   const totalTodo =
     todo.pendingRooms + todo.pendingProperties + (todo.pendingCompanies || 0) +
-    todo.activeLeads + todo.openInquiries;
+    todo.activeLeads + todo.openInquiries + todo.newViewingRequests;
   const maxWeek = Math.max(...pulse.weekly.map((w: any) => w.tin), 1);
 
   return (
@@ -137,11 +137,13 @@ export default function AdminDashboardPage() {
       {/* ① VIỆC CẦN LÀM */}
       <section>
         <h2 className="font-display font-semibold mb-3">Việc cần làm</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {/* Khách xin xem phòng lên đầu: lead nóng nhất, chậm gọi là mất khách */}
+          <TodoCard href="/admin/leads?tab=xem-phong" icon="📅" label="Khách xin xem phòng" value={todo.newViewingRequests} tone="red" />
           <TodoCard href="/admin/rooms?approved=false" icon="📝" label="Tin chờ duyệt" value={todo.pendingRooms} tone="amber" />
           <TodoCard href="/admin/properties?status=PENDING" icon="🏢" label="Tòa chờ duyệt" value={todo.pendingProperties} tone="amber" />
           <TodoCard href="/admin/companies" icon="🏛️" label="Công ty chờ duyệt" value={todo.pendingCompanies} tone="amber" />
-          <TodoCard href="/admin/leads" icon="🔔" label="Khách săn phòng" value={todo.activeLeads} tone="brand" />
+          <TodoCard href="/admin/leads?tab=san-phong" icon="🔔" label="Khách săn phòng" value={todo.activeLeads} tone="brand" />
           <TodoCard href="/admin/dashboard#hoi-phong" icon="💬" label="Hỏi phòng chưa trả lời" value={todo.openInquiries} tone="red" />
           <TodoCard href="/admin/rooms" icon="🖼️" label="Tin thiếu ảnh" value={health.roomsNoImage} tone="red" />
         </div>

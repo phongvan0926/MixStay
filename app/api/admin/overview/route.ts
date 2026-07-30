@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
   try {
     const [
       // ① Việc cần làm
-      pendingRooms, pendingProperties, pendingCompanies, activeLeads, openInquiries,
+      pendingRooms, pendingProperties, pendingCompanies, activeLeads, openInquiries, newViewingRequests,
       // ② Sức khoẻ kho hàng
       roomsNoImage, propsNoCompany, propsNoGeo, staleRooms, overdueUpcoming,
       // ③ Nhịp + ④ số tổng
@@ -51,6 +51,8 @@ export async function GET(req: NextRequest) {
       prisma.company.count({ where: { isApproved: false } }),
       prisma.savedSearch.count({ where: { isActive: true } }),
       prisma.roomInquiry.count({ where: { reply: null, dismissedAt: null } }),
+      // Khách xin xem phòng chưa ai gọi — lead nóng nhất, để tụt là mất khách.
+      prisma.viewingRequest.count({ where: { status: 'NEW' } }),
 
       prisma.roomType.count({ where: { images: { isEmpty: true } } }),
       prisma.property.count({ where: { companyId: null } }),
@@ -117,6 +119,7 @@ export async function GET(req: NextRequest) {
         pendingRooms,
         pendingProperties,
         pendingCompanies: canManageCompanies ? pendingCompanies : null,
+        newViewingRequests,
         activeLeads,
         openInquiries,
         inquiries: inquiryList,

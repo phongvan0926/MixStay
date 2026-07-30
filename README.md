@@ -234,6 +234,17 @@ mixstay/
 
 ## Changelog
 
+### v9.36 — 2026-07-31 (bắt lead trên link share: khách để lại SĐT, ghi công đúng CTV)
+- **🎯 Vì sao:** link share trước nay là brochure cụt — 70 lượt xem link chỉ đổi lại 1 lượt lưu tin, khách xem xong không để lại gì nên CTV không có lý do gửi link.
+- **📅 Ô “Đặt lịch xem phòng” trên mọi trang tin** (`/share/[token]`, `/p/[token]`, `/tin/[id]`, chế độ kho công ty): khách nhập tên (tuỳ chọn) + SĐT + giờ muốn xem. Đặt ngay trước bản đồ — chỗ khách vừa xem xong ảnh/giá/tiện ích.
+- **🔐 Ghi công CTV suy từ SHARE TOKEN phía server, KHÔNG nhận `brokerId` do client gửi** — nếu tin client thì ai cũng cướp được lead của người khác. Đã kiểm thử: gửi kèm `brokerId` giả + token bịa → lead về `brokerId=null`, `source='tin'`.
+- **🔔 Báo ngay 2 phía:** CTV giữ link nhận thông báo → `/broker/leads`; toàn bộ admin nhận → `/admin/leads?tab=xem-phong`. Nội dung kèm SĐT để bấm gọi luôn.
+- **🗄️ Bảng mới `viewing_requests` (`ViewingRequest`):** roomTypeId, brokerId?, companyId?, name?, phone, note?, source (share/system/company/tin), status (NEW/CONTACTED/DONE/CANCELLED). Thay đổi DB thuần THÊM MỚI — không đụng bảng/cột cũ.
+- **🧭 `/api/viewing-requests`:** POST công khai (rate limit mức 'auth', chỉ nhận tin đang hiển thị công khai, SĐT phải 10 số bắt đầu bằng 0); GET/PUT cho admin (mọi lead) và CTV (chỉ lead từ link của mình).
+- **📥 `/admin/leads` gộp 2 loại lead thành tab:** “Xin xem phòng” (lead nóng — có cột **Nguồn** ghi rõ lead đến từ CTV nào để chia hoa hồng) và “Săn phòng” (tiêu chí chung như cũ). Menu đổi tên thành **Khách để lại SĐT**.
+- **📥 `/broker/leads` (trang mới):** CTV xem khách xin xem phòng đến từ link của chính mình, đổi trạng thái Mới → Đã gọi → Đã dẫn xem.
+- **📊 Tổng quan admin:** thẻ **“Khách xin xem phòng”** (đỏ) lên đầu ô Việc cần làm và tính vào tổng việc tồn đọng.
+
 ### v9.35 — 2026-07-31 (trang đích SEO theo quận & theo trường đại học + sitemap đủ tin)
 - **🎯 Vì sao:** kho 758 tin trước nay chỉ nằm SAU ô tìm kiếm client-side, Google không có nội dung nào để index (toàn nền tảng chỉ đạt ~1.813 lượt xem tin, 70 lượt qua link share). Nay mỗi quận và mỗi trường có một trang riêng render sẵn phía server.
 - **📍 `/thue-phong-tro/[quận]` (mới):** ví dụ `/thue-phong-tro/cau-giay`. H1 + đoạn mở đầu dùng SỐ LIỆU THẬT (số phòng trống, số tòa, khoảng giá, giá phổ biến, diện tích TB, mức cọc quy ra số tháng), thẻ lọc nhanh theo giá/loại phòng, 24 tin render sẵn, khối trường ĐH gần đó, FAQ 4 câu trả lời bằng dữ liệu thật (bao nhiêu tin có chỗ đỗ ô tô / nuôi thú cưng / nhận khách nước ngoài). JSON-LD `BreadcrumbList` + `ItemList` + `FAQPage`.

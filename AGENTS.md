@@ -41,7 +41,10 @@ app/broker/profile + app/landlord/profile → trang hồ sơ (ảnh đại diệ
 app/api/saved-searches → "Săn phòng": khách (không cần tài khoản) để lại tiêu chí + SĐT; tin mới DUYỆT khớp → notification cho ADMIN (xem PUT /api/rooms); admin quản lý ở /admin/leads
 app/api/cron/lifecycle → Vercel Cron 8h VN hằng ngày (vercel.json): UPCOMING đến hạn → tự AVAILABLE + báo chủ nhà; tin 30 ngày không cập nhật → nhắc chủ nhà xác nhận (chỉ nhắc 1 lần khi chạm mốc)
 app/api/broker/stats + app/broker/stats → thống kê cá nhân CTV: hoa hồng, hạng tháng (ẩn danh người khác), chuỗi 6 tháng, views share link
-app/admin/leads/    → Admin xem khách săn phòng (SĐT + tiêu chí + lần khớp gần nhất, bật/tắt)
+app/api/viewing-requests/ → "Đặt lịch xem phòng": POST CÔNG KHAI (khách để lại SĐT trên 1 tin cụ thể; ghi công CTV suy từ SHARE TOKEN phía server, KHÔNG tin brokerId client gửi) + GET/PUT cho admin (mọi lead) & CTV (chỉ lead của mình). Báo thông báo cho CTV giữ link + toàn bộ admin
+app/broker/leads/   → CTV xem khách xin xem phòng đến từ link CỦA MÌNH, đổi trạng thái NEW→CONTACTED→DONE
+app/admin/leads/    → Admin xem khách để lại SĐT, 2 tab: "Xin xem phòng" (ViewingRequest, có cột Nguồn = CTV nào) + "Săn phòng" (SavedSearch). Đọc ?tab= bằng useSearchParams + Suspense
+components/public/ViewingRequestForm.tsx → Ô "Đặt lịch xem phòng" gắn trong ShareViewClient (dùng chung cho /share/[token], /p/[token], /tin/[id], kho công ty)
 app/api/upload/signed-url/ → Tạo Supabase signed upload URL (upload video trực tiếp client → Storage, không qua Vercel serverless)
 app/api/ai/parse-listing/ → "Tạo tin nhanh AI": dán tin FB/Zalo → Gemini structured output bóc property+room+match tòa có sẵn (client đổ vào RoomTypeForm, KHÔNG auto-lưu)
 app/api/rooms/map/  → Dữ liệu bản đồ public (tòa APPROVED có toạ độ + tin hiệu lực; redactName/redactHouseNumber; cache 5 phút)
@@ -79,7 +82,7 @@ lib/listing-code-server.ts → Server-only (crypto): generateListingCode, genera
 lib/user-company.ts → getUserCompany() — resolve company của user (cho topbar + share link)
 lib/zalo.ts         → Resolve link Zalo (company zaloGroupLink → landlord phone → env → fallback)
 lib/supabase.ts     → Supabase client (storage upload ảnh/video)
-prisma/schema.prisma → 14 bảng: users, accounts, sessions, companies, properties, room_types, deals, share_links, room_inquiries, notifications, settings, verification_tokens, saved_listings (khách/CTV lưu/bookmark tin — SavedListing), saved_searches (khách "săn phòng": tiêu chí + SĐT, isActive, lastMatchedAt — SavedSearch)
+prisma/schema.prisma → 15 bảng: users, accounts, sessions, companies, properties, room_types, deals, share_links, room_inquiries, notifications, settings, verification_tokens, saved_listings (khách/CTV lưu/bookmark tin — SavedListing), saved_searches (khách "săn phòng": tiêu chí + SĐT, isActive, lastMatchedAt — SavedSearch), viewing_requests (khách "đặt lịch xem phòng" trên 1 tin cụ thể: phone, name?, note?, brokerId? ghi công CTV, source, status NEW/CONTACTED/DONE/CANCELLED — ViewingRequest)
 prisma/seed.ts      → Demo data (password: 123456)
 prisma/backfill-listing-codes.ts → Backfill listingCode cho RoomType cũ (idempotent, chạy sau prisma db push)
 middleware.ts       → Route protection theo role (+ chặn /admin/{companies,users,settings} theo permission cho ADMIN_STAFF)

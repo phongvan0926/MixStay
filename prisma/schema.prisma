@@ -76,6 +76,7 @@ model User {
   notifications   Notification[]
   savedListings   SavedListing[]
   createdRoomTypes RoomType[]  @relation("RoomTypeCreatedBy")
+  viewingRequests ViewingRequest[] @relation("BrokerViewingRequests")
 
   @@index([role])
   @@index([isActive])
@@ -234,6 +235,7 @@ model RoomType {
   shareLinks          ShareLink[]
   inquiries           RoomInquiry[]
   savedBy             SavedListing[]
+  viewingRequests     ViewingRequest[]
 
   @@index([propertyId])
   @@index([status])
@@ -361,6 +363,34 @@ model SavedSearch {
 
   @@index([isActive])
   @@map("saved_searches")
+}
+
+// "Đặt lịch xem phòng" — khách để lại SĐT NGAY TRÊN MỘT TIN CỤ THỂ (không cần tài khoản).
+//
+// Khác SavedSearch (khách nêu tiêu chí chung, chưa có tin nào): đây là lead NÓNG, khách đã
+// xem đúng phòng đó. Quan trọng nhất là `brokerId`: link share của CTV nào dẫn khách tới thì
+// ghi công CTV đó — trước đây link share là brochure cụt, khách xem xong không để lại gì
+// nên CTV không có lý do gửi link.
+model ViewingRequest {
+  id         String   @id @default(cuid())
+  roomTypeId String
+  brokerId   String? // CTV sở hữu link share dẫn khách tới; null = khách vào thẳng trang công khai
+  companyId  String? // chế độ kho công ty (/tin/[id]?kho=…) — lead thuộc về công ty đó
+  name       String? // tên khách (tuỳ chọn)
+  phone      String // SĐT/Zalo khách — kênh liên hệ chính
+  note       String? // khách ghi thêm: hẹn giờ xem, yêu cầu riêng…
+  source     String   @default("tin") // share | system | company | tin — vào từ đâu
+  status     String   @default("NEW") // NEW | CONTACTED | DONE | CANCELLED
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  broker     User?    @relation("BrokerViewingRequests", fields: [brokerId], references: [id], onDelete: SetNull)
+
+  @@index([brokerId, createdAt])
+  @@index([roomTypeId])
+  @@index([status, createdAt])
+  @@map("viewing_requests")
 }
 
 // Tin đã lưu (bookmark) — Cộng tác viên lưu tin để xem lại sau.

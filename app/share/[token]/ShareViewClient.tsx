@@ -7,6 +7,7 @@ import OptimizedImage from '@/components/ui/OptimizedImage';
 import VideoGallery from '@/components/ui/VideoGallery';
 import ZaloFab from '@/components/ui/ZaloFab';
 import ListingActionBar from '@/components/ui/ListingActionBar';
+import ViewingRequestForm from '@/components/public/ViewingRequestForm';
 import { buildListingText } from '@/lib/listing-text';
 import { formatListingCode } from '@/lib/listing-code';
 import CallFab from '@/components/ui/CallFab';
@@ -443,6 +444,16 @@ export default function ShareViewClient() {
             )}
           </div>
         )}
+
+        {/* Đặt lịch xem phòng: đặt NGAY TRƯỚC bản đồ — khách đã xem hết ảnh/giá/tiện ích,
+            đây là lúc quyết định. Lead gửi từ link share nào sẽ ghi công CTV đó (server tự
+            suy từ token, client không gửi brokerId). */}
+        <ViewingRequestForm
+          roomTypeId={roomType.id}
+          shareToken={token || null}
+          companyId={companyMode ? khoParam : null}
+          contactName={brokerName || (companyMode ? company?.name : null) || null}
+        />
 
         {/* Section 6: Google Maps */}
         <div className="card">
