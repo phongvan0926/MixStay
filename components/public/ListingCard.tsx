@@ -3,6 +3,7 @@ import ListingImageMosaic from '@/components/ui/ListingImageMosaic';
 import { formatCurrency } from '@/lib/utils';
 import { TYPE_LABEL } from '@/lib/seo-locations';
 import type { ListingCardData } from '@/lib/seo-listings';
+import SaveHeart from '@/components/public/SaveHeart';
 
 /**
  * Thẻ tin đăng render SẴN PHÍA SERVER — dùng cho các trang đích SEO.
@@ -32,7 +33,8 @@ export default function ListingCard({ rt, uniShort }: { rt: ListingCardData; uni
             </span>
           )}
         </div>
-        <div className="absolute top-3 right-3">
+        <div className="absolute top-3 right-3 flex items-center gap-1.5">
+          <SaveHeart id={rt.id} />
           {rt.status === 'UPCOMING' ? (
             <span className="inline-flex items-center rounded-full bg-amber-500 px-2.5 py-1 text-xs font-semibold text-white shadow">
               🟡 Sắp trống{rt.expectedAvailableDate ? ` ${new Date(rt.expectedAvailableDate).toLocaleDateString('vi-VN')}` : ''}

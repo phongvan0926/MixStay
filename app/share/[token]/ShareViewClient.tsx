@@ -8,6 +8,8 @@ import VideoGallery from '@/components/ui/VideoGallery';
 import ZaloFab from '@/components/ui/ZaloFab';
 import ListingActionBar from '@/components/ui/ListingActionBar';
 import ViewingRequestForm from '@/components/public/ViewingRequestForm';
+import SaveHeart from '@/components/public/SaveHeart';
+import CompareBar from '@/components/public/CompareBar';
 import { buildListingText } from '@/lib/listing-text';
 import { formatListingCode } from '@/lib/listing-code';
 import CallFab from '@/components/ui/CallFab';
@@ -343,7 +345,8 @@ export default function ShareViewClient() {
                 <p className="text-xs font-mono font-semibold text-stone-500 mt-1.5 inline-block bg-stone-100 px-2 py-0.5 rounded">Mã tin: {displayListingCode}</p>
               )}
             </div>
-            <div className="order-1 sm:order-2 shrink-0">
+            <div className="order-1 sm:order-2 shrink-0 flex items-center gap-2">
+              <SaveHeart id={roomType.id} />
               {roomType.status === 'UPCOMING' ? (
                 <span className="badge bg-amber-100 text-amber-700 text-sm py-1">
                   🟡 Sắp trống{roomType.expectedAvailableDate ? ` từ ${new Date(roomType.expectedAvailableDate).toLocaleDateString('vi-VN')}` : ''}
@@ -498,6 +501,7 @@ export default function ShareViewClient() {
 
       {/* Floating Zalo button (shortcut khi user scroll xa Section 7) — định tuyến broker/chủ nhà.
           Chế độ kho công ty: chỉ Zalo công ty/chủ tòa, KHÔNG fallback Zalo hệ thống. */}
+      <CompareBar />
       {companyMode ? (companyZalo && <ZaloFab href={companyZalo} />) : <ZaloFab href={zaloLink} />}
       {/* Nút gọi nổi: link CTV/chủ nhà → gọi đúng người đó; chế độ kho công ty → SĐT công ty/chủ tòa
           (không có thì ẨN — tuyệt đối không hiện hotline MixStay); trang công khai /tin thường → hotline */}

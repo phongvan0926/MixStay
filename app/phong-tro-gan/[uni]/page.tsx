@@ -6,6 +6,7 @@ import PublicNav from '@/components/layout/PublicNav';
 import CallFab from '@/components/ui/CallFab';
 import ListingCard from '@/components/public/ListingCard';
 import SeoLinks from '@/components/public/SeoLinks';
+import CompareBar from '@/components/public/CompareBar';
 import { getUniPageData } from '@/lib/seo-listings';
 import {
   uniBySlug, uniPath, districtPath, SEO_UNIS, SITE_URL, UNI_RADIUS_KM, PRICE_BANDS,
@@ -226,6 +227,7 @@ export default async function UniPage({ params }: { params: { uni: string } }) {
         </div>
       </footer>
 
+      <CompareBar />
       <CallFab stacked={false} />
     </div>
   );

@@ -48,8 +48,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Tin đăng không tồn tại hoặc chưa được duyệt' }, { status: 404 });
     }
 
-    // Lượt xem tự nhiên (không chặn response nếu lỗi)
-    prisma.roomType.update({ where: { id: params.id }, data: { viewCount: { increment: 1 } } }).catch(() => {});
+    // Lượt xem tự nhiên (không chặn response nếu lỗi). ?noview=1 = trang so sánh /da-luu
+    // nạp lại các tin đã lưu — không phải lượt xem thật, đừng thổi phồng viewCount.
+    if (new URL(req.url).searchParams.get('noview') !== '1') {
+      prisma.roomType.update({ where: { id: params.id }, data: { viewCount: { increment: 1 } } }).catch(() => {});
+    }
 
     // ẨN SỐ NHÀ: thay fullAddress bằng publicAddress (ngõ/ngách + đường), lọc số nhà khỏi tên + tên đường.
     const { fullAddress, name, streetName, ...restProp } = roomType.property as any;

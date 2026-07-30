@@ -78,6 +78,21 @@ export async function GET(req: NextRequest) {
     const uniParam = url.searchParams.get('uni');
     const uni = uniParam ? HANOI_UNIVERSITIES.find(u => u.short === uniParam) : null;
 
+    // Sắp xếp: ?sort=price_asc|price_desc|newest|area_desc — mặc định giữ hành vi cũ
+    // (còn trống trước, sắp trống theo ngày gần nhất, rồi mới nhất). Khi chọn sort giá/diện tích
+    // vẫn đẩy AVAILABLE lên trước UPCOMING để khách không thấy phòng chưa vào ở được đứng đầu.
+    const sort = url.searchParams.get('sort');
+    const orderBy: any[] =
+      sort === 'price_asc' ? [{ status: 'asc' }, { priceMonthly: 'asc' }, { createdAt: 'desc' }]
+      : sort === 'price_desc' ? [{ status: 'asc' }, { priceMonthly: 'desc' }, { createdAt: 'desc' }]
+      : sort === 'area_desc' ? [{ status: 'asc' }, { areaSqm: 'desc' }, { createdAt: 'desc' }]
+      : sort === 'newest' ? [{ createdAt: 'desc' }]
+      : [
+          { status: 'asc' },
+          { expectedAvailableDate: { sort: 'asc', nulls: 'last' } },
+          { createdAt: 'desc' },
+        ];
+
     const [roomTypes, total] = await Promise.all([
       prisma.roomType.findMany({
         where,
@@ -115,12 +130,7 @@ export async function GET(req: NextRequest) {
             },
           },
         },
-        // AVAILABLE trước (status asc), trong UPCOMING xếp theo ngày sắp trống gần nhất, còn lại mới nhất trước
-        orderBy: [
-          { status: 'asc' },
-          { expectedAvailableDate: { sort: 'asc', nulls: 'last' } },
-          { createdAt: 'desc' },
-        ],
+        orderBy,
         // Chế độ gần trường: lấy rộng rồi sort theo khoảng cách + tự cắt trang (distance không sort được trong SQL)
         skip: uni ? 0 : skip,
         take: uni ? 500 : limit,
@@ -128,7 +138,8 @@ export async function GET(req: NextRequest) {
       prisma.roomType.count({ where }),
     ]);
 
-    // Sắp theo khoảng cách tới trường rồi cắt trang thủ công
+    // Chế độ gần trường: mặc định sắp theo khoảng cách; nếu khách CHỌN sắp xếp khác
+    // (giá/diện tích/mới nhất) thì tôn trọng lựa chọn đó — DB đã orderBy sẵn nên giữ nguyên thứ tự.
     let pageRows = roomTypes;
     const distanceById = new Map<string, number>();
     if (uni) {
@@ -138,8 +149,8 @@ export async function GET(req: NextRequest) {
           const d = kmBetween(uni.lat, uni.lng, rt.property!.latitude!, rt.property!.longitude!);
           distanceById.set(rt.id, d);
           return { rt, d };
-        })
-        .sort((a, b) => a.d - b.d);
+        });
+      if (!sort) withDist.sort((a, b) => a.d - b.d);
       pageRows = withDist.slice(skip, skip + limit).map(x => x.rt);
     }
 

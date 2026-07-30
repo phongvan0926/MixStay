@@ -30,11 +30,12 @@ app/share/[token]/  → Trang tin đăng loại phòng (public, ẩn địa ch�
 app/share/system/[token]/ → Trang kho phòng hệ thống (public, có toggle grid/list view)
 app/ban-do/         → Bản đồ tìm phòng public (Leaflet + OSM; zoom xa gom theo quận, zoom gần pin từng tòa "giá từ"; KHÔNG hiện số nhà — redact như API public). Ghim vị trí BẤT KỲ (ô tìm + autocomplete gộp trường ĐH local + geocode server, nút 🎯 Định vị, click map) + bán kính nấc 500m lọc/tô nổi bật tòa quanh điểm ghim
 app/auth/callback/  → Trang chọn vai trò sau OAuth login lần đầu
+app/da-luu/         → SO SÁNH tin đã lưu của KHÁCH VÃNG LAI (❤ localStorage, KHÔNG cần đăng nhập — lib/saved-guest.ts): thẻ tin + bảng so sánh giá/giá m²/cọc/tiện ích khi ≥2 tin; fetch /api/rooms/public/[id]?noview=1 (không tăng viewCount). Nút tim: components/public/SaveHeart.tsx (thẻ tin + trang chi tiết); thanh nổi: CompareBar.tsx
 app/thue-phong-tro/ → TRANG ĐÍCH SEO theo QUẬN (hub `/thue-phong-tro` + `/thue-phong-tro/[district]`, VD /thue-phong-tro/cau-giay). Server-render + ISR 30 phút, số liệu thật (số tin/tòa/khoảng giá/cọc), lọc nhanh giá+loại phòng, 24 tin, FAQ + JSON-LD (BreadcrumbList/ItemList/FAQPage)
 app/phong-tro-gan/  → TRANG ĐÍCH SEO theo TRƯỜNG ĐH (hub `/phong-tro-gan` + `/phong-tro-gan/[uni]`, VD /phong-tro-gan/bach-khoa). Tin trong bán kính 3km quanh trường, xếp gần nhất trước, mỗi thẻ ghi "cách ~X km" (toạ độ KHÔNG ra HTML)
 app/api/            → API routes (companies, properties, properties/duplicate-check, rooms, rooms/public, rooms/related, rooms/import, rooms/map, deals, deals/stats, users, users/stats, geocode, ai/parse-listing, ai/listing, ai/search, share-links, share-links/system, inquiries, notifications, saved-searches, broker/stats, cron/lifecycle, settings, upload/signed-url)
 app/api/ai/search/  → Tìm phòng NGÔN NGỮ TỰ NHIÊN: câu khách gõ → Gemini bóc thành bộ lọc (district/type/giá/uni/flags) — client đổ vào form, KHÔNG tự tìm
-app/api/rooms/public → hỗ trợ ?uni=<short HANOI_UNIVERSITIES> — tính khoảng cách server-side (KHÔNG trả lat/lng), sort gần nhất, trả distanceKm
+app/api/rooms/public → hỗ trợ ?sort=price_asc|price_desc|newest|area_desc + ?uni=<short HANOI_UNIVERSITIES> — tính khoảng cách server-side (KHÔNG trả lat/lng), sort gần nhất, trả distanceKm
 app/api/me/company   → GET công ty của chủ nhà (kèm canEdit) + PUT cho chủ nhà TỰ sửa logo/liên hệ công ty DO MÌNH TẠO (createdById); tên/mã/duyệt vẫn của admin
 app/api/users/me     → GET/PUT hồ sơ cá nhân: name, phone, avatar (ảnh hiện ở topbar + đầu mọi link share)
 app/broker/profile + app/landlord/profile → trang hồ sơ (ảnh đại diện + SĐT); trang landlord kèm ô đổi LOGO CÔNG TY

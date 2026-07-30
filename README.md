@@ -234,6 +234,13 @@ mixstay/
 
 ## Changelog
 
+### v9.41 — 2026-07-31 (sắp xếp kết quả + JSON-LD từng tin + ❤ lưu tin so sánh không cần đăng nhập)
+- **↕️ Sắp xếp kết quả tìm kiếm:** `/api/rooms/public` nhận `?sort=price_asc|price_desc|newest|area_desc`; ô chọn "Sắp xếp" cạnh dòng tổng kết quả ở trang chủ + `/phong` (giá thấp→cao, giá cao→thấp, mới nhất, diện tích lớn nhất). Sort giá/diện tích vẫn đẩy AVAILABLE lên trước UPCOMING; chế độ gần trường mặc định gần nhất trước nhưng tôn trọng sort khách chọn. `sort` nằm trong URL nên Back/khôi phục giữ nguyên.
+- **🔎 JSON-LD cho TỪNG trang tin `/tin/[id]`:** schema `Product` + `Offer` (giá VND kèm `UnitPriceSpecification` đơn vị "tháng" — tránh Google hiểu nhầm giá bán đứt, `availability` theo trạng thái phòng, ảnh OG, diện tích, khu vực) — điều kiện để Google hiện giá + ảnh ngay trong kết quả tìm kiếm. Chỉ đưa dữ liệu ĐÃ công khai (địa chỉ redact, không SĐT/toạ độ). Trang cũng có thêm `canonical`.
+- **❤ Lưu tin SO SÁNH cho khách vãng lai — KHÔNG cần đăng nhập:** lưu danh sách id vào localStorage (`lib/saved-guest.ts`, tối đa 30 tin, đồng bộ giữa các component bằng custom event + storage event cho tab khác). Nút tim trên thẻ tin (trang chủ, /phong, trang đích SEO) + trang chi tiết. Thanh nổi "❤ Đã lưu N tin • So sánh" giữa đáy màn hình.
+- **📊 Trang `/da-luu` (mới):** thẻ các tin đã lưu (highlight 💰 rẻ nhất) + bảng so sánh cạnh nhau khi có ≥2 tin: giá, **giá/m²**, diện tích, cọc, loại phòng, khu vực, còn trống, cờ tiện ích, nội thất. Nội dung luôn fetch mới từ API public (`?noview=1` để không thổi phồng viewCount); tin đã gỡ hiện ô "đã hết hạn" cho khách tự bỏ lưu.
+- Kiểm thử Playwright mobile end-to-end: bấm 2 tim → thanh hiện "Đã lưu 2 tin" → /da-luu render bảng + nhãn rẻ nhất → bỏ lưu còn 1 tin thì bảng tự ẩn → sort asc trả giá tăng dần đúng → 0 lỗi JS.
+
 ### v9.40 — 2026-07-31 (Google Search Console: xác minh sở hữu + nộp sitemap 698 URL)
 - **✅ Đã xác minh `https://mixstay.vn/`** trong Search Console bằng tài khoản **phongvan0926@gmail.com** (phương thức: Tệp HTML). Có 2 phương thức đang hoạt động, giữ cả hai cho chắc:
   - Thẻ meta `google-site-verification` trong `app/layout.tsx` → `metadata.verification.google`

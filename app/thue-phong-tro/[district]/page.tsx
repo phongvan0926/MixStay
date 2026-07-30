@@ -6,6 +6,7 @@ import PublicNav from '@/components/layout/PublicNav';
 import CallFab from '@/components/ui/CallFab';
 import ListingCard from '@/components/public/ListingCard';
 import SeoLinks from '@/components/public/SeoLinks';
+import CompareBar from '@/components/public/CompareBar';
 import { getDistrictPageData } from '@/lib/seo-listings';
 import {
   districtBySlug, districtPath, uniPath, SEO_DISTRICTS, SITE_URL, PRICE_BANDS, TYPE_LABEL,
@@ -274,6 +275,7 @@ export default async function DistrictPage({ params }: { params: { district: str
         </div>
       </footer>
 
+      <CompareBar />
       <CallFab stacked={false} />
     </div>
   );

@@ -6,6 +6,8 @@ import { formatCurrency } from '@/lib/utils';
 import DistrictPills from '@/components/ui/DistrictPills';
 import PriceRangeSlider from '@/components/ui/PriceRangeSlider';
 import { HANOI_UNIVERSITIES } from '@/lib/hanoi-locations';
+import SaveHeart from '@/components/public/SaveHeart';
+import CompareBar from '@/components/public/CompareBar';
 
 const ROOM_TYPES: { value: string; label: string }[] = [
   { value: 'studio', label: 'Studio' },
@@ -68,6 +70,7 @@ type Filters = {
   minPrice: string;
   maxPrice: string;
   uni: string; // lọc "gần trường ĐH" (short name trong HANOI_UNIVERSITIES)
+  sort: string; // '' (phù hợp nhất) | price_asc | price_desc | newest | area_desc
   features: Record<FeatureKey, boolean>;
 };
 
@@ -75,10 +78,10 @@ const EMPTY_FEATURES: Record<FeatureKey, boolean> = {
   parkingCar: false, parkingBike: false, evCharging: false, petAllowed: false, foreignerOk: false,
 };
 const EMPTY_FILTERS: Filters = {
-  keyword: '', district: [], typeName: '', minPrice: '', maxPrice: '', uni: '', features: EMPTY_FEATURES,
+  keyword: '', district: [], typeName: '', minPrice: '', maxPrice: '', uni: '', sort: '', features: EMPTY_FEATURES,
 };
 const FEATURE_KEYS = Object.keys(EMPTY_FEATURES) as FeatureKey[];
-const URL_KEYS = ['q', 'district', 'typeName', 'minPrice', 'maxPrice', 'uni', 'p', ...FEATURE_KEYS];
+const URL_KEYS = ['q', 'district', 'typeName', 'minPrice', 'maxPrice', 'uni', 'sort', 'p', ...FEATURE_KEYS];
 
 // Bộ lọc -> query string (dùng cho cả URL trình duyệt lẫn gọi API)
 const filtersToQuery = (f: Filters) => {
@@ -89,6 +92,7 @@ const filtersToQuery = (f: Filters) => {
   if (f.minPrice) p.set('minPrice', f.minPrice);
   if (f.maxPrice) p.set('maxPrice', f.maxPrice);
   if (f.uni) p.set('uni', f.uni);
+  if (f.sort) p.set('sort', f.sort);
   FEATURE_KEYS.forEach(k => { if (f.features[k]) p.set(k, 'true'); });
   return p;
 };
@@ -104,6 +108,7 @@ const queryToFilters = (search: string) => {
     minPrice: sp.get('minPrice') || '',
     maxPrice: sp.get('maxPrice') || '',
     uni: sp.get('uni') || '',
+    sort: sp.get('sort') || '',
     features,
   };
   const pagesLoaded = Math.max(1, parseInt(sp.get('p') || '1', 10) || 1);
@@ -119,6 +124,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [uni, setUni] = useState('');
+  const [sort, setSort] = useState('');
   const [features, setFeatures] = useState<Record<FeatureKey, boolean>>({
     parkingCar: false,
     parkingBike: false,
@@ -148,6 +154,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
     setMinPrice('');
     setMaxPrice('');
     setUni('');
+    setSort('');
     setFeatures(EMPTY_FEATURES);
     // Đang có kết quả → tìm lại không lọc (URL cũng được dọn theo) để URL luôn khớp danh sách đang hiện
     if (searched) runSearch(EMPTY_FILTERS, 1);
@@ -166,7 +173,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
   // API kẹp limit ở 100 → khôi phục tối đa 8 trang (96 tin) trong 1 lần gọi, "Xem thêm" chạy tiếp từ đó
   const MAX_RESTORE_PAGES = 8;
 
-  const currentFilters = (): Filters => ({ keyword, district, typeName, minPrice, maxPrice, uni, features });
+  const currentFilters = (): Filters => ({ keyword, district, typeName, minPrice, maxPrice, uni, sort, features });
 
   // Gọi AI bóc câu mô tả nhu cầu → đổ vào bộ lọc rồi tìm luôn (khách vẫn chỉnh lại được)
   const runAiSearch = async () => {
@@ -187,6 +194,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
         minPrice: json.minPrice ? String(json.minPrice) : '',
         maxPrice: json.maxPrice ? String(json.maxPrice) : '',
         uni: json.uni || '',
+        sort: '',
         features: {
           ...EMPTY_FEATURES,
           parkingCar: !!json.parkingCar, petAllowed: !!json.petAllowed,
@@ -194,7 +202,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
         },
       };
       setKeyword(f.keyword); setDistrict(f.district); setTypeName(f.typeName);
-      setMinPrice(f.minPrice); setMaxPrice(f.maxPrice); setUni(f.uni); setFeatures(f.features);
+      setMinPrice(f.minPrice); setMaxPrice(f.maxPrice); setUni(f.uni); setSort(''); setFeatures(f.features);
       runSearch(f, 1);
     } catch (err: any) {
       setAiError(err.message || 'Có lỗi, dùng bộ lọc thường nhé');
@@ -336,6 +344,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
       setMinPrice(filters.minPrice);
       setMaxPrice(filters.maxPrice);
       setUni(filters.uni);
+      setSort(filters.sort);
       setFeatures(filters.features);
       runSearch(filters, Math.min(MAX_RESTORE_PAGES, pagesLoaded));
     } else if (autoLoad) {
@@ -578,10 +587,31 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
 
         {results && results.length > 0 && (
           <>
-            <p className="text-sm text-stone-500 mb-4">
-              Tìm thấy <span className="font-semibold text-stone-800">{total}</span> tin đăng phù hợp
-              {total > results.length && <> • đang hiển thị {results.length}</>}
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <p className="text-sm text-stone-500">
+                Tìm thấy <span className="font-semibold text-stone-800">{total}</span> tin đăng phù hợp
+                {total > results.length && <> • đang hiển thị {results.length}</>}
+              </p>
+              {/* Sắp xếp — đổi là tìm lại ngay với đúng bộ lọc đang chọn */}
+              <label className="flex items-center gap-1.5 text-sm text-stone-500">
+                <span className="hidden sm:inline">Sắp xếp:</span>
+                <select
+                  value={sort}
+                  onChange={e => {
+                    const v = e.target.value;
+                    setSort(v);
+                    runSearch({ ...currentFilters(), sort: v }, 1);
+                  }}
+                  className="border border-stone-300 rounded-lg px-2.5 py-1.5 text-sm bg-white text-stone-700 focus:outline-none focus:border-brand-400"
+                >
+                  <option value="">{uni ? 'Gần trường nhất' : 'Phù hợp nhất'}</option>
+                  <option value="price_asc">Giá thấp → cao</option>
+                  <option value="price_desc">Giá cao → thấp</option>
+                  <option value="newest">Mới đăng nhất</option>
+                  <option value="area_desc">Diện tích lớn nhất</option>
+                </select>
+              </label>
+            </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {results.map(rt => {
@@ -609,7 +639,8 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
                           </span>
                         )}
                       </div>
-                      <div className="absolute top-3 right-3">
+                      <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                        <SaveHeart id={rt.id} />
                         {rt.status === 'UPCOMING' ? (
                           <span className="inline-flex items-center rounded-full bg-amber-500 px-2.5 py-1 text-xs font-semibold text-white shadow">
                             🟡 Sắp trống{rt.expectedAvailableDate ? ` ${new Date(rt.expectedAvailableDate).toLocaleDateString('vi-VN')}` : ''}
@@ -685,6 +716,9 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
           </>
         )}
       </div>
+
+      {/* Thanh nổi "Đã lưu N tin — So sánh" cho khách vãng lai */}
+      <CompareBar />
     </section>
   );
 }
