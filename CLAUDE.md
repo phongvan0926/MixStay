@@ -22,8 +22,11 @@ Kết nối 4 vai trò: Admin (Công ty), Môi giới, Chủ nhà, Khách thuê.
 ```
 app/page.tsx        → Trang chủ public: hero + bộ lọc + grid phòng trống công khai (PublicSearch)
 app/PublicSearch.tsx → Client component tìm kiếm phòng public cho trang chủ
+app/phong/          → Trang xem TOÀN BỘ phòng mới nhất (public, PublicSearch autoLoad) + khối liên kết quận/trường ở chân trang
+app/tin/[id]/       → Trang chi tiết tin CÔNG KHAI theo id (không cần login/token). Dùng chung ShareViewClient. Có JSON-LD `Product`+`Offer` (giá VND theo THÁNG qua UnitPriceSpecification, availability theo trạng thái phòng) + canonical → Google hiện giá/ảnh trong kết quả tìm kiếm
 app/p/[token]/      → Short share link (/p/{token}) → redirect sang /share/[token] hoặc /share/system/[token]
 app/admin/          → Trang quản trị (companies, properties, rooms, deals, users, settings)
+app/admin/dashboard/ → TRUNG TÂM ĐIỀU HÀNH của admin (tách khỏi trang Tòa nhà): thẻ Việc cần làm (khách xin xem phòng / tin–tòa–công ty chờ duyệt / hỏi phòng / tin thiếu ảnh), sức khoẻ kho, nhịp đăng tin 8 tuần, top công ty. Dữ liệu từ 1 endpoint /api/admin/overview. Trả lời hỏi phòng của CTV ngay tại đây (CÒN/HẾT/Bỏ qua)
 app/broker/         → Trang môi giới (inventory, deals, share-links)
 app/landlord/       → Trang chủ nhà (properties — đã gộp quản lý phòng vào trang tòa nhà — + share-links)
 app/share/[token]/  → Trang tin đăng loại phòng (public, ẩn địa chỉ + SĐT, có video + tin đăng liên quan)
@@ -33,7 +36,7 @@ app/auth/callback/  → Trang chọn vai trò sau OAuth login lần đầu
 app/da-luu/         → SO SÁNH tin đã lưu của KHÁCH VÃNG LAI (❤ localStorage, KHÔNG cần đăng nhập — lib/saved-guest.ts): thẻ tin + bảng so sánh giá/giá m²/cọc/tiện ích khi ≥2 tin; fetch /api/rooms/public/[id]?noview=1 (không tăng viewCount). Nút tim: components/public/SaveHeart.tsx (thẻ tin + trang chi tiết); thanh nổi: CompareBar.tsx
 app/thue-phong-tro/ → TRANG ĐÍCH SEO theo QUẬN (hub `/thue-phong-tro` + `/thue-phong-tro/[district]`, VD /thue-phong-tro/cau-giay). Server-render + ISR 30 phút, số liệu thật (số tin/tòa/khoảng giá/cọc), lọc nhanh giá+loại phòng, 24 tin, FAQ + JSON-LD (BreadcrumbList/ItemList/FAQPage)
 app/phong-tro-gan/  → TRANG ĐÍCH SEO theo TRƯỜNG ĐH (hub `/phong-tro-gan` + `/phong-tro-gan/[uni]`, VD /phong-tro-gan/bach-khoa). Tin trong bán kính 3km quanh trường, xếp gần nhất trước, mỗi thẻ ghi "cách ~X km" (toạ độ KHÔNG ra HTML)
-app/api/            → API routes (companies, properties, properties/duplicate-check, rooms, rooms/public, rooms/related, rooms/import, rooms/map, deals, deals/stats, users, users/stats, geocode, ai/parse-listing, ai/listing, ai/search, share-links, share-links/system, inquiries, notifications, saved-searches, broker/stats, cron/lifecycle, settings, upload/signed-url)
+app/api/            → API routes (companies, properties, properties/duplicate-check, rooms, rooms/public, rooms/related, rooms/import, rooms/map, deals, deals/stats, users, users/stats, geocode, ai/parse-listing, ai/listing, ai/search, share-links, share-links/system, inquiries, notifications, saved-searches, broker/stats, cron/lifecycle, settings, upload, upload/signed-url, viewing-requests, poster/[id], og/[id], admin/overview, saved-listings, me/company)
 app/api/ai/search/  → Tìm phòng NGÔN NGỮ TỰ NHIÊN: câu khách gõ → Gemini bóc thành bộ lọc (district/type/giá/uni/flags) — client đổ vào form, KHÔNG tự tìm
 app/api/rooms/public → hỗ trợ ?sort=price_asc|price_desc|newest|area_desc + ?uni=<short HANOI_UNIVERSITIES> — tính khoảng cách server-side (KHÔNG trả lat/lng), sort gần nhất, trả distanceKm
 app/api/me/company   → GET công ty của chủ nhà (kèm canEdit) + PUT cho chủ nhà TỰ sửa logo/liên hệ công ty DO MÌNH TẠO (createdById); tên/mã/duyệt vẫn của admin
@@ -58,18 +61,19 @@ app/api/users/stats/ + app/api/deals/stats/ → Số liệu TỔNG toàn nền t
 components/ai/AIQuickCreate.tsx → Nút + modal "⚡ Tạo tin nhanh AI" (paste → parse → chọn/tạo tòa → mở RoomTypeForm điền sẵn) — dùng ở admin/rooms + landlord/properties
 lib/gemini.ts       → Helper gọi Gemini server-side dùng chung (getGeminiKeys xoay nhiều key khi 429, callGemini)
 lib/geocode.ts      → geocodeAddress() Nominatim/OSM server-only (query kèm quận tránh pin nhầm khu) — POST/PUT properties + import Excel tự geocode khi thiếu toạ độ (fail không chặn lưu)
+lib/ai-listing-styles.ts → AI_LISTING_STYLES: các phong cách viết tin (ngắn gọn / chuyên nghiệp / …) cho nút "AI hỗ trợ chuẩn hoá tin đăng" — client render nút bằng key+label, server dựng prompt bằng instruction (dùng ở components/forms/AiListingAssistant.tsx + app/api/ai/listing)
 lib/listing-options.ts → AMENITY_OPTIONS + ROOM_TYPE_OPTIONS dùng chung form + AI enum (client-safe)
 lib/listing-code.ts → LISTING_CODE_REGEX, normalizeListingCode, formatListingCode (ghép mã công ty MS-066-XXXXXX — DISPLAY, không đổi listingCode gốc), parseComposedListingCode, normalizeCompanyCode
 lib/seo-locations.ts → Client-safe: slugify, SEO_DISTRICTS/SEO_UNIS (slug URL đặt tay theo cụm từ khách gõ), districtPath/uniPath, PRICE_BANDS, TYPE_LABEL, SITE_URL, UNI_RADIUS_KM=3
 lib/seo-listings.ts → SERVER-ONLY (prisma): getDistrictPageData/getUniPageData/getDistrictCounts/getUniCounts + PUBLIC_ROOM_WHERE. Xen kẽ tin theo TÒA và đẩy tin trùng tiêu đề xuống dưới để trang không trông như tin rác; mọi dữ liệu ra ngoài đều redact số nhà
-components/public/ListingCard.tsx + SeoLinks.tsx → Thẻ tin render sẵn phía server cho trang đích + khối liên kết quận/trường gắn ở chân trang chủ, /phong và mọi trang đích (đường cho Google đi tới trang đích)
+components/public/  → ListingCard.tsx + SeoLinks.tsx + Thẻ tin render sẵn phía server cho trang đích + khối liên kết quận/trường gắn ở chân trang chủ, /phong và mọi trang đích (đường cho Google đi tới trang đích)
 app/layout.tsx      → 🚨 metadata.verification.google + public/google1b741701c683e2a6.html = XÁC MINH Google Search Console (tài khoản phongvan0926@gmail.com). KHÔNG XOÁ — xoá là mất xác minh + mất dữ liệu Search Console
 app/sitemap.ts      → Sitemap ĐỘNG (cache 1h): trang tĩnh + 12 quận + 18 trường + TỪNG tin /tin/[id] kèm lastModified. Trước đây chỉ có 3 URL nên tin đăng không có đường vào từ Google
 lib/hanoi-locations.ts → HANOI_DISTRICTS, INNER_CITY/OUTER_DISTRICTS, HANOI_UNIVERSITIES (18 trường lớn cho bản đồ), findDistrictForStreet
 scripts/geocode-properties.js → Backfill lat/long tòa cũ từ địa chỉ (1 req/s, --force để chạy lại tất cả); geocode-properties-pass2.js (làm sạch địa chỉ bẩn); geocode-fix-outliers.js (rà + sửa pin đặt sai quận, viewbox bounded); geocode-audit-pins.js (audit pin theo TUYẾN PHỐ của chính tòa — pin lệch >3km khỏi phố mình thì ghim lại, bắt được ca lệch nhỏ mà fix-outliers lọt)
 scripts/backup-storage.js → BACKUP kho ảnh/video Supabase Storage về Ổ SSD SAMSUNG 120GB gắn trong máy — `/srv/data/MixStay/storage` (backup của Supabase KHÔNG gồm file Storage!). DỪNG hẳn nếu ổ chưa mount (tránh ghi nhầm làm đầy ổ hệ thống). Tăng dần (bỏ qua file đã đủ dung lượng), chỉ đọc, ghi manifest.json. `--check` đối chiếu không tải, `--dest <thư mục>` đổi đích. scripts/install-backup-cron.sh cài lịch 3h sáng HẰNG NGÀY (`--remove` để gỡ) — hằng ngày chứ không hằng tuần vì crontab user KHÔNG được anacron chạy bù, máy tắt đúng giờ hẹn là mất lượt đó. LƯU Ý: `/srv/data/backup` là repo restic của hệ thống — KHÔNG đụng vào
 components/layout/  → DashboardLayout.tsx (sidebar + topbar + notification badge), AuthProvider.tsx
-components/ui/      → Skeleton.tsx, ImageUpload.tsx, VideoUpload.tsx, VideoLinkInput.tsx, VideoPlayer.tsx, VideoGallery.tsx, OptimizedImage.tsx, Pagination.tsx, DistrictPills.tsx, PriceRangeSlider.tsx, ZaloFab.tsx
+components/ui/      → Skeleton, ImageUpload, VideoUpload, VideoLinkInput, VideoPlayer, VideoGallery, OptimizedImage, Pagination, DistrictPills, PriceRangeSlider, ZaloFab, CallFab, Logo, Avatar, AvatarUpload, Combobox, SearchableSelect, InstallPWA, PhoneRequiredNotice, ListingActionBar (⚠️ công cụ CTV: tải ảnh/copy nội dung), ListingImageGallery, ListingImageMosaic, PostExportModal
 components/forms/   → PropertyForm.tsx, RoomTypeForm.tsx, RoomForm.tsx, QuickRoomTypeForm.tsx
 lib/video-utils.ts  → Parse YouTube/TikTok/Facebook URL, lấy videoId, thumbnail (img.youtube.com cho YT), detect platform
 hooks/useData.ts    → SWR hooks: useProperties, useRoomTypes, useDeals, useUsers, useShareLinks, useCompanies, useDashboardStats, useInquiries
@@ -84,6 +88,10 @@ lib/permissions.ts  → Client-safe RBAC: hasPermission(), ALL_ADMIN_PERMISSIONS
 lib/permissions-server.ts → requirePermission() — API guard kiểm permission trước khi xử lý
 lib/listing-code.ts → Client-safe: LISTING_CODE_REGEX, normalizeListingCode (mã tin đăng MS-XXXXXX)
 lib/listing-code-server.ts → Server-only (crypto): generateListingCode, generateUniqueListingCode (retry chống trùng) — tách khỏi file client để không kéo crypto vào bundle
+lib/address.ts      → 🔒 ẨN SỐ NHÀ khỏi mọi trang công khai: redactHouseNumber(), publicAddress(), redactName(), extractHouseNumber(). Có collapseDoubled() gộp địa chỉ bị dán N lần, cắt LẶP số nhà ở đầu, và QUY TẮC CHUỖI NGÕ: địa chỉ đã ghi số nhà tường minh ("Số 4 Ngõ 103/2/5") → giữ nguyên chuỗi; chưa có số nhà nào ("Ngõ 103/2/5") → đoạn CUỐI là số nhà, cắt bỏ
+lib/saved-guest.ts  → localStorage lưu tin cho KHÁCH VÃNG LAI (getSavedIds/toggleSaved/removeSaved/onSavedChange, tối đa 30 tin) — nguồn dữ liệu cho SaveHeart, CompareBar, /da-luu
+lib/listing-text.ts → buildListingText(): bản copy ĐẦY ĐỦ 1 tin để dán sang Zalo cá nhân (khác lib/social-post.ts có hashtag cho mạng xã hội)
+lib/og.ts           → ogImage()/ogDefaultImage()/largeCard — dựng URL tuyệt đối cho og:image theo host request (dùng headers(); KHÔNG dùng ở trang cần ISR)
 lib/user-company.ts → getUserCompany() — resolve company của user (cho topbar + share link)
 lib/zalo.ts         → Resolve link Zalo (company zaloGroupLink → landlord phone → env → fallback)
 lib/supabase.ts     → Supabase client (storage upload ảnh/video)
@@ -102,7 +110,8 @@ middleware.ts       → Route protection theo role (+ chặn /admin/{companies,u
 - room_types: id, propertyId, name, listingCode? (mã tin "MS-XXXXXX" — @unique, bất biến, sinh tự động khi tạo; nullable cho dữ liệu cũ trước backfill), typeName (don/gac_xep/1k1n/2k1n/studio/duplex), areaSqm, priceMonthly, deposit, description, amenities[], images[], videos[] (URL upload Supabase, tối đa 3), videoLinks[] (YouTube/TikTok/Facebook embed), totalUnits, availableUnits, availableRoomNames, status (RoomStatus: AVAILABLE/UPCOMING/UNAVAILABLE), expectedAvailableDate (bắt buộc khi UPCOMING), isApproved, commissionJson, shortTermAllowed, shortTermMonths, shortTermPrice, landlordNotes, viewCount
 - deals: id, roomTypeId, brokerId, dealPrice, commissionTotal, commissionBroker, commissionCompany, status (PENDING/CONFIRMED/PAID/CANCELLED)
 - share_links: id, roomTypeId?, brokerId, token (unique), viewCount, isSystem, isActive, expiresAt
-- room_inquiries: id, roomTypeId, brokerId, message, reply (CÒN/HẾT), repliedAt
+- room_inquiries: id, roomTypeId, brokerId, message, reply (CÒN/HẾT), repliedAt, dismissedAt (admin bấm "Bỏ qua" ở Tổng quan — ẩn khỏi việc cần làm mà KHÔNG báo CTV)
+- viewing_requests: id, roomTypeId, brokerId? (ghi công CTV — suy từ share token PHÍA SERVER), companyId?, name?, phone, note?, source (share/system/company/tin), status (NEW/CONTACTED/DONE/CANCELLED)
 - notifications: id, userId, type, title, message, isRead
 - settings: key-value (commission_broker_percent)
 - enum Role: ADMIN, ADMIN_STAFF, BROKER, LANDLORD, CUSTOMER
@@ -132,7 +141,11 @@ middleware.ts       → Route protection theo role (+ chặn /admin/{companies,u
 - API: tất cả dùng getServerSession(authOptions) để check role
 - Format tiền: dùng formatCurrency() từ lib/utils.ts
 - Toast: dùng react-hot-toast (toast.success, toast.error)
-- Mỗi lần thay đổi tính năng → cập nhật file README.md cho đồng bộ
+- **🔒 ẨN SỐ NHÀ — luật bất di bất dịch:** mọi thứ hiển thị cho KHÁCH (trang `/tin/[id]`, `/share/*`, `/phong`, trang đích SEO, bản đồ, API `rooms/public`, `rooms/map`, ảnh bìa `poster`) đều PHẢI đi qua `redactHouseNumber()` / `publicAddress()` / `redactName()` trong `lib/address.ts`. TUYỆT ĐỐI không trả `fullAddress`, `latitude`, `longitude`, `zaloPhone`, `availableRoomNames` ra client công khai. Thêm trường mới có địa chỉ → nhớ redact.
+- **Chuỗi ngõ nhiều cấp:** `Số 4 Ngõ 103/2/5` (đã có số nhà tường minh) → giữ nguyên chuỗi ngõ; `Ngõ 103/2/5` (không có số nhà nào) → đoạn cuối chính là số nhà, phải cắt. Logic ở `redactHouseNumber()`, đã có bộ ca kiểm thử trong changelog v9.39.
+- **Tiêu đề trang:** `app/layout.tsx` đã có `title.template: '%s | MixStay'` → KHÔNG tự nối thêm `| MixStay` trong `generateMetadata` (từng ra "… | MixStay | MixStay").
+- **🚨 KHÔNG xoá** `metadata.verification.google` trong `app/layout.tsx` và `public/google1b741701c683e2a6.html` — mất xác minh Google Search Console.
+- Mỗi lần thay đổi tính năng → cập nhật `README.md` (Changelog + mục Tính năng nếu có) VÀ `CLAUDE.md`/`AGENTS.md` cho đồng bộ
 
 ## Cộng tác nhiều AI agent (Claude Code + Antigravity/Codex...)
 Repo này có NHIỀU AI agent cùng làm việc trên cùng thư mục, cùng commit lên `main`. Quy tắc bắt buộc:

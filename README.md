@@ -4,21 +4,25 @@ Nền tảng quản lý chung cư mini — kết nối Chủ nhà, Môi giới, 
 
 ## Tech Stack
 
-- **Frontend:** Next.js 14, React 18, Tailwind CSS
+- **Frontend:** Next.js 14 (App Router), React 18, Tailwind CSS, SWR
 - **Backend:** Next.js API Routes, Prisma ORM
-- **Database:** PostgreSQL (Supabase)
-- **Auth:** NextAuth.js (JWT, multi-role)
-- **Deploy:** Vercel
+- **Database:** PostgreSQL (Supabase) — ảnh/video ở Supabase Storage
+- **Auth:** NextAuth.js (JWT, multi-role: ADMIN / ADMIN_STAFF / BROKER / LANDLORD / CUSTOMER)
+- **AI:** Google Gemini (tạo tin nhanh từ text, tìm phòng bằng ngôn ngữ tự nhiên, chuẩn hoá mô tả)
+- **Bản đồ:** Leaflet + OpenStreetMap, geocode qua Nominatim
+- **Ảnh:** `sharp` (OG 1200×630 chuẩn Zalo), `next/og` + Satori (ảnh bìa đăng bài 1080×1350)
+- **Deploy:** Vercel (region sin1) + Vercel Cron
 
 ## Tính năng
 
 ### 👨‍💼 Admin (Công ty)
-- Dashboard tổng quan (thống kê, doanh thu)
-- CRUD tòa nhà & phòng
-- Duyệt sản phẩm chủ nhà đăng
-- Quản lý giao dịch & tính hoa hồng tự động
-- Cấu hình tỷ lệ chia hoa hồng
-- Quản lý tài khoản người dùng
+- **Tổng quan = trung tâm điều hành** (`/admin/dashboard`, tách khỏi trang Tòa nhà): thẻ "Việc cần làm" (khách xin xem phòng chưa gọi, tin/tòa/công ty chờ duyệt, hỏi phòng chưa trả lời, tin thiếu ảnh) + sức khoẻ kho hàng + nhịp đăng tin 8 tuần + top công ty. Tất cả từ 1 endpoint `/api/admin/overview`
+- **Trả lời CTV hỏi phòng ngay tại Tổng quan:** 🟢 Còn phòng / 🔴 Hết phòng (tự gỡ tin khỏi thị trường) / Bỏ qua
+- **Khách để lại SĐT** (`/admin/leads`, 2 tab): "Xin xem phòng" (lead nóng, có cột **Nguồn** = đến từ link của CTV nào → dùng chia hoa hồng) và "Săn phòng" (khách nêu tiêu chí chung)
+- **📢 Đăng Facebook/Zalo 1 chạm** ngay trong bảng Tin đăng: tải ảnh bìa in sẵn giá + copy caption có hashtag
+- CRUD tòa nhà & phòng, duyệt tin chủ nhà đăng (kèm cảnh báo tòa nghi trùng)
+- Quản lý giao dịch & tính hoa hồng tự động, cấu hình tỷ lệ chia hoa hồng
+- Quản lý tài khoản người dùng + phân quyền `ADMIN_STAFF` theo 9 `Permission`
 - **Excel Import/Export:**
   - Tải form mẫu Excel (2 sheet: dữ liệu mẫu + hướng dẫn tiếng Việt)
   - Import từ Excel: upload → preview bảng → validate từng dòng → import hàng loạt
@@ -34,8 +38,11 @@ Nền tảng quản lý chung cư mini — kết nối Chủ nhà, Môi giới, 
 - Bộ lọc nâng cao: tìm kiếm thông minh (tên, địa chỉ, SĐT, mô tả), công ty, loại phòng, khoảng giá, toggle tags (ô tô, foreigner, sạc xe, pet, ngắn hạn), trạng thái (còn phòng/tất cả)
 - Xem SĐT chủ nhà & địa chỉ chi tiết + liên hệ Zalo
 - Tạo link chia sẻ cho khách (ẩn thông tin nhạy cảm)
-- Báo deal & theo dõi hoa hồng
-- Quản lý link đã chia sẻ
+- **📥 Khách xin xem phòng** (`/broker/leads`): khách để lại SĐT trên link CỦA MÌNH sẽ hiện ở đây kèm ghi chú hẹn giờ; đổi trạng thái Mới → Đã gọi → Đã dẫn xem
+- **📢 Đăng Facebook/Zalo 1 chạm:** hệ thống tự tạo link riêng của CTV rồi gói sẵn ảnh bìa 1080×1350 (in giá/diện tích/khu vực) + caption có hashtag theo quận → khách đặt lịch từ bài đăng sẽ ghi công đúng CTV đó
+- **Thống kê cá nhân** (`/broker/stats`): hoa hồng, hạng tháng (ẩn danh người khác), chuỗi 6 tháng, lượt xem link
+- **Hồ sơ** (`/broker/profile`): ảnh đại diện + SĐT — ảnh hiện ở đầu mọi link share
+- Báo deal & theo dõi hoa hồng, quản lý link đã chia sẻ
 
 ### 🏠 Chủ nhà
 - Wizard tạo tòa nhà 2 bước: bước 1 thông tin tòa nhà → bước 2 thêm loại phòng ngay
@@ -43,9 +50,19 @@ Nền tảng quản lý chung cư mini — kết nối Chủ nhà, Môi giới, 
 - Bật/tắt nhanh toàn bộ loại phòng
 - Tạo link tổng hệ thống: 1 link chứa tất cả phòng trống của tất cả tòa nhà
 - Theo dõi lượt xem link chia sẻ
+- **Hồ sơ** (`/landlord/profile`): ảnh đại diện + SĐT + đổi **logo công ty do chính mình tạo**
+- **⚡ Tạo tin nhanh AI:** dán tin từ Facebook/Zalo → Gemini bóc thành tòa nhà + loại phòng, tự khớp tòa đã có
+- Tự động nhắc xác nhận khi tin 30 ngày không cập nhật; tin "sắp trống" đến hạn tự chuyển sang "còn trống"
 
-### 👤 Khách thuê
-- **Trang chủ công khai:** tìm kiếm phòng trống toàn hệ thống ngay trên homepage với bộ lọc khu vực / khoảng giá / kiểu phòng (không cần tài khoản)
+### 👤 Khách thuê (không cần tài khoản)
+- **Trang chủ công khai:** tìm kiếm phòng trống toàn hệ thống với bộ lọc khu vực / khoảng giá / kiểu phòng / tiện ích / gần trường ĐH
+- **✨ Tìm bằng AI:** gõ nhu cầu bằng lời ("phòng 1 ngủ dưới 5 triệu gần Bách Khoa, để được xe máy") → AI đổ sẵn vào bộ lọc, khách vẫn sửa được rồi mới tìm
+- **↕️ Sắp xếp kết quả:** giá thấp→cao, giá cao→thấp, mới đăng nhất, diện tích lớn nhất (lưu trong URL nên bấm Back vẫn giữ)
+- **❤ Lưu tin & so sánh KHÔNG cần đăng nhập:** bấm tim trên tin bất kỳ (lưu ngay trên máy bằng localStorage) → thanh nổi "Đã lưu N tin" → trang `/da-luu` so sánh cạnh nhau: giá, **giá/m²**, diện tích, cọc, khu vực, còn trống, tiện ích, nội thất; tin rẻ nhất được đánh dấu
+- **📅 Đặt lịch xem phòng:** để lại tên + SĐT + giờ muốn xem ngay trên trang tin — CTV giữ link và admin nhận thông báo tức thì
+- **🔔 Săn phòng:** chưa ưng tin nào thì để lại tiêu chí + SĐT, có phòng mới khớp sẽ được gọi lại
+- **🗺️ Bản đồ tìm phòng** (`/ban-do`): ghim vị trí bất kỳ (trường ĐH, chỗ làm) + bán kính nấc 500m
+- **📍 Trang đích theo khu vực & trường học:** `/thue-phong-tro/{quận}` và `/phong-tro-gan/{trường}` — số liệu thật, lọc nhanh theo giá/loại phòng, FAQ
 - **Trang tin đăng loại phòng:** gallery 3 ảnh grid + lightbox, video giới thiệu phòng (nếu có), thông tin đầy đủ (giá, diện tích, tiện ích, ngắn hạn, số phòng trống), nút Google Maps, nút liên hệ MG, gợi ý tin đăng liên quan
 - **Trang kho phòng hệ thống:** xem tất cả phòng trống của 1 hệ thống, toggle Grid ↔ List view, card carousel 3 ảnh, bộ lọc (khu vực, giá, kiểu phòng), nút "Xem chi tiết"
 - **Short share link `/p/{token}`:** URL rút gọn dễ gửi qua Zalo/SMS, tự redirect về trang tin đăng
@@ -167,39 +184,57 @@ npm run dev
 ```
 mixstay/
 ├── app/
-│   ├── admin/           # Admin dashboard pages
-│   ├── broker/          # Broker pages
-│   ├── landlord/        # Landlord pages
-│   ├── share/[token]/   # Public share page (1 loại phòng)
-│   ├── share/system/[token]/ # Public share page (kho phòng chủ nhà)
-│   ├── api/             # API routes
-│   ├── login/           # Login page
-│   ├── register/        # Register page
-│   └── page.tsx         # Landing page
+│   ├── page.tsx                  # Trang chủ public (PublicSearch + phòng mới đăng + liên kết SEO)
+│   ├── phong/                    # Xem toàn bộ phòng mới nhất (public)
+│   ├── tin/[id]/                 # Chi tiết tin CÔNG KHAI (+ JSON-LD Product/Offer)
+│   ├── da-luu/                   # ❤ So sánh tin đã lưu — khách vãng lai, không cần đăng nhập
+│   ├── ban-do/                   # Bản đồ tìm phòng (Leaflet + OSM, bán kính quanh điểm ghim)
+│   ├── thue-phong-tro/[district]/# Trang đích SEO theo QUẬN (+ hub /thue-phong-tro)
+│   ├── phong-tro-gan/[uni]/      # Trang đích SEO theo TRƯỜNG ĐH (+ hub /phong-tro-gan)
+│   ├── share/[token]/            # Link chia sẻ 1 loại phòng (gắn CTV)
+│   ├── share/system/[token]/     # Link kho phòng của CTV/chủ nhà
+│   ├── share/company/[id]/       # Kho phòng của 1 công ty
+│   ├── p/[token]/                # Short link → redirect sang trang share tương ứng
+│   ├── admin/                    # dashboard, companies, properties, rooms, deals, leads, users, settings
+│   ├── broker/                   # inventory, leads, saved, deals, stats, share-links, profile
+│   ├── landlord/                 # properties, share-links, profile
+│   ├── api/                      # API routes (xem CLAUDE.md để có mô tả từng route)
+│   ├── sitemap.ts / robots.ts    # Sitemap ĐỘNG (698 URL) + robots
+│   └── login/ · register/ · auth/callback/
 ├── components/
-│   ├── layout/          # Dashboard layout, AuthProvider
-│   ├── forms/           # PropertyForm, RoomTypeForm, RoomForm, QuickRoomTypeForm
-│   └── ui/              # Skeleton, ImageUpload, VideoUpload, VideoLinkInput, VideoPlayer, VideoGallery, OptimizedImage, Pagination, DistrictPills, PriceRangeSlider, ZaloFab
+│   ├── layout/    # DashboardLayout, PublicNav, AuthProvider
+│   ├── forms/     # PropertyForm, RoomTypeForm, RoomForm, QuickRoomTypeForm, ProfileForm
+│   ├── public/    # ListingCard, SeoLinks, SaveHeart, CompareBar, ViewingRequestForm
+│   ├── leads/     # ViewingRequestTable (dùng chung admin + CTV)
+│   ├── ai/        # AIQuickCreate
+│   └── ui/        # Skeleton, ImageUpload, VideoUpload/LinkInput/Player/Gallery, OptimizedImage,
+│                  # Pagination, DistrictPills, PriceRangeSlider, ZaloFab, CallFab, Logo, Avatar,
+│                  # AvatarUpload, ListingActionBar, ListingImageMosaic, PostExportModal, InstallPWA
 ├── hooks/
-│   └── useData.ts       # SWR hooks (useProperties, useRoomTypes, useDeals, etc.)
+│   └── useData.ts             # SWR hooks (useProperties, useRoomTypes, useDeals, ...)
 ├── lib/
 │   ├── auth.ts                # NextAuth config
-│   ├── prisma.ts              # Prisma client
-│   ├── utils.ts               # Helper functions
-│   ├── fetcher.ts             # SWR fetcher
-│   ├── pagination.ts          # Server-side pagination helper
-│   ├── rate-limit.ts          # API rate limiter
-│   ├── video-utils.ts         # Parse YouTube/TikTok/Facebook URL, thumbnail, embed
-│   ├── validations.ts         # Zod validation schemas
-│   ├── permissions.ts         # RBAC client-safe: hasPermission(), ALL_ADMIN_PERMISSIONS
-│   ├── permissions-server.ts  # requirePermission() — API guard
-│   ├── user-company.ts        # getUserCompany() — resolve company của user
-│   ├── zalo.ts                # Resolve link Zalo (company → landlord → env → fallback)
-│   └── supabase.ts            # Supabase client (storage upload)
+│   ├── prisma.ts              # Prisma client singleton
+│   ├── address.ts             # 🔒 Ẩn số nhà: redactHouseNumber, publicAddress, redactName
+│   ├── seo-locations.ts       # Slug quận/trường, PRICE_BANDS, SITE_URL (client-safe)
+│   ├── seo-listings.ts        # Truy vấn dữ liệu trang đích SEO (server-only)
+│   ├── saved-guest.ts         # ❤ Lưu tin cho khách vãng lai (localStorage)
+│   ├── social-post.ts         # Caption đăng Facebook/Zalo (hashtag theo quận)
+│   ├── listing-text.ts        # Bản copy đầy đủ 1 tin (dán Zalo cá nhân)
+│   ├── listing-code.ts / -server.ts  # Mã tin MS-XXXXXX
+│   ├── hanoi-locations.ts     # 30 quận/huyện + 18 trường ĐH + map đường→quận
+│   ├── geocode.ts             # Geocode Nominatim/OSM (server-only)
+│   ├── gemini.ts              # Helper gọi Gemini (xoay nhiều API key khi 429)
+│   ├── og.ts                  # URL tuyệt đối cho og:image
+│   ├── permissions.ts / -server.ts   # RBAC client + API guard
+│   ├── validations.ts · pagination.ts · rate-limit.ts · fetcher.ts · utils.ts
+│   ├── user-company.ts · zalo.ts · supabase.ts · video-utils.ts
 ├── prisma/
-│   ├── schema.prisma    # Database schema
-│   └── seed.ts          # Demo data
-└── middleware.ts         # Route protection
+│   ├── schema.prisma          # 15 bảng
+│   └── seed.ts                # Demo data
+├── public/fonts/              # Be Vietnam Pro (OFL) — dựng ảnh bìa đăng bài
+├── scripts/                   # geocode-*, backup-storage, ai-start.sh ...
+└── middleware.ts              # Route protection theo role + permission
 ```
 
 ## 🔐 Phân quyền dữ liệu
@@ -211,11 +246,14 @@ mixstay/
 | Tiện ích | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Khu vực / Quận | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Tuyến phố | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Địa chỉ chi tiết | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Địa chỉ chi tiết (có số nhà) | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Ngõ/ngách + tuyến phố (đã ẩn số nhà) | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Toạ độ chính xác (lat/lng) | ✅ | ✅ | ❌ | ❌ | ❌ |
 | SĐT Chủ nhà | ✅ | ✅ | ✅ | — | ❌ |
 | Hoa hồng / doanh thu | ✅ | ⚙️* | Của mình | ❌ | ❌ |
 
 > **Admin Staff (`ADMIN_STAFF`):** hành động được phép theo `User.permissions[]` (enum `Permission`, 9 quyền). `ADMIN` là super-admin bypass tất cả; staff chỉ làm được hành động được cấp.
+> **🔒 Ẩn số nhà:** mọi dữ liệu ra trang công khai đều đi qua `redactHouseNumber()` / `publicAddress()` / `redactName()` (`lib/address.ts`). Quy tắc chuỗi ngõ nhiều cấp: `Số 4 Ngõ 103/2/5` (đã có số nhà tường minh) → giữ nguyên chuỗi; `Ngõ 103/2/5` (không có số nhà) → đoạn cuối chính là số nhà nên bị cắt. Toạ độ chỉ dùng server-side để tính khoảng cách tới trường / dựng bản đồ, **không bao giờ trả ra client công khai**.
 > `⚙️*` Hoa hồng/doanh thu áp **field-strip**: API vẫn trả key nhưng set `null` nếu thiếu `VIEW_FINANCIAL_REPORTS`. Guard: `lib/permissions.ts` (client `hasPermission()`) + `lib/permissions-server.ts` (`requirePermission()`).
 
 ## Performance & Optimization
@@ -228,11 +266,26 @@ mixstay/
 - **Input Validation:** Zod schemas (`lib/validations.ts`) validate request body trước khi xử lý
 - **Error Boundaries:** `app/error.tsx`, `app/loading.tsx`, `app/not-found.tsx` cho UX mượt
 - **Skeleton Loading:** Pulse animation skeletons thay thế text "Đang tải..." trên tất cả trang dashboard
-- **SEO:** Dynamic OG tags cho share pages (`generateMetadata`), sitemap.xml, robots.txt
+- **SEO — trang đích theo nhu cầu tìm kiếm:** `/thue-phong-tro/{quận}` (12 quận nội thành) và `/phong-tro-gan/{trường}` (18 trường ĐH) render sẵn phía server + ISR 30 phút, nội dung dựng từ **số liệu thật** (số tin, số tòa, khoảng giá, mức cọc, tiện ích) kèm FAQ. Xen kẽ tin theo tòa + đẩy tin trùng tiêu đề xuống dưới để trang không trông như tin rác
+- **SEO — dữ liệu có cấu trúc (JSON-LD):** trang đích có `BreadcrumbList` + `ItemList` + `FAQPage`; từng tin `/tin/[id]` có `Product` + `Offer` (giá VND theo **tháng** qua `UnitPriceSpecification`, `availability` theo trạng thái phòng) → Google hiện giá/ảnh ngay trong kết quả tìm kiếm
+- **SEO — sitemap động:** `app/sitemap.ts` liệt kê trang tĩnh + 12 quận + 18 trường + **từng tin đăng** kèm `lastModified` (hiện ~698 URL, cache 1h). `robots.ts` khai báo rõ nhánh công khai và chặn `/admin` `/broker` `/landlord` `/api`
+- **Google Search Console:** đã xác minh `https://mixstay.vn/` (tài khoản `phongvan0926@gmail.com`) qua **2 phương thức** — thẻ meta trong `app/layout.tsx` (`metadata.verification.google`) và tệp `public/google1b741701c683e2a6.html`. **🚨 Không xoá 2 mục này** — xoá là mất trạng thái xác minh. Sitemap đã nộp, trạng thái "Thành công"
+- **OG tags động** cho mọi trang chia sẻ (`generateMetadata`), canonical cho trang tin + trang đích
 - **OG image chuẩn Zalo:** `app/api/og/[id]` render ảnh tin đăng thành **JPEG 1200×630** (Zalo không đọc được WebP/HEIC — ảnh gốc Supabase phần lớn là .webp). `lib/og.ts` dựng URL tuyệt đối theo host request cho mọi trang chia sẻ
 - **PWA (cài như app):** `manifest.json` (standalone, portrait), icon 192/512 + maskable, `apple-touch-icon` 180×180 + meta `apple-mobile-web-app-*` (icon + full-screen trên iPhone), service worker `public/sw.js` (network-first cho trang, không cache /api → luôn dữ liệu thật), banner cài đặt `components/ui/InstallPWA.tsx` (Android 1 chạm / hướng dẫn Safari cho iPhone). Đăng nhập nhớ sẵn qua session JWT 30 ngày.
 
 ## Changelog
+
+### v9.42 — 2026-07-31 (rà soát & đồng bộ lại toàn bộ tài liệu: README + CLAUDE.md + AGENTS.md)
+- **📚 Vì sao:** các phiên trước chỉ nối thêm Changelog, còn phần MÔ TẢ ở đầu README (Tính năng, Cấu trúc thư mục, Tech Stack, SEO) vẫn là bản cũ — người/agent đọc README sẽ hiểu sai về sản phẩm hiện tại.
+- **README — mục Tính năng viết lại cả 4 vai trò:** Admin (Tổng quan = trung tâm điều hành, trả lời hỏi phòng tại chỗ, 2 tab khách để lại SĐT, nút 📢 Đăng bài); Môi giới (`/broker/leads`, đăng Facebook/Zalo 1 chạm, thống kê cá nhân, hồ sơ); Chủ nhà (hồ sơ + logo công ty, ⚡ Tạo tin nhanh AI, cron vòng đời tin); Khách thuê (tìm bằng AI, ↕️ sắp xếp, ❤ lưu tin + `/da-luu` so sánh, 📅 đặt lịch xem phòng, 🔔 săn phòng, bản đồ, trang đích theo quận/trường).
+- **README — Cấu trúc thư mục dựng lại từ đầu:** bổ sung `app/phong`, `app/tin/[id]`, `app/da-luu`, `app/thue-phong-tro`, `app/phong-tro-gan`, `app/share/company`, `components/public`, `components/leads`, `public/fonts` và toàn bộ `lib/` mới (address, seo-locations, seo-listings, saved-guest, social-post, listing-text, og…).
+- **README — Tech Stack** ghi đúng thực tế: SWR, Supabase Storage, Gemini, Leaflet/OSM + Nominatim, `sharp`, `next/og` (Satori), Vercel Cron.
+- **README — mục SEO viết lại** (trước chỉ 1 dòng "OG tags + sitemap.xml"): trang đích theo quận/trường, JSON-LD 2 tầng, sitemap động 698 URL, và trạng thái Google Search Console kèm cảnh báo không xoá thẻ xác minh.
+- **README — bảng Phân quyền dữ liệu** tách rõ 3 dòng: địa chỉ có số nhà / ngõ-ngách đã ẩn số nhà / toạ độ lat-lng, kèm ghi chú quy tắc ẩn số nhà và chuỗi ngõ nhiều cấp.
+- **CLAUDE.md + AGENTS.md:** bổ sung các mục còn thiếu (`app/phong`, `app/tin/[id]` kèm JSON-LD, `app/admin/dashboard`, `lib/address.ts`, `lib/saved-guest.ts`, `lib/listing-text.ts`, `lib/og.ts`, `lib/ai-listing-styles.ts`, danh sách `components/ui` đầy đủ, các route API mới), thêm bullet `viewing_requests` + `dismissedAt` vào mục Database schema tóm tắt.
+- **Thêm 4 luật vào "Quy tắc khi sửa code":** (1) 🔒 mọi dữ liệu công khai phải qua `redactHouseNumber`/`publicAddress`/`redactName`, không lộ `fullAddress`/toạ độ/SĐT; (2) quy tắc chuỗi ngõ nhiều cấp; (3) không tự nối `| MixStay` vì layout đã có `title.template`; (4) 🚨 không xoá thẻ/tệp xác minh Google Search Console.
+- **Kiểm tra tự động:** script rà mọi thư mục trong `app/`, `app/api/`, `lib/`, `components/{public,leads,forms,ai}` đối chiếu với tài liệu → **không còn mục nào chưa được nhắc tới**. `CLAUDE.md` và `AGENTS.md` giống hệt nhau (chỉ khác dòng tiêu đề).
 
 ### v9.41 — 2026-07-31 (sắp xếp kết quả + JSON-LD từng tin + ❤ lưu tin so sánh không cần đăng nhập)
 - **↕️ Sắp xếp kết quả tìm kiếm:** `/api/rooms/public` nhận `?sort=price_asc|price_desc|newest|area_desc`; ô chọn "Sắp xếp" cạnh dòng tổng kết quả ở trang chủ + `/phong` (giá thấp→cao, giá cao→thấp, mới nhất, diện tích lớn nhất). Sort giá/diện tích vẫn đẩy AVAILABLE lên trước UPCOMING; chế độ gần trường mặc định gần nhất trước nhưng tôn trọng sort khách chọn. `sort` nằm trong URL nên Back/khôi phục giữ nguyên.
