@@ -1,3 +1,5 @@
+// Màn hình chờ toàn cục của App Router: Next tự hiện khi một route đang tải dữ liệu server.
+// Giữ thật nhẹ (không ảnh, không phụ thuộc) để hiện tức thì trên mạng 3G/4G yếu.
 export default function Loading() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-stone-50">
@@ -9,7 +11,7 @@ export default function Loading() {
         <p className="text-sm font-medium text-brand-700" style={{ fontFamily: 'var(--font-display)' }}>
           MixStay
         </p>
-        <p className="text-xs text-stone-400 mt-1">Dang tai...</p>
+        <p className="text-xs text-stone-400 mt-1">Đang tải…</p>
       </div>
     </div>
   );

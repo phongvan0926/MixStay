@@ -276,6 +276,12 @@ mixstay/
 
 ## Changelog
 
+### v9.44 — 2026-07-31 (dọn dấu vết tên dự án cũ trên GitHub + vá lỗi thiếu dấu ở màn hình chờ)
+- **🐛 Lỗi thật phát hiện khi rà:** `app/loading.tsx` — màn hình chờ toàn cục hiện **"Dang tai..."** (mất dấu tiếng Việt). Đã sửa thành **"Đang tải…"**.
+- **🏷️ Tên dự án cũ trên GitHub:** danh sách file của GitHub hiển thị *thông điệp commit cuối cùng chạm vào file đó* — 5 file chưa ai sửa từ hồi đổi tên nên vẫn treo dòng "MiniAppart Manager v2". **Đã kiểm tra: KHÔNG file nào còn chứa tên cũ trong nội dung** (việc đổi tên đã xong từ trước, chỉ còn dấu vết ở metadata git).
+- **Cách xử lý (không phá lịch sử):** bổ sung chú thích tiếng Việt giải thích *vì sao* cho 5 file cũ chưa từng được chú thích — `postcss.config.js` (autoprefixer cần cho Safari iOS), `lib/prisma.ts` (singleton tránh cạn connection Supabase khi Next hot-reload), `components/layout/AuthProvider.tsx` (ranh giới client cho SessionProvider), `app/api/auth/[...nextauth]/route.ts` (cấu hình nằm ở lib/auth.ts), `app/loading.tsx`. Sau commit này GitHub hiển thị thông điệp hiện tại cho cả 5 file.
+- **Còn lại:** 2 commit CŨ trong lịch sử vẫn mang tên "MiniAppart"/"MiniZen" (trên tổng 179 commit). Xoá hẳn phải viết lại lịch sử + force push — đổi SHA của mọi commit, làm hỏng bản clone của các AI agent khác đang cùng làm trên repo. **Không làm** trừ khi chủ dự án yêu cầu rõ.
+
 ### v9.43 — 2026-07-31 (thống nhất thuật ngữ: bỏ hẳn "Môi giới"/"MG", dùng "Cộng tác viên"/"CTV")
 - **Vì sao:** nhãn vai trò trong hệ thống (`getRoleLabel`) từ lâu đã là **Cộng tác viên**, nhưng vẫn còn chỗ hiển thị "Môi giới"/"MG" — người dùng thấy hai tên cho cùng một vai trò.
 - **Chỗ người dùng THỰC SỰ nhìn thấy đã sửa:** nhãn "Hoa hồng MG" → **"Hoa hồng CTV"** (`QuickRoomTypeForm`); gợi ý ô lưu ý "Thông tin riêng dành cho MG…" → **"…dành cho CTV…"** (`PropertyForm`); tiêu đề thông báo gửi chủ nhà `"MG hỏi về {tên tin}"` → **`"CTV hỏi về {tên tin}"`** (`/api/inquiries`); tài khoản demo `Nguyễn Văn Môi Giới` → `Nguyễn Văn Cộng Tác` (`prisma/seed.ts`).
