@@ -10,7 +10,7 @@ Khi người dùng gõ đúng `MIX` (hoặc `MIX <việc cần làm>`), TRƯỚC
 
 ## Dự án
 MixStay Manager v2 - Nền tảng phân phối & quản lý chung cư mini.
-Kết nối 4 vai trò: Admin (Công ty), Môi giới, Chủ nhà, Khách thuê.
+Kết nối 4 vai trò: Admin (Công ty), Cộng tác viên (CTV), Chủ nhà, Khách thuê.
 
 ## Tech stack
 - Next.js 14 + React 18 + Tailwind CSS
@@ -27,7 +27,7 @@ app/tin/[id]/       → Trang chi tiết tin CÔNG KHAI theo id (không cần lo
 app/p/[token]/      → Short share link (/p/{token}) → redirect sang /share/[token] hoặc /share/system/[token]
 app/admin/          → Trang quản trị (companies, properties, rooms, deals, users, settings)
 app/admin/dashboard/ → TRUNG TÂM ĐIỀU HÀNH của admin (tách khỏi trang Tòa nhà): thẻ Việc cần làm (khách xin xem phòng / tin–tòa–công ty chờ duyệt / hỏi phòng / tin thiếu ảnh), sức khoẻ kho, nhịp đăng tin 8 tuần, top công ty. Dữ liệu từ 1 endpoint /api/admin/overview. Trả lời hỏi phòng của CTV ngay tại đây (CÒN/HẾT/Bỏ qua)
-app/broker/         → Trang môi giới (inventory, deals, share-links)
+app/broker/         → Trang cộng tác viên (inventory, leads, saved, deals, stats, share-links, profile)
 app/landlord/       → Trang chủ nhà (properties — đã gộp quản lý phòng vào trang tòa nhà — + share-links)
 app/share/[token]/  → Trang tin đăng loại phòng (public, ẩn địa chỉ + SĐT, có video + tin đăng liên quan)
 app/share/system/[token]/ → Trang kho phòng hệ thống (public, có toggle grid/list view)
@@ -126,7 +126,7 @@ middleware.ts       → Route protection theo role (+ chặn /admin/{companies,u
 - `listingCode`: mã tin "MS-XXXXXX" (6 ký tự, bỏ 0/O/1/I/L), unique, BẤT BIẾN. Sinh server-side ở `POST /api/rooms` qua `generateUniqueListingCode()` (lib/listing-code-server.ts); client KHÔNG gửi/sửa được. Hiển thị badge + tìm kiếm (normalizeListingCode) ở admin/broker/landlord + trang share link
 
 ## Phân quyền dữ liệu
-- Môi giới: thấy fullAddress + SĐT/Zalo chủ nhà + hoa hồng + lưu ý
+- Cộng tác viên (CTV): thấy fullAddress + SĐT/Zalo chủ nhà + hoa hồng + lưu ý
 - Khách (qua share link): chỉ thấy district, streetName, amenities — KHÔNG thấy fullAddress, SĐT
 - Chủ nhà: tự set commissionJson, zaloPhone, landlordNotes, đổi status phòng (AVAILABLE/UPCOMING/UNAVAILABLE)
 - Admin (ADMIN): super-admin — thấy tất cả, duyệt property/roomType, xác nhận deal, bypass mọi permission check

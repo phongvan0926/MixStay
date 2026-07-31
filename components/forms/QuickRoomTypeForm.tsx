@@ -140,7 +140,7 @@ export default function QuickRoomTypeForm({ onAdd, onCancel }: QuickRoomTypeForm
 
       {/* Quick commission */}
       <div>
-        <label className="block text-sm font-medium text-stone-700 mb-1.5">Hoa hồng MG</label>
+        <label className="block text-sm font-medium text-stone-700 mb-1.5">Hoa hồng CTV</label>
         <div className="grid grid-cols-2 gap-3">
           <div className="flex items-center gap-2">
             <span className="text-xs text-stone-500 whitespace-nowrap">6 tháng:</span>

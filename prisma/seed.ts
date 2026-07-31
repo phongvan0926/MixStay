@@ -52,7 +52,7 @@ async function main() {
   const broker1 = await prisma.user.upsert({
     where: { email: 'broker@mixstay.vn' },
     update: {},
-    create: { name: 'Nguyễn Văn Môi Giới', email: 'broker@mixstay.vn', phone: '0901000002', password, role: 'BROKER' },
+    create: { name: 'Nguyễn Văn Cộng Tác', email: 'broker@mixstay.vn', phone: '0901000002', password, role: 'BROKER' },
   });
 
   const broker2 = await prisma.user.upsert({

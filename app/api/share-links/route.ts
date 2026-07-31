@@ -257,7 +257,7 @@ export async function POST(req: NextRequest) {
     const token = nanoid(12);
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-    // System link: landlord (kho của mình) / broker (kho cả hệ thống, liên hệ về MG) / admin / admin-staff
+    // System link: landlord (kho của mình) / broker (kho cả hệ thống, liên hệ về CTV) / admin / admin-staff
     if (body.isSystem) {
       if (['LANDLORD', 'BROKER', 'ADMIN'].includes(session.user.role)) {
         // landlord/broker tạo system link cho chính mình, super-admin OK

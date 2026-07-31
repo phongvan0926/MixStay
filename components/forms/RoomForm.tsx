@@ -390,7 +390,7 @@ export default function RoomForm({ initialData, properties, onSubmit, isAdmin = 
         </div>
       </div>
 
-      {/* Section 7: Lưu ý cho MG */}
+      {/* Section 7: Lưu ý cho CTV */}
       <div className="card">
         <h3 className="text-lg font-semibold text-stone-900 mb-4">Lưu ý cho Cộng tác viên</h3>
         <textarea

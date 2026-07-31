@@ -69,7 +69,7 @@ export default async function UniPage({ params }: { params: { uni: string } }) {
         : `Bạn có thể mở bản đồ tìm phòng, ghim vị trí trường rồi chọn bán kính để xem các tòa quanh đó.`,
     },
     {
-      q: 'Sinh viên thuê phòng qua MixStay có mất phí môi giới không?',
+      q: 'Sinh viên thuê phòng qua MixStay có mất phí gì không?',
       a: 'Không. Người thuê dùng MixStay miễn phí hoàn toàn — xem tin, xem video, đặt lịch xem phòng. Chi phí do chủ nhà chi trả khi phòng được thuê.',
     },
   ];

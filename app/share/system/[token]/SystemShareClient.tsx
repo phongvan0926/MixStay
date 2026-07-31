@@ -142,7 +142,7 @@ export default function SystemShareClient() {
     </div>
   );
 
-  // Link MÔI GIỚI: liên hệ CHỈ cộng tác viên (data đã bỏ company/chủ nhà ở backend).
+  // Link CTV: liên hệ CHỈ cộng tác viên (data đã bỏ company/chủ nhà ở backend).
   // Link CHỦ NHÀ: hành vi cũ (Zalo chủ nhà/công ty + hotline).
   const isBroker = !!data.isBrokerLink;
   const contact = isBroker ? data.broker : data.landlord;

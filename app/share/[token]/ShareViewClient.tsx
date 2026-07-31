@@ -477,7 +477,7 @@ export default function ShareViewClient() {
           </a>
         </div>
 
-        {/* Section 8: Link MÔI GIỚI → nút sang KHO TỔNG của cộng tác viên (giữ khách, không thoát ra
+        {/* Section 8: Link CTV → nút sang KHO TỔNG của cộng tác viên (giữ khách, không thoát ra
             trang chủ). Trang công khai /tin + link chủ nhà → giữ "Tin đăng liên quan" như cũ. */}
         {data.brokerSystemToken ? (
           <Link href={`/share/system/${data.brokerSystemToken}`}

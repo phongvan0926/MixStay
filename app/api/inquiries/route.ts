@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
       data: {
         userId: inquiry.roomType.property.landlordId,
         type: 'inquiry',
-        title: `MG hỏi về ${inquiry.roomType.name}`,
+        title: `CTV hỏi về ${inquiry.roomType.name}`,
         message: `${session.user.name} hỏi: "${inquiry.message}"`,
         link: `/landlord/properties`,
       },

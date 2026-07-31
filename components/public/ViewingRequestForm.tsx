@@ -68,7 +68,7 @@ export default function ViewingRequestForm({
     <div className="card border-brand-200 bg-gradient-to-br from-brand-50/70 to-white">
       <h2 className="font-display font-semibold text-lg">📅 Đặt lịch xem phòng</h2>
       <p className="text-sm text-stone-500 mt-0.5 mb-3">
-        Để lại số điện thoại — {contactName || 'chúng tôi'} gọi lại hẹn giờ dẫn bạn đi xem. Miễn phí, không mất phí môi giới.
+        Để lại số điện thoại — {contactName || 'chúng tôi'} gọi lại hẹn giờ dẫn bạn đi xem. Hoàn toàn miễn phí cho người thuê.
       </p>
 
       <div className="grid sm:grid-cols-2 gap-2">

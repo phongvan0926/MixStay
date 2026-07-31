@@ -674,7 +674,7 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
         />
       </div>
 
-      {/* Section 7: Hoa hồng cho MG */}
+      {/* Section 7: Hoa hồng cho CTV */}
       <div className="card">
         <h3 className="text-lg font-semibold text-stone-900 mb-4">Hoa hồng cho Cộng tác viên</h3>
         {!canEditCommission && (
@@ -745,7 +745,7 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
         </fieldset>
       </div>
 
-      {/* Section 8: Lưu ý cho MG */}
+      {/* Section 8: Lưu ý cho CTV */}
       <div className="card">
         <h3 className="text-lg font-semibold text-stone-900 mb-4">Lưu ý cho Cộng tác viên</h3>
         <textarea

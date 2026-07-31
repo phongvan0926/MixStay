@@ -1,6 +1,6 @@
 # 🏢 MixStay Manager
 
-Nền tảng quản lý chung cư mini — kết nối Chủ nhà, Môi giới, Công ty và Khách thuê.
+Nền tảng quản lý chung cư mini — kết nối Chủ nhà, Cộng tác viên, Công ty và Khách thuê.
 
 ## Tech Stack
 
@@ -28,7 +28,7 @@ Nền tảng quản lý chung cư mini — kết nối Chủ nhà, Môi giới, 
   - Import từ Excel: upload → preview bảng → validate từng dòng → import hàng loạt
   - Xuất Excel: export toàn bộ hoặc chỉ kết quả đang filter
 
-### 🤝 Môi giới
+### 🤝 Cộng tác viên (CTV)
 - Kho hàng với card phong phú: ảnh carousel (3 ảnh), badge loại phòng, giá nổi bật
 - Hoa hồng hiển thị ngay ngoài card: "HH: 6th=40% (1.4tr) | 12th=50% (1.75tr)"
 - Hiện số phòng trống: "Còn 3/5 phòng" + tên phòng cụ thể
@@ -63,11 +63,11 @@ Nền tảng quản lý chung cư mini — kết nối Chủ nhà, Môi giới, 
 - **🔔 Săn phòng:** chưa ưng tin nào thì để lại tiêu chí + SĐT, có phòng mới khớp sẽ được gọi lại
 - **🗺️ Bản đồ tìm phòng** (`/ban-do`): ghim vị trí bất kỳ (trường ĐH, chỗ làm) + bán kính nấc 500m
 - **📍 Trang đích theo khu vực & trường học:** `/thue-phong-tro/{quận}` và `/phong-tro-gan/{trường}` — số liệu thật, lọc nhanh theo giá/loại phòng, FAQ
-- **Trang tin đăng loại phòng:** gallery 3 ảnh grid + lightbox, video giới thiệu phòng (nếu có), thông tin đầy đủ (giá, diện tích, tiện ích, ngắn hạn, số phòng trống), nút Google Maps, nút liên hệ MG, gợi ý tin đăng liên quan
+- **Trang tin đăng loại phòng:** gallery 3 ảnh grid + lightbox, video giới thiệu phòng (nếu có), thông tin đầy đủ (giá, diện tích, tiện ích, ngắn hạn, số phòng trống), nút Google Maps, nút liên hệ CTV, gợi ý tin đăng liên quan
 - **Trang kho phòng hệ thống:** xem tất cả phòng trống của 1 hệ thống, toggle Grid ↔ List view, card carousel 3 ảnh, bộ lọc (khu vực, giá, kiểu phòng), nút "Xem chi tiết"
 - **Short share link `/p/{token}`:** URL rút gọn dễ gửi qua Zalo/SMS, tự redirect về trang tin đăng
 - Thấy khu vực & tuyến phố (KHÔNG thấy địa chỉ cụ thể & SĐT chủ nhà)
-- Liên hệ qua môi giới
+- Liên hệ qua cộng tác viên
 
 ---
 
@@ -151,7 +151,7 @@ npm run db:seed
 1. Vào `https://your-app.vercel.app`
 2. Đăng nhập với tài khoản demo (mật khẩu: `123456`):
    - Admin: `admin@mixstay.vn`
-   - Môi giới: `broker@mixstay.vn`
+   - Cộng tác viên: `broker@mixstay.vn`
    - Chủ nhà: `landlord@mixstay.vn`
 
 ---
@@ -239,7 +239,7 @@ mixstay/
 
 ## 🔐 Phân quyền dữ liệu
 
-| Thông tin | Admin | Admin Staff | Môi giới | Chủ nhà | Khách (qua link) |
+| Thông tin | Admin | Admin Staff | Cộng tác viên | Chủ nhà | Khách (qua link) |
 |-----------|:-----:|:-----------:|:--------:|:-------:|:-----------------:|
 | Ảnh phòng | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Giá thuê | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -276,9 +276,17 @@ mixstay/
 
 ## Changelog
 
+### v9.43 — 2026-07-31 (thống nhất thuật ngữ: bỏ hẳn "Môi giới"/"MG", dùng "Cộng tác viên"/"CTV")
+- **Vì sao:** nhãn vai trò trong hệ thống (`getRoleLabel`) từ lâu đã là **Cộng tác viên**, nhưng vẫn còn chỗ hiển thị "Môi giới"/"MG" — người dùng thấy hai tên cho cùng một vai trò.
+- **Chỗ người dùng THỰC SỰ nhìn thấy đã sửa:** nhãn "Hoa hồng MG" → **"Hoa hồng CTV"** (`QuickRoomTypeForm`); gợi ý ô lưu ý "Thông tin riêng dành cho MG…" → **"…dành cho CTV…"** (`PropertyForm`); tiêu đề thông báo gửi chủ nhà `"MG hỏi về {tên tin}"` → **`"CTV hỏi về {tên tin}"`** (`/api/inquiries`); tài khoản demo `Nguyễn Văn Môi Giới` → `Nguyễn Văn Cộng Tác` (`prisma/seed.ts`).
+- **Câu quảng cáo cho khách:** bỏ luôn cụm "phí môi giới" thay vì dịch cứng — ô Đặt lịch xem phòng nay ghi *"Hoàn toàn miễn phí cho người thuê"*, FAQ trang trường ĐH đổi thành *"có mất phí gì không?"*.
+- **Chú thích trong code** cũng chuẩn hoá theo (RoomForm, RoomTypeForm, share-links, ShareViewClient, SystemShareClient) để agent sau không dùng lại từ cũ.
+- **Tài liệu:** README (dòng giới thiệu, đề mục vai trò, bảng phân quyền, tài khoản demo, các mục changelog cũ) + CLAUDE.md/AGENTS.md (mô tả dự án, `app/broker/`, mục Phân quyền dữ liệu) đều đổi sang **Cộng tác viên (CTV)**.
+- **Kiểm tra:** rà toàn repo bằng `grep` các biến thể `Môi giới` / `MÔI GIỚI` / `môi giới` / `MG` / `moi gioi` → **không còn kết quả nào**.
+
 ### v9.42 — 2026-07-31 (rà soát & đồng bộ lại toàn bộ tài liệu: README + CLAUDE.md + AGENTS.md)
 - **📚 Vì sao:** các phiên trước chỉ nối thêm Changelog, còn phần MÔ TẢ ở đầu README (Tính năng, Cấu trúc thư mục, Tech Stack, SEO) vẫn là bản cũ — người/agent đọc README sẽ hiểu sai về sản phẩm hiện tại.
-- **README — mục Tính năng viết lại cả 4 vai trò:** Admin (Tổng quan = trung tâm điều hành, trả lời hỏi phòng tại chỗ, 2 tab khách để lại SĐT, nút 📢 Đăng bài); Môi giới (`/broker/leads`, đăng Facebook/Zalo 1 chạm, thống kê cá nhân, hồ sơ); Chủ nhà (hồ sơ + logo công ty, ⚡ Tạo tin nhanh AI, cron vòng đời tin); Khách thuê (tìm bằng AI, ↕️ sắp xếp, ❤ lưu tin + `/da-luu` so sánh, 📅 đặt lịch xem phòng, 🔔 săn phòng, bản đồ, trang đích theo quận/trường).
+- **README — mục Tính năng viết lại cả 4 vai trò:** Admin (Tổng quan = trung tâm điều hành, trả lời hỏi phòng tại chỗ, 2 tab khách để lại SĐT, nút 📢 Đăng bài); Cộng tác viên (`/broker/leads`, đăng Facebook/Zalo 1 chạm, thống kê cá nhân, hồ sơ); Chủ nhà (hồ sơ + logo công ty, ⚡ Tạo tin nhanh AI, cron vòng đời tin); Khách thuê (tìm bằng AI, ↕️ sắp xếp, ❤ lưu tin + `/da-luu` so sánh, 📅 đặt lịch xem phòng, 🔔 săn phòng, bản đồ, trang đích theo quận/trường).
 - **README — Cấu trúc thư mục dựng lại từ đầu:** bổ sung `app/phong`, `app/tin/[id]`, `app/da-luu`, `app/thue-phong-tro`, `app/phong-tro-gan`, `app/share/company`, `components/public`, `components/leads`, `public/fonts` và toàn bộ `lib/` mới (address, seo-locations, seo-listings, saved-guest, social-post, listing-text, og…).
 - **README — Tech Stack** ghi đúng thực tế: SWR, Supabase Storage, Gemini, Leaflet/OSM + Nominatim, `sharp`, `next/og` (Satori), Vercel Cron.
 - **README — mục SEO viết lại** (trước chỉ 1 dòng "OG tags + sitemap.xml"): trang đích theo quận/trường, JSON-LD 2 tầng, sitemap động 698 URL, và trạng thái Google Search Console kèm cảnh báo không xoá thẻ xác minh.
@@ -590,7 +598,7 @@ mixstay/
   - Schema: `RoomType.listingCode String? @unique` (nullable trước cho an toàn dữ liệu cũ; backfill phủ hết → thực tế không còn null; chưa siết NOT NULL).
   - Format: `"MS-" + 6 ký tự IN HOA` từ bảng `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (bỏ 0/O, 1/I/L dễ nhầm) → vd `MS-7K3P9Q`. Random (không tăng dần) ⇒ không lộ tổng số tin, không đoán được tin khác. **Bất biến** (sinh server-side khi tạo, client không gửi/sửa được).
   - Helper: `lib/listing-code.ts` (client-safe: `LISTING_CODE_REGEX`, `normalizeListingCode`) + `lib/listing-code-server.ts` (server-only, dùng `crypto`: `generateListingCode`, `generateUniqueListingCode` — retry chống trùng, `@unique` là chốt chặn cuối). Tách 2 file để KHÔNG kéo `crypto` vào client bundle.
-  - Gắn vào `POST /api/rooms` (tin mới tự có mã). Hiển thị badge "Mã: MS-…" ở: card+list chủ nhà, card+modal inventory môi giới, bảng + modal Phòng admin, và trang tin đăng share link (khách/đối tác trích dẫn được). Tìm kiếm theo mã (admin có ô tìm server-side; broker dùng ô "Tìm kiếm thông minh"; landlord lọc client) — nhập mã đầy đủ → tra chính xác, nhập 1 phần → contains. API trả `listingCode`: rooms, share-links, rooms/public, rooms/related.
+  - Gắn vào `POST /api/rooms` (tin mới tự có mã). Hiển thị badge "Mã: MS-…" ở: card+list chủ nhà, card+modal inventory cộng tác viên, bảng + modal Phòng admin, và trang tin đăng share link (khách/đối tác trích dẫn được). Tìm kiếm theo mã (admin có ô tìm server-side; broker dùng ô "Tìm kiếm thông minh"; landlord lọc client) — nhập mã đầy đủ → tra chính xác, nhập 1 phần → contains. API trả `listingCode`: rooms, share-links, rooms/public, rooms/related.
 - **Sau khi pull code v8.5:** `npx prisma db push --accept-data-loss` (additive: thêm cột `listingCode` nullable + unique index — cảnh báo data-loss là generic, cột mới toàn NULL nên 0 trùng, an toàn) → `npm run db:backfill-codes` (idempotent, sinh mã cho tin cũ, tự verify 100% có mã & không null).
 
 ### v8.4.1 — 2026-06-19 (docs sync)
@@ -671,7 +679,7 @@ mixstay/
 - **Tin đăng liên quan:** API `/api/rooms/related` gợi ý 4 phòng cùng khu vực / cùng khoảng giá hiển thị cuối trang `/share/[token]`
 - **Short share link `/p/{token}`:** Route `app/p/[token]` rút gọn URL chia sẻ, tự redirect sang `/share/[token]` hoặc `/share/system/[token]` tuỳ loại link
 - **Admin > Quản lý phòng:** Cột "Phòng trống" (VD: 3/5) giờ hiện thêm tên phòng trống cụ thể ngay dưới (VD: "201, 301, 501")
-- **Text liên hệ:** Chuẩn hoá text liên hệ MG/Zalo trên tất cả trang public (share link + system share) cho đồng nhất
+- **Text liên hệ:** Chuẩn hoá text liên hệ CTV/Zalo trên tất cả trang public (share link + system share) cho đồng nhất
 - **Sau khi pull code v8:** chạy `npm install && npx prisma db push` (có field mới `videoUrl` trên room_types)
 
 ### v7 — Performance, Security, SEO, PWA, Pre-launch Polish
@@ -694,9 +702,9 @@ mixstay/
 - **Wizard tạo tòa nhà 2 bước:** Bước 1 thông tin tòa nhà → Bước 2 thêm loại phòng ngay (form inline nhanh)
 - **Quản lý phòng theo loại:** Card RoomType với inline edit số phòng trống, bật/tắt nhanh, sửa chi tiết
 - **Share link hệ thống:** 1 link chứa tất cả phòng trống của landlord. Trang public `/share/system/{token}` có grid cards (carousel 3 ảnh), bộ lọc (khu vực, giá, kiểu phòng), modal chi tiết + Google Maps
-- **Trang tin đăng loại phòng:** Gallery 3 ảnh grid + lightbox, info đầy đủ (giá, ngắn hạn, số trống, tiện ích), Google Maps, liên hệ MG
+- **Trang tin đăng loại phòng:** Gallery 3 ảnh grid + lightbox, info đầy đủ (giá, ngắn hạn, số trống, tiện ích), Google Maps, liên hệ CTV
 - **API share-links/system:** POST tạo link hệ thống, GET lấy kho phòng theo token
-- **Company.zaloGroupLink:** Link Zalo nhóm hiển thị trong kho hàng MG
+- **Company.zaloGroupLink:** Link Zalo nhóm hiển thị trong kho hàng CTV
 - **Bộ lọc cascade:** Admin filter Công ty → Tòa nhà → Loại phòng → Trạng thái
 - **Excel Import/Export (Admin > Quản lý phòng):**
   - Tải form mẫu: file .xlsx 2 sheet (dữ liệu mẫu 3 dòng + hướng dẫn tiếng Việt)
@@ -777,7 +785,7 @@ NEXT_PUBLIC_APPLE_ENABLED=true
 
 ### v1 — Initial release
 - CRUD tòa nhà, phòng, deal, user
-- 4 vai trò: Admin, Môi giới, Chủ nhà, Khách
+- 4 vai trò: Admin, Cộng tác viên, Chủ nhà, Khách
 - Share link ẩn thông tin nhạy cảm
 - Hoa hồng tự động
 
@@ -786,7 +794,7 @@ NEXT_PUBLIC_APPLE_ENABLED=true
 | Vai trò | Email | Mật khẩu |
 |---------|-------|-----------|
 | Admin | admin@mixstay.vn | 123456 |
-| Môi giới | broker@mixstay.vn | 123456 |
+| Cộng tác viên | broker@mixstay.vn | 123456 |
 | Chủ nhà | landlord@mixstay.vn | 123456 |
 | Chủ nhà (Công ty) | company@mixstay.vn | 123456 |
 | Khách | customer@mixstay.vn | 123456 |

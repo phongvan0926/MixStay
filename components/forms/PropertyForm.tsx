@@ -368,7 +368,7 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
             <label className="block text-sm font-medium text-stone-700 mb-1.5">Lưu ý cho cộng tác viên</label>
             <textarea
               className="input-field min-h-[80px] resize-y"
-              placeholder="Thông tin riêng dành cho MG: giờ xem phòng, cách liên hệ..."
+              placeholder="Thông tin riêng dành cho CTV: giờ xem phòng, cách liên hệ..."
               value={form.landlordNotes}
               onChange={e => updateField('landlordNotes', e.target.value)}
               rows={3}
