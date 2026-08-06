@@ -283,6 +283,8 @@ mixstay/
 - **Đã vá:** `lib/zalo.ts` (bộ định tuyến chính của mọi trang share — `normalizeZaloInput`, `getZaloLink`, `getSystemZaloLink`), `ShareViewClient`, `SystemShareClient`, `CompanyCatalogClient`, `/admin/rooms`, `/admin/leads`, `components/leads/ViewingRequestTable`.
 - **Giữ nguyên luật kinh doanh:** CTV giữ link mà SĐT hỏng thì **bỏ qua cấp đó, lùi về chủ nhà** (không dẫn khách vào hư không); trang kho công ty **vẫn tuyệt đối không lùi về hotline MixStay** — không có số dùng được thì ẩn nút, chứ không cướp khách của công ty. `CallFab` có thêm lớp phòng thủ cuối chuẩn hoá số nhưng **không tự lùi về hotline** vì đúng lý do đó.
 - **9/9 ca kiểm thử đạt** trên chính dữ liệu thật đang lỗi. Rà lại toàn repo: **0 chỗ** còn dựng `tel:`/`zalo.me/` từ SĐT chưa kiểm.
+- **Sửa dữ liệu:** BNBHOLDING `09366258556` → **`0936258556`**. Bằng chứng: cả 9 tòa của công ty đứng tên chủ nhà **Anh Biên — 0936258556**, và 3 tòa ghi thẳng `"A Biên 0936258556"`; số lưu sai đúng là số đó **thừa một chữ số 6** (`0936|6|258556`). Kho công ty đã có lại nút gọi + Zalo.
+- **Rà lại toàn bộ nguồn SĐT dựng link:** công ty **0/36 lỗi**, tòa nhà **0/464 lỗi**, tài khoản còn 1 (CTV thử nghiệm "aaa" `1234567890` — đã có cảnh báo lo).
 
 ### v9.47 — 2026-08-06 (hotline sửa được trong Cài đặt + vá nút gọi méo + cảnh báo SĐT sai định dạng)
 - **⚙️ Đổi hotline không cần lập trình viên:** thêm mục **"Hotline công ty"** ở `/admin/settings` — số + link Zalo lưu ở bảng `settings`, mọi trang công khai đọc qua `getSupportContact()` (`lib/contact-server.ts`). Ô nhập kiểm ngay tại chỗ, số sai **không lưu được**, và có khung xem trước đúng thứ khách sẽ thấy. Trang công khai đặt `revalidate = 600` → đổi số là toàn web theo trong ~10 phút.
