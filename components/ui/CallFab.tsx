@@ -8,6 +8,8 @@
  * Trang chủ không có ZaloFab → dùng stacked={false} (về vị trí FAB chuẩn bottom-4).
  * Tôn trọng safe-area-inset iOS giống ZaloFab.
  */
+import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/contact';
+
 interface Props {
   phone?: string;
   /** Số hiển thị trên nút (mặc định hotline công ty). */
@@ -19,8 +21,8 @@ interface Props {
   stacked?: boolean;
 }
 
-export default function CallFab({ phone = '0379838222', display, label = 'Hotline', showNumber = true, stacked = true }: Props) {
-  const shown = display || '0379 838 222';
+export default function CallFab({ phone = SUPPORT_PHONE, display, label = 'Hotline', showNumber = true, stacked = true }: Props) {
+  const shown = display || SUPPORT_PHONE_DISPLAY;
   return (
     <a
       href={`tel:${phone}`}

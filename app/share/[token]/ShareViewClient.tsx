@@ -16,6 +16,7 @@ import CallFab from '@/components/ui/CallFab';
 import Logo from '@/components/ui/Logo';
 import Avatar from '@/components/ui/Avatar';
 import { getZaloLink } from '@/lib/zalo';
+import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/contact';
 
 const roomTypeLabels: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1 ngủ 1 khách',
@@ -295,7 +296,7 @@ export default function ShareViewClient() {
               <span className="max-w-[38vw] truncate">Kho phòng {company.name}</span>
             </Link>
           ) : (
-            <a href="tel:0379838222" className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors">📞 Hotline: 0379 838 222</a>
+            <a href={`tel:${SUPPORT_PHONE}`} className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors">📞 Hotline: {SUPPORT_PHONE_DISPLAY}</a>
           )}
         </div>
       </nav>

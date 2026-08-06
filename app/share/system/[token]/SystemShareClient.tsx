@@ -10,6 +10,7 @@ import CallFab from '@/components/ui/CallFab';
 import Logo from '@/components/ui/Logo';
 import Avatar from '@/components/ui/Avatar';
 import { getSystemZaloLink } from '@/lib/zalo';
+import { SUPPORT_PHONE } from '@/lib/contact';
 
 const roomTypeLabels: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1 ngủ 1 khách',
@@ -153,8 +154,7 @@ export default function SystemShareClient() {
   const zaloLink = isBroker
     ? (contactDigits ? `https://zalo.me/${contactDigits}` : getSystemZaloLink(null))
     : getSystemZaloLink({ landlord: data.landlord, properties: data.properties });
-  const HOTLINE = '0379838222';
-  const callDigits = contactDigits || HOTLINE;
+  const callDigits = contactDigits || SUPPORT_PHONE;
 
   return (
     <div className="min-h-screen bg-stone-50">

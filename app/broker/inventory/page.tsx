@@ -17,6 +17,7 @@ import { useRoomTypes, useActiveCompanies, useDashboardStats } from '@/hooks/use
 import { SkeletonStats, SkeletonCardGrid } from '@/components/ui/Skeleton';
 import DistrictPills from '@/components/ui/DistrictPills';
 import PriceRangeSlider from '@/components/ui/PriceRangeSlider';
+import { SUPPORT_ZALO } from '@/lib/contact';
 
 const roomTypeLabels: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1N1K',
@@ -41,7 +42,7 @@ function formatCommissionLine(commission: Record<string, number>, price: number)
 }
 
 // Zalo/hotline admin cố định để CTV (chưa được cấp quyền xem liên hệ) gửi thông tin phòng cần hỗ trợ.
-const SUPPORT_ZALO = process.env.NEXT_PUBLIC_SUPPORT_ZALO || 'https://zalo.me/0379838222';
+// Số lấy từ lib/contact.ts — đừng chép cứng lại ở đây.
 function sendSupportRequest(room: any) {
   const code = room.listingCode ? `[${room.listingCode}] ` : '';
   const msg = `Cần hỗ trợ tin: ${code}${room.name || ''}${room.property?.district ? ' - ' + room.property.district : ''}`;
