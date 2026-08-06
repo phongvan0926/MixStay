@@ -308,6 +308,10 @@ Kiểm định do 15 agent chạy song song theo 5 hướng (phân quyền · ri
 **🔒 Rò rỉ số nhà qua TÊN TIN (tự tìm được, ngoài danh sách trên)**
 Địa chỉ đã che số nhà đúng từ lâu, nhưng **tên tin do chủ nhà tự gõ thì ra thẳng** — mà tên đi vào `<title>` của `/tin/[id]` (Google đã lập chỉ mục), thẻ tin mọi trang công khai, JSON-LD, thẻ OG và ảnh bìa Facebook. **236/622 tin (38%)** có số nhà trong tên. → `redactTitle()` (luật riêng cho tiêu đề: không dùng lại `redactName()` vì nó ăn mất số "1" của "1 ngủ 1 khách", cũng không dùng `redactHouseNumber()` vì nó cắt cả chuỗi ngõ) + `redactPublicText()` lọc SĐT/Zalo khỏi mô tả. 15/15 ca biên; trên 622 tin thật: 0 còn lộ, 0 tên bị cắt hỏng.
 
+**⚠️ CÒN LẠI — cần CHỦ DỰ ÁN bật, tôi không tự làm được**
+`lib/rate-limit.ts` đã viết sẵn cả 2 chế độ, nhưng production **chưa cấu hình KV** nên đang chạy fallback **đếm theo từng máy chủ**. Đo thật: POST bị chặn ở request thứ 5 (bộ đếm CÓ chạy), nhưng bắn **75 GET vượt ngưỡng 60/phút thì 0 lần bị chặn** — Vercel bung nhiều instance, loạt request tản ra nên không instance nào chạm ngưỡng. Nghĩa là mọi rate limit hiện chỉ cản người dùng bình thường, **không cản được kẻ tấn công có chủ đích**.
+→ Cách bật (2 phút, không cần sửa code): tạo **Vercel KV** hoặc **Upstash Redis**, thêm 2 biến môi trường trên Vercel — `KV_REST_API_URL` + `KV_REST_API_TOKEN` (hoặc `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`). Code tự nhận và chuyển sang đếm tập trung.
+
 **✅ Kiểm toàn vẹn dữ liệu (truy vấn trực tiếp) — sạch**
 0 bản ghi mồ côi · 0 mã tin/token trùng · 0 tin duyệt nằm trên tòa chưa duyệt · 0 trạng thái phi lý · 0 mật khẩu lưu thô · 0 tài khoản thừa quyền treo. Quét hộp đen lại sau khi vá: **21/21 endpoint trả đúng 401/403 hoặc chỉ dữ liệu đã che**.
 
