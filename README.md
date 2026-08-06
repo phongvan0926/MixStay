@@ -306,8 +306,8 @@ Chạy Playwright đo TỪNG phần tử trên 7 trang công khai × 2 khổ mà
 - Chip tiện ích, chip giá, chip quận trên bản đồ, tab tin liên quan, nút thanh điều hướng (36px), link hotline (16px) — đều đạt 44px.
 - **Trợ năng:** 3 ô chọn thiếu nhãn cho trình đọc màn hình → thêm `aria-label`; ảnh trong popup bản đồ thiếu `alt` → bổ sung.
 
-**🔒 Công cụ của CTV không còn lộ cho khách vãng lai**
-Trang tin công khai `/tin/[id]` và mọi link share vẫn đang hiện **"⬇️ Tải ảnh"** và **"📋 Copy nội dung"** cho người lạ — đối thủ bấm là mang sạch ảnh + nội dung của cả kho đi. `ListingActionBar` nay có cờ `tools` **mặc định TẮT**, chỉ bật ở kho CTV (`/broker/inventory`). Nút "Chia sẻ" vẫn để cho mọi người vì khách gửi tin cho bạn bè là điều mình muốn.
+**↩️ "Tải ảnh" / "Copy nội dung" — đã thử ẩn rồi TRẢ LẠI (ghi lại để không lặp)**
+Bản kiểm định đề xuất ẩn 2 nút này khỏi khách vãng lai vì tưởng là rò rỉ kho hàng. **Chủ dự án bác bỏ:** đây là CHỦ ĐÍCH của MixStay — để người ta mang tin đi đăng lại trên nhiều nền tảng khác một cách dễ dàng, càng nhiều nơi đăng thì tin càng tới được nhiều khách thuê; số nhà đã che ở tầng dữ liệu nên nội dung mang đi vẫn an toàn. Đã trả lại nguyên trạng và ghi rõ lý do ngay trong `ListingActionBar` + CLAUDE.md/AGENTS.md để lần sau không ai gỡ nhầm nữa. (Phần nâng vùng bấm 2 nút lên 44px thì GIỮ — đó là cải thiện độc lập.)
 
 **Khu quản trị**
 - Nút **CÒN / HẾT** để chủ nhà trả lời CTV: chữ 10px, cao ~18px — việc bấm hằng ngày mà gần như không trúng trên điện thoại. Nay 12px, vùng bấm 36px.

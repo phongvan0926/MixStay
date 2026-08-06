@@ -9,21 +9,21 @@ interface Props {
   title?: string;
   fileBase?: string;  // tiền tố tên file ảnh khi tải về
   className?: string;
-  /**
-   * Hiện 2 nút NGHIỆP VỤ "Tải ảnh" + "Copy nội dung" (công cụ của CTV/chủ nhà để mang tin
-   * đi đăng nơi khác). Mặc định TẮT: trên trang tin công khai, khách vãng lai — kể cả đối thủ —
-   * bấm là tải sạch ảnh và copy nguyên nội dung của cả kho hàng. Nút "Chia sẻ" vẫn để cho
-   * mọi người vì khách gửi tin cho bạn bè là điều mình muốn.
-   */
-  tools?: boolean;
 }
 
 /**
  * Thanh công cụ cho 1 bài đăng: Tải tất cả ảnh (từng file rời, không nén zip), Copy toàn bộ nội dung,
  * và Chia sẻ ra ngoài (Web Share API trên mobile → Zalo/Messenger/Facebook;
  * fallback menu Facebook/Zalo/Messenger/Copy link trên desktop).
+ *
+ * ⚠️ KHÔNG GỠ "Tải ảnh" / "Copy nội dung" khỏi trang công khai — đây là CHỦ ĐÍCH của MixStay,
+ * không phải sơ hở. Ai cũng dùng được, kể cả khách chưa đăng nhập: mục tiêu là để người ta
+ * mang tin đi đăng lại trên NHIỀU nền tảng khác một cách dễ dàng — càng nhiều nơi đăng thì
+ * tin càng tới được nhiều khách thuê. Số nhà đã được che ở tầng dữ liệu (redactTitle /
+ * redactHouseNumber / redactPublicText trong lib/address.ts) nên nội dung mang đi vẫn an toàn.
+ * Bản kiểm định 07/08/2026 từng đề xuất ẩn 2 nút này; chủ dự án đã bác bỏ và giải thích ý đồ.
  */
-export default function ListingActionBar({ images = [], shareUrl, copyText, title = 'Tin cho thuê', fileBase = 'anh-tin-dang', className = '', tools = false }: Props) {
+export default function ListingActionBar({ images = [], shareUrl, copyText, title = 'Tin cho thuê', fileBase = 'anh-tin-dang', className = '' }: Props) {
   const [downloading, setDownloading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -117,19 +117,15 @@ export default function ListingActionBar({ images = [], shareUrl, copyText, titl
 
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className}`}>
-      {tools && (
-        <>
-          <button type="button" onClick={downloadImages} disabled={downloading}
-            className={`${btn} bg-white border-stone-200 text-stone-700 hover:border-brand-300 hover:text-brand-700 disabled:opacity-60`}>
-            {downloading ? '⏳ Đang tải...' : '⬇️ Tải ảnh'}
-          </button>
+      <button type="button" onClick={downloadImages} disabled={downloading}
+        className={`${btn} bg-white border-stone-200 text-stone-700 hover:border-brand-300 hover:text-brand-700 disabled:opacity-60`}>
+        {downloading ? '⏳ Đang tải...' : '⬇️ Tải ảnh'}
+      </button>
 
-          <button type="button" onClick={copyContent}
-            className={`${btn} bg-white border-stone-200 text-stone-700 hover:border-brand-300 hover:text-brand-700`}>
-            📋 Copy nội dung
-          </button>
-        </>
-      )}
+      <button type="button" onClick={copyContent}
+        className={`${btn} bg-white border-stone-200 text-stone-700 hover:border-brand-300 hover:text-brand-700`}>
+        📋 Copy nội dung
+      </button>
 
       <div className="relative">
         <button type="button" onClick={share}

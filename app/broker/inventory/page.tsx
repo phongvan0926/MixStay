@@ -394,7 +394,7 @@ function RoomDetailModal({
             </button>
           </div>
 
-          {/* Công cụ bài đăng — `tools` chỉ bật ở ĐÂY (kho của CTV), không bật ở trang công khai */}
+          {/* Công cụ bài đăng: tải ảnh / copy nội dung / chia sẻ ra ngoài */}
           <div className="pt-3 border-t border-stone-100">
             <ListingActionBar
               images={[...(room.images || []), ...(room.property?.images || [])]}
@@ -402,7 +402,6 @@ function RoomDetailModal({
               copyText={modalCopyText}
               title={room.name}
               fileBase={`anh-${room.listingCode || room.id}`}
-              tools
             />
           </div>
 

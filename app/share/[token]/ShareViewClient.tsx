@@ -324,9 +324,8 @@ export default function ShareViewClient() {
           </div>
         </div>
 
-        {/* Chỉ còn nút "Chia sẻ" — 2 nút nghiệp vụ (tải ảnh / copy nội dung) KHÔNG hiện ở trang
-            công khai: khách vãng lai, kể cả đối thủ, bấm là mang sạch ảnh + nội dung cả kho đi.
-            CTV có công cụ đó trong kho của mình (/broker/inventory). */}
+        {/* Thanh công cụ: tải ảnh / copy nội dung / chia sẻ ra ngoài.
+            CỐ Ý mở cho cả khách chưa đăng nhập — xem chú thích trong ListingActionBar. */}
         <ListingActionBar
           images={allImages}
           shareUrl={shareUrl}
