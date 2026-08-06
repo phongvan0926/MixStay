@@ -17,6 +17,7 @@ import { useRoomTypes, useActiveCompanies, useDashboardStats } from '@/hooks/use
 import { SkeletonStats, SkeletonCardGrid } from '@/components/ui/Skeleton';
 import DistrictPills from '@/components/ui/DistrictPills';
 import PriceRangeSlider from '@/components/ui/PriceRangeSlider';
+import { telHref, zaloHref } from '@/lib/phone';
 import { SUPPORT_ZALO } from '@/lib/contact';
 
 const roomTypeLabels: Record<string, string> = {
@@ -177,7 +178,9 @@ function RoomDetailModal({
   const commission = parseCommission(room.commissionJson);
   const hasCommission = Object.keys(commission).length > 0;
   const zaloPhone = room.property?.zaloPhone || room.property?.landlord?.phone;
-  const zaloLink = zaloPhone ? 'https://zalo.me/' + zaloPhone.replace(/\s/g, '') : null;
+  // zaloPhone thường được chủ nhà ghi kèm tên ("Lâm 0394632595") — phải BÓC số ra.
+  // Trước đây chỉ bỏ dấu cách nên ra link hỏng zalo.me/Lâm0394632595 (176/464 tòa).
+  const zaloLink = zaloHref(zaloPhone);
   const company = room.property?.company;
   const landlord = room.property?.landlord;
 
@@ -348,14 +351,14 @@ function RoomDetailModal({
                   <p className="text-xs font-bold text-brand-700 uppercase tracking-wide mb-1.5">👤 Chủ nhà</p>
                   <p className="text-sm font-medium text-stone-800">{landlord.name}</p>
                   <div className="flex flex-wrap items-center gap-2 mt-2">
-                    {landlord.phone && (
-                      <a href={'tel:' + landlord.phone}
+                    {landlord.phone && telHref(landlord.phone) && (
+                      <a href={telHref(landlord.phone)!}
                         className="inline-flex items-center gap-1 bg-white border border-stone-200 text-stone-700 text-sm px-3 py-1.5 rounded-lg hover:border-brand-300 transition-colors">
                         📞 {landlord.phone}
                       </a>
                     )}
-                    {room.property?.zaloPhone && room.property.zaloPhone !== landlord.phone && (
-                      <a href={'tel:' + room.property.zaloPhone}
+                    {room.property?.zaloPhone && room.property.zaloPhone !== landlord.phone && telHref(room.property.zaloPhone) && (
+                      <a href={telHref(room.property.zaloPhone)!}
                         className="inline-flex items-center gap-1 bg-white border border-stone-200 text-stone-700 text-sm px-3 py-1.5 rounded-lg hover:border-brand-300 transition-colors">
                         📞 Zalo: {room.property.zaloPhone}
                       </a>
@@ -732,7 +735,7 @@ export default function BrokerInventoryPage() {
               const commission = parseCommission(room.commissionJson);
               const hasCommission = Object.keys(commission).length > 0;
               const zaloPhone = room.property?.zaloPhone || room.property?.landlord?.phone;
-              const zaloLink = zaloPhone ? 'https://zalo.me/' + zaloPhone.replace(/\s/g, '') : null;
+              const zaloLink = zaloHref(zaloPhone); // bóc số khỏi "Tên + SĐT" — xem chú thích ở RoomModal
               const company = room.property?.company;
 
               return (
@@ -840,7 +843,7 @@ export default function BrokerInventoryPage() {
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <span className="text-xs text-stone-600">👤 {room.property.landlord.name}</span>
                           {room.property.landlord.phone && (
-                            <a href={'tel:' + room.property.landlord.phone}
+                            <a href={telHref(room.property.landlord.phone)!}
                               onClick={(e) => e.stopPropagation()}
                               className="text-xs text-brand-600 hover:underline">
                               📞 {room.property.landlord.phone}

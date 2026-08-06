@@ -1,9 +1,13 @@
 import type { Metadata } from 'next';
 import PublicNav from '@/components/layout/PublicNav';
 import PublicSearch from '../PublicSearch';
-import CallFab from '@/components/ui/CallFab';
+import SupportFabs from '@/components/public/SupportFabs';
 import SeoLinks from '@/components/public/SeoLinks';
 import { SITE_URL } from '@/lib/seo-locations';
+
+// Đọc hotline từ Cài đặt admin (server) → cần ISR, nếu không số sẽ đứng im từ lúc build.
+export const revalidate = 600;
+
 
 export const metadata: Metadata = {
   title: 'Tất cả phòng mới nhất',
@@ -13,7 +17,7 @@ export const metadata: Metadata = {
 
 // Trang xem TOÀN BỘ phòng mới nhất — CÔNG KHAI (không cần đăng nhập). Dùng PublicSearch
 // với autoLoad: tự nạp phòng mới nhất ngay khi mở + bộ lọc + nút "Xem thêm" để duyệt hết.
-export default function PhongPage() {
+export default async function PhongPage() {
   return (
     <div className="min-h-screen bg-stone-50">
       <PublicNav />
@@ -28,7 +32,7 @@ export default function PhongPage() {
         </div>
       </footer>
 
-      <CallFab stacked={false} />
+      <SupportFabs />
     </div>
   );
 }

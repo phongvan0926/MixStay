@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import PublicNav from '@/components/layout/PublicNav';
-import CallFab from '@/components/ui/CallFab';
+import SupportFabs from '@/components/public/SupportFabs';
 import SeoLinks from '@/components/public/SeoLinks';
 import { getDistrictCounts } from '@/lib/seo-listings';
 import { SEO_DISTRICTS, districtPath, uniPath, SEO_UNIS, SITE_URL } from '@/lib/seo-locations';
@@ -104,7 +104,7 @@ export default async function DistrictHubPage() {
         </div>
       </footer>
 
-      <CallFab stacked={false} />
+      <SupportFabs />
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { cache } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import PublicNav from '@/components/layout/PublicNav';
-import CallFab from '@/components/ui/CallFab';
+import SupportFabs from '@/components/public/SupportFabs';
 import ListingCard from '@/components/public/ListingCard';
 import SeoLinks from '@/components/public/SeoLinks';
 import CompareBar from '@/components/public/CompareBar';
@@ -228,7 +228,7 @@ export default async function UniPage({ params }: { params: { uni: string } }) {
       </footer>
 
       <CompareBar />
-      <CallFab stacked={false} />
+      <SupportFabs />
     </div>
   );
 }

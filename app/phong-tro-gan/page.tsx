@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import PublicNav from '@/components/layout/PublicNav';
-import CallFab from '@/components/ui/CallFab';
+import SupportFabs from '@/components/public/SupportFabs';
 import SeoLinks from '@/components/public/SeoLinks';
 import { getUniCounts } from '@/lib/seo-listings';
 import { SEO_UNIS, uniPath, districtPath, SEO_DISTRICTS, SITE_URL, UNI_RADIUS_KM } from '@/lib/seo-locations';
@@ -81,7 +81,7 @@ export default async function UniHubPage() {
         </div>
       </footer>
 
-      <CallFab stacked={false} />
+      <SupportFabs />
     </div>
   );
 }

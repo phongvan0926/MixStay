@@ -15,13 +15,13 @@ export default function ZaloFab({ href }: Props) {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Tư vấn Zalo"
-      className="fixed z-50 right-4 bottom-4 inline-flex items-center gap-2 rounded-full bg-[#0068FF] text-white shadow-lg shadow-blue-500/30 transition-all hover:scale-105 hover:shadow-xl active:scale-95
-        h-14 sm:h-12 px-3 sm:px-4
+      className="fixed z-50 right-4 inline-flex items-center justify-center gap-2 rounded-full bg-[#0068FF] text-white shadow-lg shadow-blue-500/30 transition-all hover:scale-105 hover:shadow-xl active:scale-95
+        w-14 h-14 sm:w-auto sm:h-12 sm:px-5
         font-semibold text-sm"
       style={{
-        // Respect iOS safe-area at the bottom (notch/home-indicator)
-        paddingBottom: 'env(safe-area-inset-bottom, 0)',
-        marginBottom: 'env(safe-area-inset-bottom, 0)',
+        // Safe-area iOS đưa vào KHOẢNG CÁCH đáy. Đặt padding trong nút cao cố định sẽ ăn vào
+        // chiều cao và đẩy icon lệch lên — đúng lỗi "nút méo" đã sửa ở CallFab 06/08/2026.
+        bottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
       }}
     >
       {/* Zalo logo (simplified official mark, white on blue) */}

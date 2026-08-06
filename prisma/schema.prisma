@@ -53,6 +53,9 @@ model User {
   email         String?   @unique  // Nullable: admin có thể tạo user không email (xem userCreateSchema)
   emailVerified DateTime?
   phone         String?
+  // Người dùng đã tự xác nhận "số này của tôi đúng" → tắt cảnh báo SĐT sai định dạng.
+  // Tự xoá về null khi số bị đổi (số mới phải kiểm lại từ đầu). Xem lib/phone.ts.
+  phoneConfirmedAt DateTime?
   password      String?   // Nullable: OAuth users have no password
   role          Role      @default(CUSTOMER)
   setupComplete Boolean   @default(false) // true sau khi user chọn role (OAuth) hoặc đăng ký thủ công
@@ -128,6 +131,8 @@ model Company {
   name          String
   description   String?
   phone         String?
+  // Admin đã xác nhận SĐT công ty này đúng dù định dạng lạ → tắt cảnh báo. Xem User.phoneConfirmedAt.
+  phoneConfirmedAt DateTime?
   email         String?
   address       String?
   logo          String?

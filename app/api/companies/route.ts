@@ -190,12 +190,22 @@ export async function PUT(req: NextRequest) {
       }
     }
 
+    // Form admin luôn gửi kèm `phone` → chỉ bỏ xác nhận khi số THỰC SỰ đổi,
+    // không thì mỗi lần sửa tên/địa chỉ cũng làm cảnh báo hiện lại.
+    const currentCompany = await prisma.company.findUnique({ where: { id }, select: { phone: true } });
+    const phoneChanged = data.phone !== undefined && (data.phone || null) !== currentCompany?.phone;
+
     const company = await prisma.company.update({
       where: { id },
       data: {
         ...(data.name && { name: data.name }),
         ...(data.description !== undefined && { description: data.description || null }),
         ...(data.phone !== undefined && { phone: data.phone || null }),
+        // Đổi sang số khác → bỏ xác nhận cũ, số mới phải được kiểm định dạng lại từ đầu
+        ...(phoneChanged && { phoneConfirmedAt: null }),
+        // Admin bấm "Số này đúng" trên cảnh báo SĐT sai định dạng (công ty không có tài khoản
+        // để tự xác nhận như CTV/chủ nhà nên phải để admin làm hộ).
+        ...(data.phoneConfirmed === true && { phoneConfirmedAt: new Date() }),
         ...(data.email !== undefined && { email: data.email || null }),
         ...(data.address !== undefined && { address: data.address || null }),
         ...(data.logo !== undefined && { logo: data.logo || null }),

@@ -276,6 +276,18 @@ mixstay/
 
 ## Changelog
 
+### v9.47 — 2026-08-06 (hotline sửa được trong Cài đặt + vá nút gọi méo + cảnh báo SĐT sai định dạng)
+- **⚙️ Đổi hotline không cần lập trình viên:** thêm mục **"Hotline công ty"** ở `/admin/settings` — số + link Zalo lưu ở bảng `settings`, mọi trang công khai đọc qua `getSupportContact()` (`lib/contact-server.ts`). Ô nhập kiểm ngay tại chỗ, số sai **không lưu được**, và có khung xem trước đúng thứ khách sẽ thấy. Trang công khai đặt `revalidate = 600` → đổi số là toàn web theo trong ~10 phút.
+- **📐 Nút gọi trên điện thoại bị méo (người dùng báo):** trên mobile chữ bị ẩn nhưng nút vẫn để `h-14 px-3` → rộng 48px mà cao 56px = **bầu dục**, lại thêm `paddingBottom: env(safe-area-inset-bottom)` **bên trong** nút cao cố định nên **đẩy icon lệch lên**. Nay ép `w-14 h-14` tròn đều, icon to lên 26px, safe-area chuyển hết sang `bottom`. Đo bằng trình duyệt thật: **56×56px, icon lệch tâm 0.0px** (trước: 48×56px, icon lệch). Sửa cho cả `CallFab` lẫn `ZaloFab`.
+- **💬 Thiếu nút Zalo hotline:** trang công khai trước giờ chỉ có nút GỌI. Thêm `components/public/SupportFabs.tsx` (Zalo dưới + Gọi trên, khe 16px không chồng nhau) và gắn vào **cả 7 trang công khai**.
+- **🐛 Lỗi thật phát hiện khi rà: 176/464 tòa có nút Zalo/gọi của CTV HỎNG CÂM.** Chủ nhà hay ghi `zaloPhone` kèm tên (`"Lâm 0394632595"`, `"TÙNG: 037.337.2543"`), kho CTV lại dựng link bằng `phone.replace(/\s/g,'')` — chỉ bỏ dấu cách, **không lọc chữ** → ra `zalo.me/Lâm0394632595` và `tel:TÙNG: 037.337.2543`. Nút bấm không ra gì suốt nhiều tháng, không ai biết.
+- **`lib/phone.ts` (MỚI):** `checkPhone()` phân loại ok/messy/invalid kèm lý do tiếng Việt, `extractVNPhone()` bóc số khỏi chuỗi tự do, `telHref()`/`zaloHref()` trả **null** khi không có số dùng được (ẩn nút thay vì đưa link chết). **14/14 ca kiểm thử đạt.**
+- **⚠️ Cảnh báo SĐT sai định dạng (theo yêu cầu):** banner trong `DashboardLayout` cho **chính chủ tài khoản** (CTV/chủ nhà/admin) + thẻ tổng ở `/admin/dashboard` cho admin. **Chỉ cảnh báo khi thật sự không gọi được** — số ghi kèm tên vẫn bấm ra nên không làm phiền. Bấm **"Số này đúng"** → lưu `phoneConfirmedAt`, thôi nhắc; **đổi sang số khác thì xác nhận tự huỷ**, số mới kiểm lại từ đầu.
+- **Schema (chỉ THÊM cột nullable):** `users.phoneConfirmedAt`, `companies.phoneConfirmedAt`. Hiện đang cảnh báo: 🏢 BNBHOLDING `09366258556` (11 số) và 👤 CTV "aaa" `1234567890`.
+- **Chặn từ API:** `/api/settings` giờ có **danh sách khoá hợp lệ** (trước nhận key tự do, gõ nhầm là đẻ rác trong bảng), validate số hotline + link Zalo trước khi lưu.
+- **🐛 Vá thêm:** `PUT /api/users/me` — `where: { phone: undefined }` bị Prisma **bỏ qua** nên truy vấn thành "user bất kỳ khác mình" → sửa mỗi tên cũng ăn lỗi 409 *"số điện thoại đã được dùng"*. Nay chỉ kiểm trùng khi client thực sự gửi `phone`.
+- `/da-luu` tách thành vỏ server + `SavedClient.tsx` để đọc được Cài đặt; nhân tiện thêm `title` và `robots: noindex` (danh sách lưu nằm trong máy từng khách, không có gì để Google lập chỉ mục).
+
 ### v9.46 — 2026-08-06 (đổi hotline sang 0352 871 177 + gom số về một nguồn duy nhất)
 - **Vì sao:** công ty chuyển toàn bộ hotline sang số mới **0352 871 177**. Số cũ (0379 838 222) bị **chép cứng ở 5 chỗ rời nhau** — riêng trang chủ in ra 12 lần. Sót một chỗ là khách còn gọi vào số đã ngắt.
 - **`lib/contact.ts` (MỚI):** `SUPPORT_PHONE` / `SUPPORT_PHONE_DISPLAY` / `SUPPORT_ZALO` — **nguồn duy nhất**, lần sau đổi số chỉ sửa 1 file. Thay ở: footer trang chủ, `CallFab` (nút gọi nổi), `/share/[token]`, `/share/system/[token]`, nút "nhờ admin hỗ trợ" ở kho CTV.

@@ -9,6 +9,7 @@ import { fetcher } from '@/lib/fetcher';
 import { hasPermission, type AdminPermission } from '@/lib/permissions';
 import Logo from '@/components/ui/Logo';
 import Avatar from '@/components/ui/Avatar';
+import PhoneWarningBanner from '@/components/ui/PhoneWarningBanner';
 
 type MenuItem = { label: string; href: string; icon: string; perm?: AdminPermission; staffHidden?: boolean };
 
@@ -39,6 +40,14 @@ const menuItems: Record<string, MenuItem[]> = {
   ],
 };
 
+// Mỗi vai trò sửa hồ sơ ở một trang khác nhau — nút "Sửa số" phải dẫn đúng chỗ
+const PROFILE_HREF: Record<string, string> = {
+  BROKER: '/broker/profile',
+  LANDLORD: '/landlord/profile',
+  ADMIN: '/admin/users',
+  ADMIN_STAFF: '/admin/users',
+};
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
@@ -64,6 +73,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     session && role === 'LANDLORD' ? '/api/me/company' : null,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 60000 }
+  );
+  // Hồ sơ của chính mình — dùng để cảnh báo SĐT sai định dạng (khách gọi/Zalo không tới nơi).
+  const { data: me, mutate: mutateMe } = useSWR(
+    session ? '/api/users/me' : null,
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 300000 }
   );
 
   if (status === 'loading') {
@@ -188,6 +203,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             min-w-0 ép main co theo màn hình, bảng cuộn NGANG trong container của nó. */}
         <main className="flex-1 min-w-0 lg:ml-60 min-h-[calc(100vh-4rem)] pb-20 lg:pb-8">
           <div className="p-4 sm:p-6 max-w-7xl mx-auto page-enter">
+            {/* SĐT hỏng thì mọi nút gọi/Zalo dẫn về người này đều chết — nhắc cho tới khi
+                sửa hoặc tự xác nhận là đúng. Chỉ hiện với chính chủ tài khoản. */}
+            <PhoneWarningBanner
+              phone={me?.phone}
+              confirmedAt={me?.phoneConfirmedAt}
+              profileHref={PROFILE_HREF[role] || '/broker/profile'}
+              onConfirmed={() => mutateMe()}
+            />
             {children}
           </div>
         </main>

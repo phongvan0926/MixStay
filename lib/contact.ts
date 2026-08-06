@@ -1,5 +1,9 @@
 /**
- * HOTLINE CÔNG TY — NGUỒN DUY NHẤT. Đổi số thì sửa đúng file này.
+ * HOTLINE CÔNG TY — GIÁ TRỊ DỰ PHÒNG.
+ *
+ * 👉 Đổi hotline thì vào trang Cài đặt của admin (mục "Hotline công ty"), KHÔNG sửa file này.
+ * Số thật lưu ở bảng `settings` và đọc bằng `getSupportContact()` (lib/contact-server.ts);
+ * các hằng số dưới đây chỉ dùng khi admin chưa từng đặt hoặc DB đọc lỗi.
  *
  * Vì sao gom lại: số cũ (0379 838 222) từng được chép cứng ở 5 chỗ rời nhau (footer trang chủ,
  * CallFab, 2 trang share link, nút hỗ trợ CTV). Lần đổi số 06/08/2026 phải đi lùng từng chỗ,

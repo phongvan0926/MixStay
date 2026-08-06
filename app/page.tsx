@@ -2,12 +2,18 @@ import Link from 'next/link';
 import PublicSearch from './PublicSearch';
 import FeaturedRooms from './FeaturedRooms';
 import Logo from '@/components/ui/Logo';
-import CallFab from '@/components/ui/CallFab';
+import SupportFabs from '@/components/public/SupportFabs';
 import PublicNav from '@/components/layout/PublicNav';
 import SeoLinks from '@/components/public/SeoLinks';
-import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/contact';
+import { getSupportContact } from '@/lib/contact-server';
 
-export default function HomePage() {
+// Đọc hotline từ Cài đặt admin (server) → cần ISR, nếu không số sẽ đứng im từ lúc build.
+export const revalidate = 600;
+
+
+export default async function HomePage() {
+  // Chân trang cũng phải lấy hotline từ Cài đặt, không thì đổi số xong footer vẫn số cũ
+  const contact = await getSupportContact();
   return (
     <div className="min-h-screen bg-stone-50">
       {/* ===== NAVBAR (nhận session: hiện tên + đăng xuất khi đã đăng nhập) ===== */}
@@ -83,9 +89,9 @@ export default function HomePage() {
                   contact@mixstay.vn
                 </li>
                 <li>
-                  <a href={`tel:${SUPPORT_PHONE}`} aria-label={`Gọi hotline ${SUPPORT_PHONE_DISPLAY}`} className="flex items-center gap-2 hover:text-white transition-colors">
+                  <a href={`tel:${contact.phone}`} aria-label={`Gọi hotline ${contact.display}`} className="flex items-center gap-2 hover:text-white transition-colors">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                    <span className="font-medium text-white">Hotline: {SUPPORT_PHONE_DISPLAY}</span>
+                    <span className="font-medium text-white">Hotline: {contact.display}</span>
                   </a>
                 </li>
                 <li className="flex items-start gap-2">
@@ -108,7 +114,7 @@ export default function HomePage() {
       </footer>
 
       {/* Hotline công ty — FAB gọi nhanh (kênh hỗ trợ chung, KHÔNG qua logic Zalo/share link) */}
-      <CallFab stacked={false} />
+      <SupportFabs />
     </div>
   );
 }

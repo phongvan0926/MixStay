@@ -117,7 +117,7 @@ export default function AdminDashboardPage() {
     );
   }
 
-  const { todo, health, pulse, totals } = data;
+  const { todo, health, pulse, totals, badPhones } = data;
   const totalTodo =
     todo.pendingRooms + todo.pendingProperties + (todo.pendingCompanies || 0) +
     todo.activeLeads + todo.openInquiries + todo.newViewingRequests;
@@ -206,6 +206,8 @@ export default function AdminDashboardPage() {
 
       {/* ② SỨC KHOẺ KHO HÀNG */}
       <section>
+        <BadPhonesCard data={badPhones} onDone={mutate} />
+
         <h2 className="font-display font-semibold mb-3">Sức khoẻ kho hàng</h2>
         <div className="card p-5">
           <HealthRow label="Tin chưa có ảnh nào (khách lướt qua sẽ bỏ)" bad={health.roomsNoImage}
@@ -335,5 +337,75 @@ export default function AdminDashboardPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+/**
+ * ⚠️ SĐT sai định dạng — khách bấm gọi/Zalo vào đó không tới được ai.
+ * Công ty KHÔNG có tài khoản để tự xác nhận nên admin bấm hộ; CTV/chủ nhà thì
+ * còn được nhắc bằng banner riêng trên trang của họ (PhoneWarningBanner).
+ */
+function BadPhonesCard({ data, onDone }: { data?: { companies: any[]; users: any[] }; onDone: () => void }) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const companies = data?.companies || [];
+  const users = data?.users || [];
+  if (!companies.length && !users.length) return null;
+
+  const confirmCompany = async (id: string, name: string) => {
+    setBusy(id);
+    const res = await fetch('/api/companies', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, phoneConfirmed: true }),
+    });
+    setBusy(null);
+    if (res.ok) { toast.success(`Đã xác nhận số của ${name}`); onDone(); }
+    else toast.error('Không lưu được');
+  };
+
+  return (
+    <section className="mb-8">
+      <h2 className="font-display font-semibold mb-3">⚠️ Số điện thoại sai định dạng</h2>
+      <div className="card p-5 border-amber-300 bg-amber-50/60">
+        <p className="text-sm text-amber-900 mb-4">
+          {companies.length + users.length} số dưới đây khách <strong>bấm gọi hoặc nhắn Zalo sẽ không tới nơi</strong>.
+          Sửa lại, hoặc bấm &ldquo;Số này đúng&rdquo; nếu thực sự dùng được để thôi nhắc.
+        </p>
+        <div className="space-y-2">
+          {companies.map(c => (
+            <div key={c.id} className="flex flex-wrap items-center gap-2 justify-between bg-white rounded-xl px-4 py-2.5 border border-amber-200">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-stone-900 truncate">🏢 {c.name}</p>
+                <p className="text-xs text-stone-500">
+                  <span className="font-mono">{c.phone}</span> — {c.reason}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link href="/admin/companies" className="text-xs font-medium text-brand-600 hover:underline">Sửa</Link>
+                <button type="button" onClick={() => confirmCompany(c.id, c.name)} disabled={busy === c.id}
+                  className="text-xs font-medium px-3 py-1.5 rounded-lg border border-stone-300 bg-white hover:bg-stone-50 disabled:opacity-60">
+                  {busy === c.id ? 'Đang lưu…' : 'Số này đúng'}
+                </button>
+              </div>
+            </div>
+          ))}
+          {users.map(u => (
+            <div key={u.id} className="flex flex-wrap items-center gap-2 justify-between bg-white rounded-xl px-4 py-2.5 border border-amber-200">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-stone-900 truncate">
+                  👤 {u.name || u.email || 'Không tên'} <span className="text-xs font-normal text-stone-400">{u.role}</span>
+                </p>
+                <p className="text-xs text-stone-500">
+                  <span className="font-mono">{u.phone}</span> — {u.reason}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link href="/admin/users" className="text-xs font-medium text-brand-600 hover:underline">Sửa</Link>
+                <span className="text-xs text-stone-400">tự xác nhận khi họ đăng nhập</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }

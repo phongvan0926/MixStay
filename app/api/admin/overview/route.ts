@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { needsPhoneWarning, checkPhone } from '@/lib/phone';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { hasPermission } from '@/lib/permissions';
 
@@ -114,7 +115,29 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
+    // ⚠️ SĐT sai định dạng — khách bấm gọi/Zalo không tới nơi mà không ai biết.
+    // Lọc bằng JS (không phải SQL) vì luật số VN cần regex + bóc số; dữ liệu chỉ vài chục bản ghi.
+    const [allCompanies, allUsers] = await Promise.all([
+      prisma.company.findMany({
+        where: { phoneConfirmedAt: null, phone: { not: null } },
+        select: { id: true, name: true, phone: true },
+      }),
+      prisma.user.findMany({
+        where: { phoneConfirmedAt: null, phone: { not: null }, isActive: true },
+        select: { id: true, name: true, email: true, role: true, phone: true },
+      }),
+    ]);
+    const badPhones = {
+      companies: allCompanies
+        .filter(c => needsPhoneWarning(c.phone))
+        .map(c => ({ ...c, reason: checkPhone(c.phone).reason })),
+      users: allUsers
+        .filter(u => needsPhoneWarning(u.phone))
+        .map(u => ({ ...u, reason: checkPhone(u.phone).reason })),
+    };
+
     return NextResponse.json({
+      badPhones,
       todo: {
         pendingRooms,
         pendingProperties,
