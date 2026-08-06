@@ -286,7 +286,7 @@ function AdminPropertiesInner() {
                     <td className="table-cell">
                       <div className="flex items-center gap-2">
                         <button onClick={() => openEdit(p)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-brand-50 text-brand-700 hover:bg-brand-100 transition-colors">
+                          className="inline-flex items-center gap-1 px-3 py-1.5 min-h-8 rounded-lg text-xs font-medium bg-brand-50 text-brand-700 hover:bg-brand-100 transition-colors">
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
@@ -296,15 +296,15 @@ function AdminPropertiesInner() {
                           <>
                             <button onClick={() => handleApprove(p.id, 'APPROVED')} disabled={!canApprove}
                               title={canApprove ? '' : 'Cần quyền Duyệt tin đăng (APPROVE_LISTINGS)'}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Duyệt</button>
+                              className="inline-flex items-center gap-1 px-3 py-1.5 min-h-8 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Duyệt</button>
                             <button onClick={() => handleApprove(p.id, 'REJECTED')} disabled={!canApprove}
                               title={canApprove ? '' : 'Cần quyền Duyệt tin đăng (APPROVE_LISTINGS)'}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Từ chối</button>
+                              className="inline-flex items-center gap-1 px-3 py-1.5 min-h-8 rounded-lg text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Từ chối</button>
                           </>
                         )}
                         <button onClick={() => handleDelete(p.id)} disabled={!canDelete}
                           title={canDelete ? '' : 'Cần quyền Xóa tòa nhà (DELETE_PROPERTY)'}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Xoá</button>
+                          className="inline-flex items-center gap-1 px-3 py-1.5 min-h-8 rounded-lg text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Xoá</button>
                       </div>
                     </td>
                   </tr>

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 /**
  * Cài MixStay như ứng dụng (PWA) + đăng ký service worker.
@@ -13,6 +14,7 @@ type BIPEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ out
 const DISMISS_KEY = 'mixstay:a2hs-dismissed';
 
 export default function InstallPWA() {
+  const pathname = usePathname();
   const [deferred, setDeferred] = useState<BIPEvent | null>(null);
   const [show, setShow] = useState(false);
   const [showIosHelp, setShowIosHelp] = useState(false);
@@ -80,6 +82,11 @@ export default function InstallPWA() {
   };
 
   if (!show) return null;
+  // KHÔNG mời cài app trong khu QUẢN TRỊ: banner là `fixed` cao 94px, nó CHE mất một hàng
+  // của bảng dữ liệu (đo trên /admin/rooms 07/08/2026). Người đang quản trị kho hàng cũng
+  // không phải đối tượng cần cài PWA — lời mời chỉ hợp với khách đang tìm phòng.
+  if (/^\/(admin|broker|landlord)(\/|$)/.test(pathname || '')) return null;
+
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-[55] p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pointer-events-none">

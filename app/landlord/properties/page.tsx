@@ -940,7 +940,7 @@ function RoomTypeCard({
           </button>
           {rt.status === 'UPCOMING' && (
             <div className="rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1 min-h-8 inline-flex items-center">
-              <label className="block text-[9px] font-medium text-amber-700 leading-tight">⚠️ Sẽ trống từ (bỏ trống = đầu tháng sau):</label>
+              <label className="block text-[11px] font-medium text-amber-700 leading-tight">⚠️ Sẽ trống từ (bỏ trống = đầu tháng sau):</label>
               <input type="date"
                 value={toDateInputValue(rt.expectedAvailableDate)}
                 onChange={e => onSetUpcomingDate(rt.id, e.target.value ? new Date(e.target.value).toISOString() : firstOfNextMonthISO())}
@@ -1068,7 +1068,7 @@ function RoomTypeListView({
                   </button>
                   {rt.status === 'UPCOMING' && (
                     <div className="mt-1 mx-auto max-w-[150px] rounded-md border border-amber-300 bg-amber-50 px-1.5 py-1 text-left">
-                      <label className="block text-[9px] font-medium text-amber-700 leading-tight">⚠️ Sẽ trống từ:</label>
+                      <label className="block text-[11px] font-medium text-amber-700 leading-tight">⚠️ Sẽ trống từ:</label>
                       <input type="date"
                         value={toDateInputValue(rt.expectedAvailableDate)}
                         onChange={e => onSetUpcomingDate(rt.id, e.target.value ? new Date(e.target.value).toISOString() : firstOfNextMonthISO())}

@@ -583,7 +583,7 @@ function AdminRoomsInner() {
               <tr>
                 <th className="table-header w-8">
                   <input type="checkbox" checked={allPageSelected} onChange={toggleSelectAllPage}
-                    title="Chọn tất cả phòng trang này" className="accent-brand-600 w-4 h-4 cursor-pointer" />
+                    title="Chọn tất cả phòng trang này" className="accent-brand-600 w-4 h-4 cursor-pointer w-5 h-5 cursor-pointer accent-brand-600" />
                 </th>
                 <th className="table-header min-w-[250px]">Tin đăng</th>
                 <th className="table-header min-w-[165px]">Tòa nhà</th>
@@ -637,7 +637,7 @@ function AdminRoomsInner() {
                       <p className="text-stone-700 leading-snug line-clamp-2" title={r.property?.name}>{r.property?.name}</p>
                       <p className="text-xs text-stone-400 truncate">
                         {r.property?.district}
-                        {companyName && <span className="ml-1 inline-block align-middle badge bg-brand-50 text-brand-700 !text-[9px] !px-1.5 !py-0" title={companyName}>{companyName}</span>}
+                        {companyName && <span className="ml-1 inline-block align-middle badge bg-brand-50 text-brand-700 !text-[11px] !px-1.5 !py-0" title={companyName}>{companyName}</span>}
                       </p>
                     </td>
                     <td className="table-cell font-semibold text-brand-600 whitespace-nowrap">{formatCurrency(r.priceMonthly)}</td>
@@ -662,7 +662,7 @@ function AdminRoomsInner() {
                       </button>
                       {r.status === 'UPCOMING' && (
                         <div className="mt-1 rounded-md border border-amber-300 bg-amber-50 px-1.5 py-1 max-w-[150px]">
-                          <label className="block text-[9px] font-medium text-amber-700 leading-tight">⚠️ Sẽ trống từ (bỏ trống = đầu tháng sau):</label>
+                          <label className="block text-[11px] font-medium text-amber-700 leading-tight">⚠️ Sẽ trống từ (bỏ trống = đầu tháng sau):</label>
                           <input type="date"
                             value={toDateInputValue(r.expectedAvailableDate)}
                             onChange={e => setStatus(r.id, 'UPCOMING', e.target.value ? new Date(e.target.value).toISOString() : firstOfNextMonthISO())}
@@ -682,18 +682,18 @@ function AdminRoomsInner() {
                         return flags.length > 0 ? (
                           <div className="mt-1 max-w-[160px] space-y-0.5">
                             {flags.map(f => (
-                              <p key={f} className="text-[9px] leading-tight font-medium text-red-600 bg-red-50 border border-red-100 rounded px-1 py-0.5">{f}</p>
+                              <p key={f} className="text-[11px] leading-tight font-medium text-red-600 bg-red-50 border border-red-100 rounded px-1 py-0.5">{f}</p>
                             ))}
                           </div>
                         ) : (
-                          <p className="mt-1 text-[9px] font-medium text-emerald-600">✓ Không thấy vấn đề</p>
+                          <p className="mt-1 text-[11px] font-medium text-emerald-600">✓ Không thấy vấn đề</p>
                         );
                       })()}
                     </td>
                     <td className="table-cell">
                       <div className="flex items-center gap-2">
                         <button onClick={() => openEdit(r)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-brand-50 text-brand-700 hover:bg-brand-100 transition-colors">
+                          className="inline-flex items-center gap-1 px-3 py-1.5 min-h-8 rounded-lg text-xs font-medium bg-brand-50 text-brand-700 hover:bg-brand-100 transition-colors">
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
@@ -701,7 +701,7 @@ function AdminRoomsInner() {
                         </button>
                         {/* Đăng lên fanpage/nhóm: ảnh bìa in sẵn giá + caption có hashtag theo quận */}
                         <button onClick={() => setPostRoom(r)} title="Lấy ảnh bìa + nội dung đăng Facebook/Zalo"
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-violet-50 text-violet-700 hover:bg-violet-100 transition-colors">
+                          className="inline-flex items-center gap-1 px-3 py-1.5 min-h-8 rounded-lg text-xs font-medium bg-violet-50 text-violet-700 hover:bg-violet-100 transition-colors">
                           📢 Đăng
                         </button>
                         <button onClick={async () => {
@@ -709,7 +709,7 @@ function AdminRoomsInner() {
                             await fetch(`/api/rooms?id=${r.id}`, { method: 'DELETE' });
                             toast.success('Đã xoá'); mutate();
                           }
-                        }} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors">Xoá</button>
+                        }} className="inline-flex items-center gap-1 px-3 py-1.5 min-h-8 rounded-lg text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors">Xoá</button>
                       </div>
                     </td>
                   </tr>

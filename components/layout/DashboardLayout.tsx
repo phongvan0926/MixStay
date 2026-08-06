@@ -81,6 +81,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { revalidateOnFocus: false, dedupingInterval: 300000 }
   );
 
+  // Đặt TIÊU ĐỀ TAB theo trang đang mở. Trang quản trị là client component nên không dùng
+  // được `export const metadata` — trước đây MỌI tab đều hiện "MixStay - Tìm phòng chung cư
+  // mini nhanh nhất", mở 5 tab là không biết tab nào là tab nào (đo 07/08/2026).
+  useEffect(() => {
+    const all = Object.values(menuItems).flat();
+    const hit = all.filter(m => pathname?.startsWith(m.href)).sort((a, b) => b.href.length - a.href.length)[0];
+    if (hit) document.title = `${hit.label} | MixStay`;
+  }, [pathname]);
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-50">
@@ -186,7 +195,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <span className="text-lg relative">
                   {item.icon}
                   {showBadge && (
-                    <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[8px] font-bold min-w-[14px] h-[14px] rounded-full flex items-center justify-center px-0.5">
+                    <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold min-w-[14px] h-[14px] rounded-full flex items-center justify-center px-0.5">
                       {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
                   )}

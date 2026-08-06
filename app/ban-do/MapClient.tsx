@@ -541,7 +541,7 @@ export default function MapClient() {
         href="https://www.openstreetmap.org/copyright"
         target="_blank"
         rel="noopener noreferrer"
-        className="absolute bottom-0.5 right-1 z-[500] text-[9px] leading-none text-stone-400/70 hover:text-stone-500 bg-white/40 px-1 rounded"
+        className="absolute bottom-0.5 right-1 z-[500] text-[11px] leading-none text-stone-400/70 hover:text-stone-500 bg-white/40 px-1 rounded"
       >
         © OpenStreetMap
       </a>

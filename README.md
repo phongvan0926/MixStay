@@ -286,6 +286,16 @@ mixstay/
 - **Sửa dữ liệu:** BNBHOLDING `09366258556` → **`0936258556`**. Bằng chứng: cả 9 tòa của công ty đứng tên chủ nhà **Anh Biên — 0936258556**, và 3 tòa ghi thẳng `"A Biên 0936258556"`; số lưu sai đúng là số đó **thừa một chữ số 6** (`0936|6|258556`). Kho công ty đã có lại nút gọi + Zalo.
 - **Rà lại toàn bộ nguồn SĐT dựng link:** công ty **0/36 lỗi**, tòa nhà **0/464 lỗi**, tài khoản còn 1 (CTV thử nghiệm "aaa" `1234567890` — đã có cảnh báo lo).
 
+### v9.51 — 2026-08-07 (tối ưu UI/UX KHU QUẢN TRỊ — đo trên Chrome đã đăng nhập thật)
+Chủ dự án mở phiên admin trên Chrome để đo trực tiếp, thay vì đoán từ mã nguồn.
+
+- **🏷️ Mọi tab quản trị đều mang CÙNG một tên** — `MixStay - Tìm phòng chung cư mini nhanh nhất`. Mở 5 tab là không biết tab nào là tab nào. Trang quản trị là client component nên không dùng được `export const metadata`; nay `DashboardLayout` đặt `document.title` theo mục menu đang mở (`Tin đăng | MixStay`, `Tòa nhà | MixStay`…). Một chỗ sửa, cả admin + CTV + chủ nhà đều có tên riêng.
+- **🚫 Banner "Cài MixStay như ứng dụng" ĐANG CHE dữ liệu.** Nó `position: fixed`, cao 94px, `z-index 55` — đo trên `/admin/rooms` thì nó phủ lên một hàng của bảng. Người đang quản trị kho hàng cũng không phải đối tượng cần cài PWA. Nay không hiện ở `/admin`, `/broker`, `/landlord`.
+- **☑️ Ô tick chọn chỉ 16×16px** — 21 ô mỗi trang `/admin/rooms`, chọn nhiều tin là cực khổ. Nay 20×20 + con trỏ tay + màu thương hiệu.
+- **Nút thao tác trong bảng cao 28px** (Sửa/Đăng/Xoá — 20 hàng × 3 nút, bấm cả ngày) → 32px.
+- **Chữ 9px và 8px** (4 chỗ trong bảng tin đăng, 2 chỗ trang chủ nhà, 1 chỗ bản đồ, 1 chỗ sidebar) → 10–11px. Giữ 10px trong bảng vì mật độ dày là cố ý.
+- Ghi nhận chưa sửa: bảng `/admin/rooms` rộng hơn khung **32px** nên cột "Xoá" bị khuất, phải cuộn ngang mới thấy (khung đã có `overflow-x-auto` nên không vỡ layout).
+
 ### v9.50 — 2026-08-07 (tối ưu UI/UX toàn trang: đo bằng trình duyệt thật, không phải cảm tính)
 Chạy Playwright đo TỪNG phần tử trên 7 trang công khai × 2 khổ màn hình (điện thoại 390px + máy tính 1440px), lấy chuẩn **vùng bấm tối thiểu 44×44px** và **cỡ chữ tối thiểu 12px**.
 
