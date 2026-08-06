@@ -8,6 +8,7 @@ import ListingCard from '@/components/public/ListingCard';
 import SeoLinks from '@/components/public/SeoLinks';
 import CompareBar from '@/components/public/CompareBar';
 import { getDistrictPageData } from '@/lib/seo-listings';
+import { safeJsonLd } from '@/lib/json-ld';
 import {
   districtBySlug, districtPath, uniPath, SEO_DISTRICTS, SITE_URL, PRICE_BANDS, TYPE_LABEL,
 } from '@/lib/seo-locations';
@@ -117,7 +118,7 @@ export default async function DistrictPage({ params }: { params: { district: str
   return (
     <div className="min-h-screen bg-stone-50">
       <PublicNav />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
 
       <main className="pt-16">
         <section className="bg-white border-b border-stone-200">

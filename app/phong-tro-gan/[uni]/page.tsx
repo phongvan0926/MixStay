@@ -8,6 +8,7 @@ import ListingCard from '@/components/public/ListingCard';
 import SeoLinks from '@/components/public/SeoLinks';
 import CompareBar from '@/components/public/CompareBar';
 import { getUniPageData } from '@/lib/seo-listings';
+import { safeJsonLd } from '@/lib/json-ld';
 import {
   uniBySlug, uniPath, districtPath, SEO_UNIS, SITE_URL, UNI_RADIUS_KM, PRICE_BANDS,
 } from '@/lib/seo-locations';
@@ -105,7 +106,7 @@ export default async function UniPage({ params }: { params: { uni: string } }) {
   return (
     <div className="min-h-screen bg-stone-50">
       <PublicNav />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
 
       <main className="pt-16">
         <section className="bg-white border-b border-stone-200">

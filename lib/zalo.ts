@@ -26,6 +26,10 @@ export function normalizeZaloInput(raw: string | null | undefined): string | nul
   if (!raw) return null;
   const v = raw.trim();
   if (!v) return null;
+  // Chỉ chấp nhận http/https. Chuỗi lạ (javascript:, data:, vbscript:) trước đây rơi xuống
+  // `return v` cuối và được ghi thẳng vào href. Bản kiểm định kết luận CHƯA khai thác được
+  // (React chặn), nhưng chặn ở đây thì không phải phụ thuộc vào hành vi của React/trình duyệt.
+  if (/^[a-z][a-z0-9+.-]*:/i.test(v) && !/^https?:\/\//i.test(v)) return null;
   if (/^https?:\/\//i.test(v)) return v;
   if (/^(www\.)?zalo\.me\//i.test(v)) return 'https://' + v.replace(/^www\./i, '');
   // Chỉ gồm ký tự của số điện thoại → coi là SĐT.

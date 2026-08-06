@@ -38,7 +38,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             // NO lat, lng, zaloPhone
             // phone: dùng cho nút Gọi ở chế độ kho công ty (?kho=) — liên hệ về CHÍNH công ty
             company: { select: { id: true, name: true, code: true, logo: true, zaloGroupLink: true, phone: true, description: true } },
-            landlord: { select: { id: true, name: true, phone: true } }, // phone dùng cho FAB Zalo deeplink (KHÔNG render trên UI)
+            // 🔴 KHÔNG trả phone: đây là API CÔNG KHAI, ai cũng gọi được. Trước đây có
+            // `phone: true` "để dựng FAB Zalo" — khách vãng lai chỉ cần duyệt /api/rooms/public
+            // lấy id rồi lặp là quét sạch danh bạ SĐT cá nhân của toàn bộ chủ nhà, và gọi thẳng
+            // chủ nhà bỏ qua nền tảng. Không có share token thì nút liên hệ lùi về Zalo nhóm
+            // công ty hoặc hotline (lib/zalo.ts) — đúng luật "khách không thấy SĐT".
+            landlord: { select: { id: true, name: true } },
           },
         },
       },

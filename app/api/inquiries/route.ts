@@ -57,22 +57,34 @@ export async function POST(req: NextRequest) {
 
     const { roomTypeId, message } = await req.json();
 
-    // Create inquiry
+    // 🔴 Trước đây roomTypeId nhận thẳng không kiểm, và `include: { property: true }` trả VỀ
+    // MỌI cột của Property. CTV chưa được cấp canViewContact chỉ cần lặp POST với id lấy từ
+    // /api/rooms/public là moi sạch fullAddress + toạ độ + zaloPhone + landlordNotes của cả kho
+    // — vô hiệu hoá đúng cơ chế canViewContact sinh ra để chặn (phát hiện khi kiểm định 07/08/2026).
+    // Nay: kiểm tin có thật + đã duyệt, và CHỈ lấy đúng field cần cho thông báo.
+    const target = await prisma.roomType.findFirst({
+      where: { id: roomTypeId, isApproved: true, property: { status: 'APPROVED', isActive: true } },
+      select: { id: true, name: true, property: { select: { landlordId: true } } },
+    });
+    if (!target) {
+      return NextResponse.json({ error: 'Tin đăng không tồn tại hoặc chưa được duyệt' }, { status: 404 });
+    }
+
     const inquiry = await prisma.roomInquiry.create({
       data: {
         roomTypeId,
         brokerId: session.user.id,
         message: message || 'Còn phòng không?',
       },
-      include: { roomType: { include: { property: true } } },
+      select: { id: true, roomTypeId: true, message: true, createdAt: true },
     });
 
     // Create notification for landlord
     await prisma.notification.create({
       data: {
-        userId: inquiry.roomType.property.landlordId,
+        userId: target.property.landlordId,
         type: 'inquiry',
-        title: `CTV hỏi về ${inquiry.roomType.name}`,
+        title: `CTV hỏi về ${target.name}`,
         message: `${session.user.name} hỏi: "${inquiry.message}"`,
         link: `/landlord/properties`,
       },

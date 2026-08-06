@@ -286,6 +286,31 @@ mixstay/
 - **Sửa dữ liệu:** BNBHOLDING `09366258556` → **`0936258556`**. Bằng chứng: cả 9 tòa của công ty đứng tên chủ nhà **Anh Biên — 0936258556**, và 3 tòa ghi thẳng `"A Biên 0936258556"`; số lưu sai đúng là số đó **thừa một chữ số 6** (`0936|6|258556`). Kho công ty đã có lại nút gọi + Zalo.
 - **Rà lại toàn bộ nguồn SĐT dựng link:** công ty **0/36 lỗi**, tòa nhà **0/464 lỗi**, tài khoản còn 1 (CTV thử nghiệm "aaa" `1234567890` — đã có cảnh báo lo).
 
+### v9.49 — 2026-08-07 (KIỂM ĐỊNH BẢO MẬT: 9 lỗ hổng được xác nhận, vá hết + rò rỉ số nhà qua TÊN TIN)
+Kiểm định do 15 agent chạy song song theo 5 hướng (phân quyền · riêng tư · injection · xác thực · lạm dụng), mỗi phát hiện nặng đều bị một agent khác **cố bác bỏ** trước khi được ghi nhận. Song song đó là quét hộp đen từ ngoài + kiểm toàn vẹn dữ liệu bằng truy vấn trực tiếp. Kết quả: **9 lỗi thật, 1 bị bác bỏ**.
+
+**🔴 CRITICAL**
+- **`GET /api/properties` không kiểm tra đăng nhập** — route CÓ gọi `getServerSession` nhưng chỉ dùng để lọc bớt cho chủ nhà; khách vãng lai → `session=null` → `where={}` → trả **toàn bộ 472 tòa** (5 request là hết) kèm `fullAddress` nguyên số nhà, toạ độ GPS, `zaloPhone`, `landlordNotes`, tên/SĐT/email chủ nhà. Đúng thứ mà cả hệ thống redact sinh ra để giấu, và vô hiệu hoá hoàn toàn cơ chế `canViewContact`. → bắt buộc đăng nhập, chặn CUSTOMER, bỏ hẳn field nhạy cảm khỏi payload khi không có quyền xem liên hệ.
+- **`POST /api/inquiries` trả nguyên đối tượng Property** (`include: { property: true }`) và **không kiểm `roomTypeId`** → CTV chưa được cấp `canViewContact` chỉ cần lặp POST với id lấy từ API công khai là moi sạch địa chỉ + SĐT chủ nhà cả kho. → kiểm tin tồn tại/đã duyệt, chỉ `select` đúng field cần cho thông báo.
+- **`GET /api/deals` chỉ giới hạn phạm vi cho BROKER** → CUSTOMER (ai cũng tự đăng ký, không cần duyệt) và LANDLORD đọc được **toàn bộ sổ giao dịch**: họ tên + SĐT khách thuê thật, giá chốt, mọi con số hoa hồng. Tệ hơn: `canSeeFinancials = !isBroker` nên họ thấy luôn `commissionCompany`. → chặn CUSTOMER, khoá LANDLORD về tòa của mình, số liệu tài chính chỉ admin có quyền.
+- **Leo thang đặc quyền lên ADMIN từ console trình duyệt** — `jwt` callback nhận thẳng `session.role` do CLIENT gửi (`update({role:'ADMIN'})`) rồi `return token` sớm, bỏ luôn bước đối chiếu DB. Có ADMIN trong session là qua middleware `/admin` VÀ mọi `requirePermission` (ADMIN bypass hết) → tự cấp quyền thật trong DB, chiếm vĩnh viễn. → bỏ hẳn nhánh tin client; `update()` nay chỉ ép nạp lại từ DB; `needsRoleSetup` suy từ DB. `/api/auth/set-role` chỉ đặt được MỘT LẦN (trước đây đổi vai trò lúc nào cũng được).
+- **`GET /api/rooms` mở cho khách vãng lai** + `?search=` dò được `fullAddress`/`zaloPhone`/SĐT chủ nhà (oracle có/không kết quả), và trả tên tòa/tên đường THÔ (186/472 tên tòa bắt đầu bằng số nhà). → bắt buộc đăng nhập; điều kiện tìm trên trường bí mật chỉ mở cho người được xem liên hệ; che tên tòa/đường khi không có quyền.
+
+**🟠 HIGH**
+- **Stored XSS trên `/tin/[id]`** — `JSON.stringify` không escape `</script>`, mà tên tin do chủ nhà tự gõ → đặt tên `Phòng đẹp</script><script>…` là chạy được JS trên chính miền mixstay.vn. → `lib/json-ld.ts` (MỚI) `safeJsonLd()` escape `< > &`, áp cho cả 3 trang nhúng JSON-LD.
+- **`/api/rooms/public/[id]` luôn trả SĐT cá nhân chủ nhà** ("để dựng nút Zalo") → khách vãng lai duyệt danh sách công khai lấy id rồi lặp là quét sạch danh bạ chủ nhà, gọi thẳng bỏ qua nền tảng. → bỏ `phone`; không có share token thì nút liên hệ lùi về Zalo nhóm công ty hoặc hotline.
+
+**🟡 MEDIUM**
+- `/api/poster/[id]` và `/api/og/[id]` **không có rate limit**, dựng ảnh nặng mỗi request, cache CDN vượt được bằng `?cb=random` → đốt CPU/tiền Vercel. → thêm `applyRateLimit`.
+
+**Bị BÁC BỎ sau phản biện:** XSS qua `javascript:` lưu ở `company.zaloGroupLink` — 2/3 mắt xích đúng nhưng JS không thực thi. Vẫn siết `normalizeZaloInput` chỉ nhận `http/https` để không phụ thuộc hành vi React (8/8 ca kiểm thử).
+
+**🔒 Rò rỉ số nhà qua TÊN TIN (tự tìm được, ngoài danh sách trên)**
+Địa chỉ đã che số nhà đúng từ lâu, nhưng **tên tin do chủ nhà tự gõ thì ra thẳng** — mà tên đi vào `<title>` của `/tin/[id]` (Google đã lập chỉ mục), thẻ tin mọi trang công khai, JSON-LD, thẻ OG và ảnh bìa Facebook. **236/622 tin (38%)** có số nhà trong tên. → `redactTitle()` (luật riêng cho tiêu đề: không dùng lại `redactName()` vì nó ăn mất số "1" của "1 ngủ 1 khách", cũng không dùng `redactHouseNumber()` vì nó cắt cả chuỗi ngõ) + `redactPublicText()` lọc SĐT/Zalo khỏi mô tả. 15/15 ca biên; trên 622 tin thật: 0 còn lộ, 0 tên bị cắt hỏng.
+
+**✅ Kiểm toàn vẹn dữ liệu (truy vấn trực tiếp) — sạch**
+0 bản ghi mồ côi · 0 mã tin/token trùng · 0 tin duyệt nằm trên tòa chưa duyệt · 0 trạng thái phi lý · 0 mật khẩu lưu thô · 0 tài khoản thừa quyền treo. Quét hộp đen lại sau khi vá: **21/21 endpoint trả đúng 401/403 hoặc chỉ dữ liệu đã che**.
+
 ### v9.47 — 2026-08-06 (hotline sửa được trong Cài đặt + vá nút gọi méo + cảnh báo SĐT sai định dạng)
 - **⚙️ Đổi hotline không cần lập trình viên:** thêm mục **"Hotline công ty"** ở `/admin/settings` — số + link Zalo lưu ở bảng `settings`, mọi trang công khai đọc qua `getSupportContact()` (`lib/contact-server.ts`). Ô nhập kiểm ngay tại chỗ, số sai **không lưu được**, và có khung xem trước đúng thứ khách sẽ thấy. Trang công khai đặt `revalidate = 600` → đổi số là toàn web theo trong ~10 phút.
 - **📐 Nút gọi trên điện thoại bị méo (người dùng báo):** trên mobile chữ bị ẩn nhưng nút vẫn để `h-14 px-3` → rộng 48px mà cao 56px = **bầu dục**, lại thêm `paddingBottom: env(safe-area-inset-bottom)` **bên trong** nút cao cố định nên **đẩy icon lệch lên**. Nay ép `w-14 h-14` tròn đều, icon to lên 26px, safe-area chuyển hết sang `bottom`. Đo bằng trình duyệt thật: **56×56px, icon lệch tâm 0.0px** (trước: 48×56px, icon lệch). Sửa cho cả `CallFab` lẫn `ZaloFab`.

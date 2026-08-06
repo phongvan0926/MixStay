@@ -5,6 +5,7 @@ import ShareViewClient from '@/app/share/[token]/ShareViewClient';
 import { publicAddress, redactTitle, redactPublicText } from '@/lib/address';
 import { ogImage, largeCard } from '@/lib/og';
 import { SITE_URL } from '@/lib/seo-locations';
+import { safeJsonLd } from '@/lib/json-ld';
 
 // Trang tin đăng CÔNG KHAI theo id — khách xem chi tiết KHÔNG cần đăng nhập / không cần
 // share link. Dùng chung ShareViewClient (tự fetch /api/rooms/public/[id] khi có params.id).
@@ -99,7 +100,7 @@ export default async function PublicListingPage({ params }: { params: { id: stri
   return (
     <>
       {jsonLd && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       )}
       <ShareViewClient />
     </>

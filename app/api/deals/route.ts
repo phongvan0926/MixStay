@@ -20,8 +20,18 @@ export async function GET(req: NextRequest) {
     const companyId = url.searchParams.get('companyId');
     const where: any = {};
 
-    // Broker chỉ thấy deals CỦA MÌNH
-    if (session.user.role === 'BROKER') where.brokerId = session.user.id;
+    // 🔴 Trước đây CHỈ có nhánh BROKER, nên CUSTOMER (ai cũng tự đăng ký được, không cần duyệt)
+    // và LANDLORD gọi GET /api/deals?limit=100 là nhận TOÀN BỘ giao dịch của nền tảng: họ tên +
+    // SĐT khách thuê thật, giá chốt, mọi con số hoa hồng. Phát hiện khi kiểm định 07/08/2026.
+    const dealRole = session.user.role;
+    if (dealRole === 'CUSTOMER') {
+      return NextResponse.json({ error: 'Không có quyền xem giao dịch' }, { status: 403 });
+    }
+    if (dealRole === 'BROKER') where.brokerId = session.user.id;
+    // Chủ nhà chỉ thấy giao dịch phát sinh trên TÒA CỦA MÌNH
+    if (dealRole === 'LANDLORD') {
+      where.roomType = { ...(where.roomType || {}), property: { ...((where.roomType || {}).property || {}), landlordId: session.user.id } };
+    }
     if (status) where.status = status;
     // Lọc theo công ty (qua tòa nhà của phòng) — __none__ = phòng thuộc tòa chưa gán công ty
     if (companyId === '__none__') where.roomType = { property: { companyId: null } };
@@ -31,7 +41,9 @@ export async function GET(req: NextRequest) {
 
     const isBroker = session.user.role === 'BROKER';
     const isAdminFamily = session.user.role === 'ADMIN' || session.user.role === 'ADMIN_STAFF';
-    const canSeeFinancials = isAdminFamily ? hasPermission(session.user as any, 'VIEW_FINANCIAL_REPORTS') : !isBroker;
+    // `: !isBroker` cũ khiến CUSTOMER và LANDLORD thấy luôn commissionCompany (phần công ty ăn).
+    // Số liệu tài chính của công ty chỉ admin có quyền mới được xem.
+    const canSeeFinancials = isAdminFamily && hasPermission(session.user as any, 'VIEW_FINANCIAL_REPORTS');
 
     const [deals, total] = await Promise.all([
       prisma.deal.findMany({

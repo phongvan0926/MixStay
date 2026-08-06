@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { applyRateLimit } from '@/lib/rate-limit';
 import sharp from 'sharp';
 import prisma from '@/lib/prisma';
 import { getVideoThumbnail } from '@/lib/video-utils';
@@ -33,6 +34,12 @@ async function toOgJpeg(url: string): Promise<Buffer | null> {
 }
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  // Dựng ảnh là việc NẶNG (tải ảnh gốc + render). Không giới hạn thì khách vãng lai bắn vòng
+  // lặp kèm ?cb=random (mỗi query string là một cache key khác → CDN MISS 100%) là đốt CPU
+  // và tiền Vercel. Phát hiện khi kiểm định 07/08/2026.
+  const rateLimited = await applyRateLimit(req, 'api');
+  if (rateLimited) return rateLimited;
+
   let source: string | null = null;
 
   try {

@@ -9,6 +9,7 @@ import { requirePermission } from '@/lib/permissions-server';
 import { normalizeListingCode, LISTING_CODE_REGEX, parseComposedListingCode } from '@/lib/listing-code';
 import { generateUniqueListingCode } from '@/lib/listing-code-server';
 import { reconcileAvailability, type RoomStatusValue } from '@/lib/room-status';
+import { redactName, redactHouseNumber } from '@/lib/address';
 
 export async function GET(req: NextRequest) {
   const rateLimited = await applyRateLimit(req, 'api');
@@ -85,6 +86,13 @@ export async function GET(req: NextRequest) {
     if (Object.keys(propertyWhere).length > 0) {
       where.property = { ...where.property, ...propertyWhere };
     }
+    // Tính sớm (canContact bên dưới dùng cho phần select) để dùng ngay trong điều kiện tìm kiếm
+    const canContactSearch =
+      session.user.role === 'ADMIN' ||
+      session.user.role === 'ADMIN_STAFF' ||
+      session.user.role === 'LANDLORD' ||
+      (session.user.role === 'BROKER' && !!(session.user as any).canViewContact);
+
     if (search) {
       const composed = parseComposedListingCode(search);
       if (composed.companyCode && LISTING_CODE_REGEX.test(composed.baseCode)) {
@@ -106,9 +114,14 @@ export async function GET(req: NextRequest) {
             { property: { name: { contains: search, mode: 'insensitive' } } },
             { property: { district: { contains: search, mode: 'insensitive' } } },
             { property: { streetName: { contains: search, mode: 'insensitive' } } },
-            { property: { fullAddress: { contains: search, mode: 'insensitive' } } },
-            { property: { zaloPhone: { contains: search, mode: 'insensitive' } } },
-            { property: { landlord: { phone: { contains: search, mode: 'insensitive' } } } },
+            // 🔴 Tìm theo fullAddress/zaloPhone/SĐT chủ nhà chỉ dành cho người ĐƯỢC XEM LIÊN HỆ.
+            // Mở cho mọi người là biến ?search= thành ORACLE: dò từng ký tự (có kết quả / không)
+            // để moi ra số nhà và số điện thoại mà API cố tình không trả về.
+            ...(canContactSearch ? [
+              { property: { fullAddress: { contains: search, mode: 'insensitive' } } },
+              { property: { zaloPhone: { contains: search, mode: 'insensitive' } } },
+              { property: { landlord: { phone: { contains: search, mode: 'insensitive' } } } },
+            ] : []),
           ];
         }
       }
@@ -217,7 +230,19 @@ export async function GET(req: NextRequest) {
       prisma.roomType.count({ where }),
     ]);
 
-    return NextResponse.json(paginatedResponse(roomTypes, total, page, limit));
+    // 🔴 Không được xem liên hệ thì cũng KHÔNG được thấy số nhà nấp trong TÊN TÒA / TÊN ĐƯỜNG.
+    // Đo trên dữ liệu thật: 186/472 tên tòa bắt đầu bằng số nhà ("162A Tôn Đức Thắng",
+    // "Số 15 ngõ 82 Tân Ấp") — che liên hệ mà để nguyên tên là bỏ ngỏ cửa sau.
+    const rows = canContact
+      ? roomTypes
+      : roomTypes.map((rt: any) => ({
+          ...rt,
+          property: rt.property
+            ? { ...rt.property, name: redactName(rt.property.name), streetName: redactHouseNumber(rt.property.streetName) }
+            : rt.property,
+        }));
+
+    return NextResponse.json(paginatedResponse(rows, total, page, limit));
   } catch (error: any) {
     console.error('GET /api/rooms error:', error);
     return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });

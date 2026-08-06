@@ -120,12 +120,18 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     async jwt({ token, user, account, trigger, session }) {
-      // Handle manual session update (after user selects role)
-      if (trigger === 'update' && session) {
-        if (session.role) token.role = session.role;
-        if (session.needsRoleSetup !== undefined) token.needsRoleSetup = session.needsRoleSetup;
-        return token;
-      }
+      // 🔴 KHÔNG BAO GIỜ lấy role/quyền từ payload do CLIENT gửi.
+      // Trước đây chỗ này là: `if (trigger === 'update' && session) { token.role = session.role; return token }`
+      // → BẤT KỲ tài khoản nào đã đăng nhập (kể cả CUSTOMER vừa đăng ký) chỉ cần chạy
+      //   `update({ role: 'ADMIN' })` trong console trình duyệt là token.role thành ADMIN.
+      // `return token` sớm còn bỏ luôn bước đối chiếu DB bên dưới, nên không có gì chặn lại.
+      // Có ADMIN trong session là qua được middleware /admin VÀ mọi requirePermission
+      // (ADMIN bypass hết) → tự cấp quyền thật trong DB, chiếm vĩnh viễn.
+      // Phát hiện khi kiểm định 07/08/2026.
+      //
+      // Luồng chọn vai trò sau OAuth vẫn chạy: /auth/callback GHI role vào DB qua
+      // POST /api/auth/set-role (đã chặn danh sách vai trò) RỒI mới gọi update() —
+      // update() nay chỉ có tác dụng ÉP NẠP LẠI TỪ DB (forceRefresh bên dưới).
 
       // Sao chép các field NHẠY (bảo mật) từ DB vào token — dùng cho cả login và refresh định kỳ.
       const applyDbUser = (dbUser: any) => {
@@ -140,6 +146,8 @@ export const authOptions: NextAuthOptions = {
         // NextAuth map token.picture -> session.user.image.
         token.picture = dbUser.avatar ?? null;
         token.name = dbUser.name ?? token.name;
+        // Suy từ DB: user OAuth (không mật khẩu) chưa chọn vai trò. Không nhận từ client.
+        token.needsRoleSetup = !dbUser.password && !dbUser.setupComplete;
         token.refreshedAt = Math.floor(Date.now() / 1000);
       };
 
@@ -149,12 +157,7 @@ export const authOptions: NextAuthOptions = {
         if (!dbUser) return token;
         applyDbUser(dbUser);
 
-        // OAuth user who hasn't completed role setup yet
-        if (account?.type === 'oauth' && !dbUser.password && !dbUser.setupComplete) {
-          token.needsRoleSetup = true;
-        } else {
-          token.needsRoleSetup = false;
-        }
+        // needsRoleSetup đã được applyDbUser() suy ra từ DB ở trên — không gán lại thủ công
         return token;
       }
 
