@@ -146,7 +146,7 @@ export default async function UniPage({ params }: { params: { uni: string } }) {
                   if (b.max) qs.set('maxPrice', String(b.max));
                   return (
                     <Link key={b.label} href={`/phong?${qs}`}
-                      className="text-sm px-3 py-1.5 rounded-full border border-stone-300 bg-white text-stone-700 hover:border-brand-400 hover:text-brand-700 transition-colors">
+                      className="text-sm px-3.5 py-1.5 min-h-11 sm:min-h-0 inline-flex items-center rounded-full border border-stone-300 bg-white text-stone-700 hover:border-brand-400 hover:text-brand-700 transition-colors">
                       {b.label}
                     </Link>
                   );
@@ -159,7 +159,7 @@ export default async function UniPage({ params }: { params: { uni: string } }) {
                 <span className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Khu vực quanh trường</span>
                 {districts.slice(0, 5).map(x => (
                   <Link key={x.name} href={districtPath(x.name)}
-                    className="text-sm px-3 py-1.5 rounded-full border border-stone-300 bg-white text-stone-700 hover:border-brand-400 hover:text-brand-700 transition-colors">
+                    className="text-sm px-3.5 py-1.5 min-h-11 sm:min-h-0 inline-flex items-center rounded-full border border-stone-300 bg-white text-stone-700 hover:border-brand-400 hover:text-brand-700 transition-colors">
                     {x.name} <span className="text-stone-400">({x.count})</span>
                   </Link>
                 ))}

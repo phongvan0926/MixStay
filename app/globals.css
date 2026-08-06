@@ -20,14 +20,15 @@
 }
 
 @layer components {
+  /* min-h-11 = 44px: vùng bấm tối thiểu cho ngón tay. Sửa ở đây là toàn hệ thống đạt chuẩn. */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 min-h-11 text-sm font-medium text-white transition-all hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-sm font-medium text-stone-700 transition-all hover:bg-stone-50 active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-5 py-2.5 min-h-11 text-sm font-medium text-stone-700 transition-all hover:bg-stone-50 active:scale-[0.98];
   }
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-red-700 active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 min-h-11 text-sm font-medium text-white transition-all hover:bg-red-700 active:scale-[0.98];
   }
   .btn-success {
     @apply inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-emerald-800 active:scale-[0.98];
@@ -36,7 +37,7 @@
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-stone-600 transition-all hover:bg-stone-100 active:scale-[0.98];
   }
   .input-field {
-    @apply w-full rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 transition-all outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100;
+    @apply w-full rounded-xl border border-stone-200 bg-white px-4 py-2.5 min-h-11 text-sm text-stone-900 placeholder:text-stone-400 transition-all outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100;
   }
   .card {
     @apply rounded-2xl border border-stone-200/60 bg-white p-5 shadow-sm transition-all;

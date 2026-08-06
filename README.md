@@ -286,6 +286,34 @@ mixstay/
 - **Sửa dữ liệu:** BNBHOLDING `09366258556` → **`0936258556`**. Bằng chứng: cả 9 tòa của công ty đứng tên chủ nhà **Anh Biên — 0936258556**, và 3 tòa ghi thẳng `"A Biên 0936258556"`; số lưu sai đúng là số đó **thừa một chữ số 6** (`0936|6|258556`). Kho công ty đã có lại nút gọi + Zalo.
 - **Rà lại toàn bộ nguồn SĐT dựng link:** công ty **0/36 lỗi**, tòa nhà **0/464 lỗi**, tài khoản còn 1 (CTV thử nghiệm "aaa" `1234567890` — đã có cảnh báo lo).
 
+### v9.50 — 2026-08-07 (tối ưu UI/UX toàn trang: đo bằng trình duyệt thật, không phải cảm tính)
+Chạy Playwright đo TỪNG phần tử trên 7 trang công khai × 2 khổ màn hình (điện thoại 390px + máy tính 1440px), lấy chuẩn **vùng bấm tối thiểu 44×44px** và **cỡ chữ tối thiểu 12px**.
+
+| | trước | sau |
+|---|---|---|
+| Trang chủ — vùng bấm dưới chuẩn | 62 | **33** |
+| Trang chủ — chữ dưới 12px | 5 | **0** |
+| Danh sách phòng — chữ dưới 12px | 44 | **0** |
+| Trang đích quận — chữ dưới 12px | 66 | **0** |
+| Trang đích trường — chữ dưới 12px | 78 | **0** |
+| Chi tiết tin — chữ dưới 12px | 21 | **6** |
+| Tràn ngang | 0 | 0 ✅ |
+
+- **❤ Nút lưu tin chỉ 32×32px** mà mỗi trang đích có tới **24 cái** — bấm trượt là bị điều hướng sang thẻ tin. Tách vỏ trong suốt (vùng bấm 44px) khỏi lõi có màu (hình vẫn 32px), thêm `aria-pressed`.
+- **Viên lọc quận cao 30px** — thứ khách bấm nhiều nhất trên trang chủ. Nay 44px trên điện thoại, giữ gọn trên máy tính (`min-h-11 sm:min-h-0`).
+- **33 chỗ chữ 11px** trên trang khách → 12px. Giữ nguyên 11px trong bảng quản trị (mật độ dày là cố ý).
+- **Sửa ở lớp CSS DÙNG CHUNG** (`btn-primary`/`btn-secondary`/`btn-danger`/`input-field` đang cao 42–43px) → một chỗ sửa, toàn hệ thống đạt chuẩn.
+- Chip tiện ích, chip giá, chip quận trên bản đồ, tab tin liên quan, nút thanh điều hướng (36px), link hotline (16px) — đều đạt 44px.
+- **Trợ năng:** 3 ô chọn thiếu nhãn cho trình đọc màn hình → thêm `aria-label`; ảnh trong popup bản đồ thiếu `alt` → bổ sung.
+
+**🔒 Công cụ của CTV không còn lộ cho khách vãng lai**
+Trang tin công khai `/tin/[id]` và mọi link share vẫn đang hiện **"⬇️ Tải ảnh"** và **"📋 Copy nội dung"** cho người lạ — đối thủ bấm là mang sạch ảnh + nội dung của cả kho đi. `ListingActionBar` nay có cờ `tools` **mặc định TẮT**, chỉ bật ở kho CTV (`/broker/inventory`). Nút "Chia sẻ" vẫn để cho mọi người vì khách gửi tin cho bạn bè là điều mình muốn.
+
+**Khu quản trị**
+- Nút **CÒN / HẾT** để chủ nhà trả lời CTV: chữ 10px, cao ~18px — việc bấm hằng ngày mà gần như không trúng trên điện thoại. Nay 12px, vùng bấm 36px.
+- 11 mẫu nút cao 26px trong admin/chủ nhà → 32px; 2 ô nhập inline 10px → 12px.
+- Rà lại: mọi bảng dữ liệu đều đã có `overflow-x-auto`, `DashboardLayout` đã có `min-w-0` — bảng rộng không làm phình layout điện thoại.
+
 ### v9.49 — 2026-08-07 (KIỂM ĐỊNH BẢO MẬT: 9 lỗ hổng được xác nhận, vá hết + rò rỉ số nhà qua TÊN TIN)
 Kiểm định do 15 agent chạy song song theo 5 hướng (phân quyền · riêng tư · injection · xác thực · lạm dụng), mỗi phát hiện nặng đều bị một agent khác **cố bác bỏ** trước khi được ghi nhận. Song song đó là quét hộp đen từ ngoài + kiểm toàn vẹn dữ liệu bằng truy vấn trực tiếp. Kết quả: **9 lỗi thật, 1 bị bác bỏ**.
 

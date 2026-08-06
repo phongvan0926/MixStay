@@ -319,7 +319,7 @@ export default function MapClient() {
         {districts.slice(0, 12).map(d => (
           <button key={d.district}
             onClick={() => pickDistrict(d)}
-            className={`pointer-events-auto shrink-0 rounded-full backdrop-blur border shadow-sm px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`pointer-events-auto shrink-0 rounded-full backdrop-blur border shadow-sm px-3.5 py-1.5 min-h-11 sm:min-h-0 inline-flex items-center text-xs font-medium transition-colors ${
               selectedDistrict === d.district
                 ? 'bg-emerald-600 border-emerald-600 text-white'
                 : 'bg-white/95 border-stone-200 text-stone-700 hover:border-brand-400 hover:text-brand-700'
@@ -329,7 +329,7 @@ export default function MapClient() {
         ))}
         {selectedDistrict && (
           <button onClick={() => setSelectedDistrict(null)}
-            className="pointer-events-auto shrink-0 rounded-full bg-stone-800 text-white px-3 py-1.5 text-xs font-medium">
+            className="pointer-events-auto shrink-0 rounded-full bg-stone-800 text-white px-3.5 py-1.5 min-h-11 sm:min-h-0 inline-flex items-center text-xs font-medium">
             ✕ Bỏ chọn quận
           </button>
         )}
@@ -391,7 +391,7 @@ export default function MapClient() {
                   className="w-full text-left px-3 py-2 hover:bg-brand-50 rounded-lg transition-colors flex flex-col group border-b border-stone-50 last:border-0"
                 >
                   <span className="text-xs font-bold text-stone-800 group-hover:text-brand-700">{s.label}</span>
-                  {s.sublabel && <span className="text-[11px] text-stone-400 truncate">{s.sublabel}</span>}
+                  {s.sublabel && <span className="text-xs text-stone-400 truncate">{s.sublabel}</span>}
                 </button>
               ))}
             </div>
@@ -430,7 +430,7 @@ export default function MapClient() {
                 </label>
               </div>
 
-              <div className="mt-2 flex items-center justify-between text-[11px] text-stone-500">
+              <div className="mt-2 flex items-center justify-between text-xs text-stone-500">
                 <p className="truncate">
                   📍 Đang ghim: <b className="text-stone-800">{customPin.label}</b>
                 </p>
@@ -442,7 +442,7 @@ export default function MapClient() {
           )}
 
           {!customPin && (
-            <p className="mb-2 text-[11px] text-stone-400 text-center">
+            <p className="mb-2 text-xs text-stone-400 text-center">
               💡 Nhập địa điểm → chọn gợi ý / bấm <b>🎯 Định vị</b> hoặc <b>chấm trên bản đồ</b>
             </p>
           )}
@@ -503,7 +503,7 @@ export default function MapClient() {
                   {/* Ảnh tòa to hơn: banner ngang trên đầu popup */}
                   {p.listings[0]?.image && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.listings[0].image} alt="" className="w-full h-32 rounded-lg object-cover mb-2" loading="lazy" />
+                    <img src={p.listings[0].image} alt={`Ảnh phòng ${p.listings[0].name || ""}`.trim()} className="w-full h-32 rounded-lg object-cover mb-2" loading="lazy" />
                   )}
                   <p className="font-bold text-sm text-stone-900 mb-0.5">{p.name}</p>
                   <p className="text-xs text-stone-500 mb-2">
@@ -516,11 +516,11 @@ export default function MapClient() {
                         className="flex items-center gap-2 rounded-lg border border-stone-200 p-1.5 hover:border-brand-400 transition-colors no-underline">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         {l.image
-                          ? <img src={l.image} alt="" className="w-12 h-12 rounded-md object-cover shrink-0" loading="lazy" />
+                          ? <img src={l.image} alt={`Ảnh ${l.name || "phòng cho thuê"}`} className="w-12 h-12 rounded-md object-cover shrink-0" loading="lazy" />
                           : <span className="w-12 h-12 rounded-md bg-stone-100 flex items-center justify-center shrink-0">🚪</span>}
                         <span className="min-w-0">
                           <span className="block text-xs font-semibold text-stone-800 truncate">{l.name}</span>
-                          <span className="block text-[11px] text-stone-500">
+                          <span className="block text-xs text-stone-500">
                             {TYPE_LABEL[l.typeName] || l.typeName} · {l.areaSqm}m² ·{' '}
                             <b className="text-brand-600">{formatCurrency(l.priceMonthly)}</b>
                             {l.status === 'UPCOMING' && <span className="text-amber-600"> · sắp trống</span>}

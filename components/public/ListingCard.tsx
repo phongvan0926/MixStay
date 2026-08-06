@@ -28,7 +28,7 @@ export default function ListingCard({ rt, uniShort }: { rt: ListingCardData; uni
             {TYPE_LABEL[rt.typeName] || rt.typeName}
           </span>
           {hasVideo && (
-            <span title="Có video" className="inline-flex items-center justify-center rounded-full bg-black/60 backdrop-blur-sm text-white text-[11px] w-6 h-6 shadow">
+            <span title="Có video" className="inline-flex items-center justify-center rounded-full bg-black/60 backdrop-blur-sm text-white text-xs w-6 h-6 shadow">
               🎬
             </span>
           )}
@@ -74,12 +74,12 @@ export default function ListingCard({ rt, uniShort }: { rt: ListingCardData; uni
 
         {hasFlags && (
           <div className="flex flex-wrap gap-1.5 mt-3">
-            {p?.parkingCar && <span className="text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🚗 Ô tô đỗ cửa</span>}
-            {p?.parkingBike && <span className="text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🏍️ Để xe máy</span>}
-            {p?.evCharging && <span className="text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">⚡ Sạc xe điện</span>}
-            {p?.petAllowed && <span className="text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🐾 Thú cưng OK</span>}
-            {p?.foreignerOk && <span className="text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🌍 Người nước ngoài</span>}
-            {rt.shortTermAllowed && <span className="text-[11px] bg-violet-50 text-violet-700 border border-violet-200 px-2 py-0.5 rounded-full font-medium">📅 Ngắn hạn</span>}
+            {p?.parkingCar && <span className="text-xs bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🚗 Ô tô đỗ cửa</span>}
+            {p?.parkingBike && <span className="text-xs bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🏍️ Để xe máy</span>}
+            {p?.evCharging && <span className="text-xs bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">⚡ Sạc xe điện</span>}
+            {p?.petAllowed && <span className="text-xs bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🐾 Thú cưng OK</span>}
+            {p?.foreignerOk && <span className="text-xs bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🌍 Người nước ngoài</span>}
+            {rt.shortTermAllowed && <span className="text-xs bg-violet-50 text-violet-700 border border-violet-200 px-2 py-0.5 rounded-full font-medium">📅 Ngắn hạn</span>}
           </div>
         )}
 

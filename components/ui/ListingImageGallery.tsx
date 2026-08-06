@@ -68,7 +68,7 @@ export default function ListingImageGallery({
         </div>
 
         {/* Badge số ảnh */}
-        <span className="absolute bottom-2 right-2 bg-black/50 text-white text-[11px] font-medium px-2 py-0.5 rounded-full backdrop-blur-sm pointer-events-none">
+        <span className="absolute bottom-2 right-2 bg-black/50 text-white text-xs font-medium px-2 py-0.5 rounded-full backdrop-blur-sm pointer-events-none">
           📷 {idx + 1}/{list.length}
         </span>
 

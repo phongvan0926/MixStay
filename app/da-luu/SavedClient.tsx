@@ -124,7 +124,7 @@ export default function SavedCompareClient() {
                         <span className="text-xs text-stone-500">{r.areaSqm}m²</span>
                       </div>
                       {cheapest !== null && r.priceMonthly === cheapest && (
-                        <p className="text-[11px] font-semibold text-emerald-600 mt-1">💰 Rẻ nhất trong danh sách</p>
+                        <p className="text-xs font-semibold text-emerald-600 mt-1">💰 Rẻ nhất trong danh sách</p>
                       )}
                     </Link>
                   </div>

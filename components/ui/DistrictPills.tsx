@@ -23,7 +23,7 @@ export default function DistrictPills({ value, onChange }: Props) {
       <button
         type="button"
         onClick={() => onChange([])}
-        className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+        className={`px-3.5 py-1.5 min-h-11 sm:min-h-0 inline-flex items-center rounded-xl text-xs font-medium border transition-all ${
           value.length === 0
             ? 'bg-brand-600 border-brand-600 text-white shadow-sm'
             : 'bg-white border-stone-200 text-stone-600 hover:border-stone-300'
@@ -41,7 +41,7 @@ export default function DistrictPills({ value, onChange }: Props) {
             type="button"
             onClick={() => toggle(d)}
             aria-pressed={active}
-            className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+            className={`px-3.5 py-1.5 min-h-11 sm:min-h-0 inline-flex items-center rounded-xl text-xs font-medium border transition-all ${
               active
                 ? 'bg-brand-600 border-brand-600 text-white shadow-sm'
                 : 'bg-white border-stone-200 text-stone-600 hover:border-stone-300'
@@ -57,7 +57,7 @@ export default function DistrictPills({ value, onChange }: Props) {
         <button
           type="button"
           onClick={() => setDropdownOpen(o => !o)}
-          className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+          className={`px-3.5 py-1.5 min-h-11 sm:min-h-0 inline-flex items-center rounded-xl text-xs font-medium border transition-all ${
             hasOuter
               ? 'bg-brand-600 border-brand-600 text-white shadow-sm'
               : 'bg-white border-stone-200 text-stone-600 hover:border-stone-300'

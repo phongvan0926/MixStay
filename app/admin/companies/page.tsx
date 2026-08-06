@@ -235,14 +235,14 @@ export default function AdminCompaniesPage() {
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <p className="text-sm font-semibold text-stone-800">&quot;{group.name}&quot; — {group.companies.length} công ty</p>
                     <button onClick={() => dismissGroup(group)}
-                      className="text-[11px] px-2 py-1 rounded-lg bg-stone-100 text-stone-600 hover:bg-stone-200 whitespace-nowrap">
+                      className="text-[11px] px-2.5 py-1 min-h-8 inline-flex items-center rounded-lg bg-stone-100 text-stone-600 hover:bg-stone-200 whitespace-nowrap">
                       Không trùng — bỏ cảnh báo
                     </button>
                   </div>
                   <p className="text-[11px] text-stone-500 mb-2">Chọn công ty GIỮ LẠI (các công ty khác sẽ chuyển hết tòa vào rồi bị xoá):</p>
                   <div className="space-y-1.5">
                     {group.companies.map((c: any) => (
-                      <div key={c.id} className="flex items-center gap-2 text-xs rounded-lg border border-stone-100 px-2 py-1.5">
+                      <div key={c.id} className="flex items-center gap-2 text-xs rounded-lg border border-stone-100 px-2.5 py-1 min-h-8 inline-flex items-center.5">
                         <span className="flex-1 min-w-0 truncate">
                           <b>{c.name}</b>
                           {c.code && <span className="ml-1 font-mono text-stone-500">#{c.code}</span>}
@@ -251,7 +251,7 @@ export default function AdminCompaniesPage() {
                           {c.isApproved === false && <span className="ml-1 text-amber-600">· chờ duyệt</span>}
                         </span>
                         <button onClick={() => mergeGroup(group, c.id)} disabled={mergingKey === group.key}
-                          className="shrink-0 px-2 py-1 rounded-lg bg-brand-600 text-white font-medium hover:bg-brand-700 disabled:opacity-50">
+                          className="shrink-0 px-2.5 py-1 min-h-8 inline-flex items-center rounded-lg bg-brand-600 text-white font-medium hover:bg-brand-700 disabled:opacity-50">
                           {mergingKey === group.key ? '...' : 'Giữ & gộp vào đây'}
                         </button>
                       </div>
@@ -419,7 +419,7 @@ export default function AdminCompaniesPage() {
                 <input type="text" required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   className="input-field w-full" placeholder="VD: Công ty ABC" />
                 {!editItem && dupCompanyOnCreate && (
-                  <p className="mt-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
+                  <p className="mt-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1 min-h-8 inline-flex items-center">
                     ⚠️ Đã có công ty tên <b>&quot;{dupCompanyOnCreate.name}&quot;</b>{dupCompanyOnCreate.code ? ` (mã ${dupCompanyOnCreate.code})` : ''} — kiểm tra kẻo tạo trùng.
                   </p>
                 )}

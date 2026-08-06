@@ -570,7 +570,7 @@ function AdminRoomsInner() {
             className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors disabled:opacity-50">🔴 Hết phòng</button>
           {bulkUpdating && <span className="text-xs text-stone-500">Đang cập nhật…</span>}
           <button onClick={() => setSelectedIds(new Set())} disabled={bulkUpdating}
-            className="ml-auto px-2 py-1 text-xs text-stone-500 hover:text-stone-700">✕ Bỏ chọn</button>
+            className="ml-auto px-2.5 py-1 min-h-8 inline-flex items-center text-xs text-stone-500 hover:text-stone-700">✕ Bỏ chọn</button>
         </div>
       )}
 

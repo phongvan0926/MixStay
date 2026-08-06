@@ -32,7 +32,7 @@ export default function PublicNav() {
           </Link>
           {/* Nổi bật: nền vàng gold trên nav xanh đậm (gold-400 + chữ brand-900 an toàn tương phản), bo vuông giống nút Đăng ký */}
           <Link href="/ban-do"
-            className="inline-flex items-center gap-1 text-sm px-3 sm:px-4 py-2 rounded-xl font-semibold bg-gold-400 text-brand-900 shadow-sm hover:bg-gold-300 transition-colors whitespace-nowrap">
+            className="inline-flex items-center gap-1 text-sm px-3 sm:px-4 py-2 min-h-11 sm:min-h-0 rounded-xl font-semibold bg-gold-400 text-brand-900 shadow-sm hover:bg-gold-300 transition-colors whitespace-nowrap">
             🗺️ <span className="sm:hidden">Bản đồ</span><span className="hidden sm:inline">Tìm trên bản đồ</span>
           </Link>
         </div>
@@ -44,7 +44,7 @@ export default function PublicNav() {
           <div className="flex items-center gap-2 sm:gap-3">
             {homeHref && (
               <Link href={homeHref}
-                className="text-sm px-3 sm:px-4 py-2 rounded-xl font-semibold bg-white text-brand-700 hover:bg-brand-50 transition-colors whitespace-nowrap">
+                className="text-sm px-3 sm:px-4 py-2 min-h-11 sm:min-h-0 rounded-xl font-semibold bg-white text-brand-700 hover:bg-brand-50 transition-colors whitespace-nowrap">
                 <span className="sm:hidden">Quản lý</span>
                 <span className="hidden sm:inline">Vào trang quản lý</span>
               </Link>
@@ -60,14 +60,14 @@ export default function PublicNav() {
               <span className="hidden sm:inline text-sm font-medium max-w-[140px] truncate">{user.name}</span>
             </div>
             <button onClick={() => signOut({ callbackUrl: '/' })}
-              className="text-sm px-2.5 sm:px-3 py-2 rounded-xl font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap">
+              className="text-sm px-2.5 sm:px-3 py-2 min-h-11 sm:min-h-0 rounded-xl font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap">
               Đăng xuất
             </button>
           </div>
         ) : (
           <div className="flex items-center gap-1.5 sm:gap-3">
-            <Link href="/login" className="text-sm px-2.5 sm:px-4 py-2 rounded-xl font-medium text-white/90 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap">Đăng nhập</Link>
-            <Link href="/register" className="text-sm px-3 sm:px-5 py-2 rounded-xl font-semibold bg-white text-brand-700 hover:bg-brand-50 transition-colors whitespace-nowrap">
+            <Link href="/login" className="text-sm px-2.5 sm:px-4 py-2 min-h-11 sm:min-h-0 rounded-xl font-medium text-white/90 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap">Đăng nhập</Link>
+            <Link href="/register" className="text-sm px-3 sm:px-5 py-2 min-h-11 sm:min-h-0 rounded-xl font-semibold bg-white text-brand-700 hover:bg-brand-50 transition-colors whitespace-nowrap">
               <span className="sm:hidden">Đăng ký</span>
               <span className="hidden sm:inline">Đăng ký miễn phí</span>
             </Link>

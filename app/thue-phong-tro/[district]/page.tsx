@@ -160,7 +160,7 @@ export default async function DistrictPage({ params }: { params: { district: str
                 ].map(s => (
                   <div key={s.label} className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5">
                     <p className="text-lg sm:text-xl font-bold text-stone-900">{s.value}</p>
-                    <p className="text-[11px] sm:text-xs text-stone-500">{s.label}</p>
+                    <p className="text-xs sm:text-xs text-stone-500">{s.label}</p>
                   </div>
                 ))}
               </div>
@@ -176,7 +176,7 @@ export default async function DistrictPage({ params }: { params: { district: str
                     if (b.max) qs.set('maxPrice', String(b.max));
                     return (
                       <Link key={b.label} href={`/phong?${qs}`}
-                        className="text-sm px-3 py-1.5 rounded-full border border-stone-300 bg-white text-stone-700 hover:border-brand-400 hover:text-brand-700 transition-colors">
+                        className="text-sm px-3.5 py-1.5 min-h-11 sm:min-h-0 inline-flex items-center rounded-full border border-stone-300 bg-white text-stone-700 hover:border-brand-400 hover:text-brand-700 transition-colors">
                         {b.label}
                       </Link>
                     );
@@ -187,7 +187,7 @@ export default async function DistrictPage({ params }: { params: { district: str
                     <span className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Loại phòng</span>
                     {stats.byType.map(t => (
                       <Link key={t.typeName} href={`/phong?district=${encodeURIComponent(d.name)}&typeName=${t.typeName}`}
-                        className="text-sm px-3 py-1.5 rounded-full border border-stone-300 bg-white text-stone-700 hover:border-brand-400 hover:text-brand-700 transition-colors">
+                        className="text-sm px-3.5 py-1.5 min-h-11 sm:min-h-0 inline-flex items-center rounded-full border border-stone-300 bg-white text-stone-700 hover:border-brand-400 hover:text-brand-700 transition-colors">
                         {TYPE_LABEL[t.typeName] || t.typeName} <span className="text-stone-400">({t.count})</span>
                       </Link>
                     ))}

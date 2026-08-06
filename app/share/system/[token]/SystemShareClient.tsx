@@ -355,7 +355,7 @@ export default function SystemShareClient() {
                         {roomTypeLabels[rt.typeName] || rt.typeName}
                       </span>
                       {((rt.videos?.length || 0) + (rt.videoLinks?.length || 0)) > 0 && (
-                        <span className="badge bg-black/60 text-white text-[11px] backdrop-blur-sm" title="Có video">
+                        <span className="badge bg-black/60 text-white text-xs backdrop-blur-sm" title="Có video">
                           🎬 Video
                         </span>
                       )}
@@ -474,15 +474,15 @@ export default function SystemShareClient() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="p-3 bg-stone-50 rounded-xl text-center">
                   <p className="text-lg font-bold text-stone-800">{selectedRoom.areaSqm} m²</p>
-                  <p className="text-[11px] text-stone-500 mt-0.5">Diện tích</p>
+                  <p className="text-xs text-stone-500 mt-0.5">Diện tích</p>
                 </div>
                 <div className="p-3 bg-stone-50 rounded-xl text-center">
                   <p className="text-lg font-bold text-stone-800">{selectedRoom.totalUnits}</p>
-                  <p className="text-[11px] text-stone-500 mt-0.5">Tổng phòng</p>
+                  <p className="text-xs text-stone-500 mt-0.5">Tổng phòng</p>
                 </div>
                 <div className="p-3 bg-stone-50 rounded-xl text-center">
                   <p className="text-lg font-bold text-emerald-600">{selectedRoom.availableUnits}</p>
-                  <p className="text-[11px] text-stone-500 mt-0.5">Còn trống</p>
+                  <p className="text-xs text-stone-500 mt-0.5">Còn trống</p>
                 </div>
               </div>
 
@@ -580,7 +580,7 @@ export default function SystemShareClient() {
                 <p className="font-medium text-stone-900 text-sm">Khu vực: {selectedRoom.property?.district}, {selectedRoom.property?.city}</p>
                 <p className="text-xs text-stone-500 mt-0.5">Đường/ngõ: {selectedRoom.property?.publicAddress || selectedRoom.property?.streetName}</p>
                 <div className="mt-2 p-2 bg-amber-50 rounded-lg border border-amber-100">
-                  <p className="text-[11px] text-amber-700">🔒 Địa chỉ chi tiết sẽ được cung cấp khi liên hệ</p>
+                  <p className="text-xs text-amber-700">🔒 Địa chỉ chi tiết sẽ được cung cấp khi liên hệ</p>
                 </div>
               </div>
 

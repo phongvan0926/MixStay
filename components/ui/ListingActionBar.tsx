@@ -9,6 +9,13 @@ interface Props {
   title?: string;
   fileBase?: string;  // tiền tố tên file ảnh khi tải về
   className?: string;
+  /**
+   * Hiện 2 nút NGHIỆP VỤ "Tải ảnh" + "Copy nội dung" (công cụ của CTV/chủ nhà để mang tin
+   * đi đăng nơi khác). Mặc định TẮT: trên trang tin công khai, khách vãng lai — kể cả đối thủ —
+   * bấm là tải sạch ảnh và copy nguyên nội dung của cả kho hàng. Nút "Chia sẻ" vẫn để cho
+   * mọi người vì khách gửi tin cho bạn bè là điều mình muốn.
+   */
+  tools?: boolean;
 }
 
 /**
@@ -16,7 +23,7 @@ interface Props {
  * và Chia sẻ ra ngoài (Web Share API trên mobile → Zalo/Messenger/Facebook;
  * fallback menu Facebook/Zalo/Messenger/Copy link trên desktop).
  */
-export default function ListingActionBar({ images = [], shareUrl, copyText, title = 'Tin cho thuê', fileBase = 'anh-tin-dang', className = '' }: Props) {
+export default function ListingActionBar({ images = [], shareUrl, copyText, title = 'Tin cho thuê', fileBase = 'anh-tin-dang', className = '', tools = false }: Props) {
   const [downloading, setDownloading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -105,19 +112,24 @@ export default function ListingActionBar({ images = [], shareUrl, copyText, titl
     setMenuOpen(false);
   };
 
-  const btn = 'inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors';
+  // min-h-11: vùng bấm đạt 44px cho ngón tay (đo 07/08/2026: các nút này chỉ cao 38px)
+  const btn = 'inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-11 rounded-lg text-sm font-medium border transition-colors';
 
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className}`}>
-      <button type="button" onClick={downloadImages} disabled={downloading}
-        className={`${btn} bg-white border-stone-200 text-stone-700 hover:border-brand-300 hover:text-brand-700 disabled:opacity-60`}>
-        {downloading ? '⏳ Đang tải...' : '⬇️ Tải ảnh'}
-      </button>
+      {tools && (
+        <>
+          <button type="button" onClick={downloadImages} disabled={downloading}
+            className={`${btn} bg-white border-stone-200 text-stone-700 hover:border-brand-300 hover:text-brand-700 disabled:opacity-60`}>
+            {downloading ? '⏳ Đang tải...' : '⬇️ Tải ảnh'}
+          </button>
 
-      <button type="button" onClick={copyContent}
-        className={`${btn} bg-white border-stone-200 text-stone-700 hover:border-brand-300 hover:text-brand-700`}>
-        📋 Copy nội dung
-      </button>
+          <button type="button" onClick={copyContent}
+            className={`${btn} bg-white border-stone-200 text-stone-700 hover:border-brand-300 hover:text-brand-700`}>
+            📋 Copy nội dung
+          </button>
+        </>
+      )}
 
       <div className="relative">
         <button type="button" onClick={share}

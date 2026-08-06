@@ -243,7 +243,7 @@ function AdminPropertiesInner() {
                       <p className="text-xs text-stone-500 mt-0.5 max-w-[200px] truncate">{p.fullAddress}</p>
                       {/* Cảnh báo nghi trùng (chỉ tòa chờ duyệt) — tự mất sau khi duyệt */}
                       {p.status === 'PENDING' && dupMap[p.id]?.length > 0 && (
-                        <div className="mt-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 max-w-[240px]">
+                        <div className="mt-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1 min-h-8 inline-flex items-center max-w-[240px]">
                           <p className="text-[11px] font-semibold text-amber-800">⚠️ Có thể trùng {dupMap[p.id].length} tòa đã có</p>
                           <ul className="mt-0.5 space-y-0.5">
                             {dupMap[p.id].slice(0, 3).map((m: any) => (

@@ -63,7 +63,7 @@ export default function ListingImageMosaic({
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <span className="w-12 h-12 rounded-full bg-black/45 backdrop-blur-sm flex items-center justify-center text-white text-lg shadow-lg">▶</span>
           </div>
-          <span className="absolute bottom-2 right-2 bg-black/55 text-white text-[11px] font-medium px-2 py-0.5 rounded-full backdrop-blur-sm pointer-events-none">🎬 Video</span>
+          <span className="absolute bottom-2 right-2 bg-black/55 text-white text-xs font-medium px-2 py-0.5 rounded-full backdrop-blur-sm pointer-events-none">🎬 Video</span>
         </div>
       );
     }
@@ -118,7 +118,7 @@ export default function ListingImageMosaic({
           </div>
         )}
 
-        <span className="absolute bottom-2 right-2 bg-black/50 text-white text-[11px] font-medium px-2 py-0.5 rounded-full backdrop-blur-sm pointer-events-none">
+        <span className="absolute bottom-2 right-2 bg-black/50 text-white text-xs font-medium px-2 py-0.5 rounded-full backdrop-blur-sm pointer-events-none">
           📷 {list.length}
         </span>
       </div>

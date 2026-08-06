@@ -55,9 +55,9 @@ function RelatedRoomCard({ rt, khoId }: { rt: any; khoId?: string | null }) {
         <p className="text-sm font-semibold text-stone-900 truncate mt-0.5">{rt.name}</p>
         <p className="text-base font-bold text-brand-600 mt-1">
           {formatCurrency(rt.priceMonthly)}
-          <span className="text-[11px] font-normal text-stone-400">/th</span>
+          <span className="text-xs font-normal text-stone-400">/th</span>
         </p>
-        <p className="text-[11px] text-stone-400 mt-0.5">{rt.areaSqm}m² • {rt.availableUnits} trống</p>
+        <p className="text-xs text-stone-400 mt-0.5">{rt.areaSqm}m² • {rt.availableUnits} trống</p>
       </div>
     </Wrapper>
   );
@@ -127,7 +127,7 @@ function RelatedSection({ roomTypeId, khoId }: { roomTypeId: string; khoId?: str
       <div className="flex gap-2 overflow-x-auto pb-2 mb-4 -mx-1 px-1">
         {tabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} disabled={t.count === 0}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium transition-all border disabled:opacity-40 disabled:cursor-not-allowed ${
+            className={`flex-shrink-0 px-3.5 py-1.5 min-h-11 sm:min-h-0 inline-flex items-center rounded-xl text-xs font-medium transition-all border disabled:opacity-40 disabled:cursor-not-allowed ${
               tab === t.key
                 ? 'bg-brand-600 text-white border-brand-600'
                 : 'bg-white text-stone-600 border-stone-200 hover:border-brand-300'
@@ -299,7 +299,7 @@ export default function ShareViewClient() {
               <span className="max-w-[38vw] truncate">Kho phòng {company.name}</span>
             </Link>
           ) : (
-            <a href={`tel:${SUPPORT_PHONE}`} className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors">📞 Hotline: {SUPPORT_PHONE_DISPLAY}</a>
+            <a href={`tel:${SUPPORT_PHONE}`} className="inline-flex items-center min-h-11 px-2 -mx-2 text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors">📞 Hotline: {SUPPORT_PHONE_DISPLAY}</a>
           )}
         </div>
       </nav>
@@ -312,19 +312,21 @@ export default function ShareViewClient() {
         <div className="grid grid-cols-3 gap-3">
           <div className="card p-3 text-center">
             <p className="text-lg font-bold text-stone-800">{roomType.areaSqm} m²</p>
-            <p className="text-[11px] text-stone-500 mt-0.5">Diện tích</p>
+            <p className="text-xs text-stone-500 mt-0.5">Diện tích</p>
           </div>
           <div className="card p-3 text-center">
             <p className="text-lg font-bold text-stone-800">{roomType.totalUnits}</p>
-            <p className="text-[11px] text-stone-500 mt-0.5">Tổng phòng</p>
+            <p className="text-xs text-stone-500 mt-0.5">Tổng phòng</p>
           </div>
           <div className="card p-3 text-center">
             <p className="text-lg font-bold text-emerald-600">{roomType.availableUnits}</p>
-            <p className="text-[11px] text-stone-500 mt-0.5">Còn trống</p>
+            <p className="text-xs text-stone-500 mt-0.5">Còn trống</p>
           </div>
         </div>
 
-        {/* Thanh công cụ: tải ảnh / copy nội dung / chia sẻ ra ngoài */}
+        {/* Chỉ còn nút "Chia sẻ" — 2 nút nghiệp vụ (tải ảnh / copy nội dung) KHÔNG hiện ở trang
+            công khai: khách vãng lai, kể cả đối thủ, bấm là mang sạch ảnh + nội dung cả kho đi.
+            CTV có công cụ đó trong kho của mình (/broker/inventory). */}
         <ListingActionBar
           images={allImages}
           shareUrl={shareUrl}

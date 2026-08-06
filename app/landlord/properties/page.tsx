@@ -902,8 +902,10 @@ function RoomTypeCard({
               <div key={inq.id} className="flex items-center justify-between gap-2">
                 <p className="text-[11px] text-amber-800 truncate">{inq.broker?.name}: {inq.message}</p>
                 <div className="flex gap-1 shrink-0">
-                  <button onClick={() => onReplyInquiry(inq.id, 'CÒN')} className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded hover:bg-emerald-200">CÒN</button>
-                  <button onClick={() => onReplyInquiry(inq.id, 'HẾT')} className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded hover:bg-red-200">HẾT</button>
+                  {/* Trả lời CTV là việc chủ nhà bấm hằng ngày — nút cũ chữ 10px cao ~18px,
+                      bấm trên điện thoại rất dễ trượt. Nay 12px + vùng bấm 36px. */}
+                  <button onClick={() => onReplyInquiry(inq.id, 'CÒN')} className="text-xs font-semibold bg-emerald-100 text-emerald-700 px-3 py-1.5 min-h-9 rounded-lg hover:bg-emerald-200 transition-colors">CÒN</button>
+                  <button onClick={() => onReplyInquiry(inq.id, 'HẾT')} className="text-xs font-semibold bg-red-100 text-red-700 px-3 py-1.5 min-h-9 rounded-lg hover:bg-red-200 transition-colors">HẾT</button>
                 </div>
               </div>
             ))}
@@ -937,12 +939,12 @@ function RoomTypeCard({
             {rt.status === 'UNAVAILABLE' ? '🔴 Hết phòng' : rt.status === 'UPCOMING' ? '🟡 Sắp trống' : '🟢 Còn phòng'}
           </button>
           {rt.status === 'UPCOMING' && (
-            <div className="rounded-md border border-amber-300 bg-amber-50 px-2 py-1">
+            <div className="rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1 min-h-8 inline-flex items-center">
               <label className="block text-[9px] font-medium text-amber-700 leading-tight">⚠️ Sẽ trống từ (bỏ trống = đầu tháng sau):</label>
               <input type="date"
                 value={toDateInputValue(rt.expectedAvailableDate)}
                 onChange={e => onSetUpcomingDate(rt.id, e.target.value ? new Date(e.target.value).toISOString() : firstOfNextMonthISO())}
-                className="mt-0.5 w-full text-[10px] bg-white border border-amber-200 rounded px-1 py-0.5 text-amber-800" />
+                className="mt-0.5 w-full text-xs bg-white border border-amber-200 rounded-lg px-2.5 py-1 min-h-8 inline-flex items-center.5 min-h-9 text-amber-800" />
             </div>
           )}
         </div>
@@ -1070,21 +1072,21 @@ function RoomTypeListView({
                       <input type="date"
                         value={toDateInputValue(rt.expectedAvailableDate)}
                         onChange={e => onSetUpcomingDate(rt.id, e.target.value ? new Date(e.target.value).toISOString() : firstOfNextMonthISO())}
-                        className="mt-0.5 w-full text-[10px] bg-white border border-amber-200 rounded px-1 py-0.5 text-amber-800" />
+                        className="mt-0.5 w-full text-xs bg-white border border-amber-200 rounded-lg px-2.5 py-1 min-h-8 inline-flex items-center.5 min-h-9 text-amber-800" />
                     </div>
                   )}
                 </td>
                 <td className="px-3 py-2 text-right">
                   {isEditingRow ? (
                     <div className="inline-flex items-center gap-1">
-                      <button onClick={() => onSaveAvailable(rt.id)} className="px-2 py-1 bg-brand-600 text-white text-xs rounded-lg hover:bg-brand-700">Lưu</button>
-                      <button onClick={onCancelEdit} className="px-2 py-1 text-stone-500 text-xs hover:text-stone-700">Huỷ</button>
+                      <button onClick={() => onSaveAvailable(rt.id)} className="px-2.5 py-1 min-h-8 inline-flex items-center bg-brand-600 text-white text-xs rounded-lg hover:bg-brand-700">Lưu</button>
+                      <button onClick={onCancelEdit} className="px-2.5 py-1 min-h-8 inline-flex items-center text-stone-500 text-xs hover:text-stone-700">Huỷ</button>
                     </div>
                   ) : (
                     <div className="inline-flex items-center gap-1">
                       <button onClick={() => onShare(rt.id)} disabled={sharingId === rt.id || !rt.isApproved}
                         title={rt.isApproved ? 'Copy link tin đăng' : 'Cần duyệt trước'}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                        className="inline-flex items-center gap-1 px-2.5 py-1 min-h-8 inline-flex items-center rounded-lg text-xs font-medium bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200 disabled:opacity-50 disabled:cursor-not-allowed">
                         {sharingId === rt.id ? '…' : '🔗'}
                       </button>
                       <button onClick={() => onEdit(rt)}

@@ -403,7 +403,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
                 className="input-field text-sm flex-1 bg-white/80"
               />
               <button type="button" onClick={runAiSearch} disabled={aiLoading || aiText.trim().length < 5}
-                className="shrink-0 px-4 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-brand-600 disabled:opacity-50 hover:shadow-md transition-all">
+                className="shrink-0 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-brand-600 disabled:opacity-50 hover:shadow-md transition-all">
                 {aiLoading ? 'AI đang đọc…' : 'Tìm bằng AI'}
               </button>
             </div>
@@ -446,6 +446,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
             <div className="md:col-span-1">
               <label className="block text-xs font-medium text-stone-500 mb-1">Kiểu phòng</label>
               <select
+                aria-label="Kiểu phòng"
                 className="input-field text-sm"
                 value={typeName}
                 onChange={e => setTypeName(e.target.value)}
@@ -458,6 +459,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
             <div className="md:col-span-1">
               <label className="block text-xs font-medium text-stone-500 mb-1">🎓 Gần trường ĐH</label>
               <select
+                aria-label="Gần trường đại học"
                 className="input-field text-sm"
                 value={uni}
                 onChange={e => setUni(e.target.value)}
@@ -496,7 +498,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
                     key={f.key}
                     type="button"
                     onClick={() => toggleFeature(f.key)}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border transition-all ${
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 min-h-11 sm:min-h-0 text-xs font-medium border transition-all ${
                       active
                         ? 'bg-brand-600 border-brand-600 text-white shadow-sm'
                         : 'bg-white border-stone-200 text-stone-600 hover:border-stone-300'
@@ -524,7 +526,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
             </button>
             <Link
               href="/ban-do"
-              className="inline-flex items-center justify-center rounded-xl px-3 sm:px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-brand-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all whitespace-nowrap"
+              className="inline-flex items-center justify-center rounded-xl px-3 sm:px-6 py-2.5 min-h-11 text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-brand-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all whitespace-nowrap"
             >
               Tìm theo bản đồ
             </Link>
@@ -557,7 +559,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
                   <span className="font-semibold">🔔 Chưa ưng phòng nào?</span> Để lại SĐT — có phòng mới đúng tiêu chí này, chúng tôi chủ động báo bạn.
                 </p>
                 <button type="button" onClick={() => setHuntOpen(true)}
-                  className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-colors">
+                  className="shrink-0 px-4 py-2 min-h-11 rounded-xl text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-colors">
                   Săn phòng giúp tôi
                 </button>
               </div>
@@ -596,13 +598,14 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
               <label className="flex items-center gap-1.5 text-sm text-stone-500">
                 <span className="hidden sm:inline">Sắp xếp:</span>
                 <select
+                  aria-label="Sắp xếp kết quả"
                   value={sort}
                   onChange={e => {
                     const v = e.target.value;
                     setSort(v);
                     runSearch({ ...currentFilters(), sort: v }, 1);
                   }}
-                  className="border border-stone-300 rounded-lg px-2.5 py-1.5 text-sm bg-white text-stone-700 focus:outline-none focus:border-brand-400"
+                  className="border border-stone-300 rounded-lg px-2.5 py-1.5 min-h-11 sm:min-h-0 text-sm bg-white text-stone-700 focus:outline-none focus:border-brand-400"
                 >
                   <option value="">{uni ? 'Gần trường nhất' : 'Phù hợp nhất'}</option>
                   <option value="price_asc">Giá thấp → cao</option>
@@ -633,7 +636,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
                         {rt.hasVideo && (
                           <span
                             title="Có video"
-                            className="inline-flex items-center justify-center rounded-full bg-black/60 backdrop-blur-sm text-white text-[11px] w-6 h-6 shadow"
+                            className="inline-flex items-center justify-center rounded-full bg-black/60 backdrop-blur-sm text-white text-xs w-6 h-6 shadow"
                           >
                             🎬
                           </span>
@@ -681,12 +684,12 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
                       {/* Property-level special amenities */}
                       {(rt.property?.parkingCar || rt.property?.parkingBike || rt.property?.evCharging || rt.property?.petAllowed || rt.property?.foreignerOk || rt.shortTermAllowed) && (
                         <div className="flex flex-wrap gap-1.5 mt-3">
-                          {rt.property?.parkingCar && <span className="text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🚗 Ô tô đỗ cửa</span>}
-                          {rt.property?.parkingBike && <span className="text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🏍️ Để xe máy</span>}
-                          {rt.property?.evCharging && <span className="text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">⚡ Sạc xe điện</span>}
-                          {rt.property?.petAllowed && <span className="text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🐾 Thú cưng OK</span>}
-                          {rt.property?.foreignerOk && <span className="text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🌍 Người nước ngoài</span>}
-                          {rt.shortTermAllowed && <span className="text-[11px] bg-violet-50 text-violet-700 border border-violet-200 px-2 py-0.5 rounded-full font-medium">📅 Ngắn hạn</span>}
+                          {rt.property?.parkingCar && <span className="text-xs bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🚗 Ô tô đỗ cửa</span>}
+                          {rt.property?.parkingBike && <span className="text-xs bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🏍️ Để xe máy</span>}
+                          {rt.property?.evCharging && <span className="text-xs bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">⚡ Sạc xe điện</span>}
+                          {rt.property?.petAllowed && <span className="text-xs bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🐾 Thú cưng OK</span>}
+                          {rt.property?.foreignerOk && <span className="text-xs bg-stone-100 text-stone-700 px-2 py-0.5 rounded-full font-medium">🌍 Người nước ngoài</span>}
+                          {rt.shortTermAllowed && <span className="text-xs bg-violet-50 text-violet-700 border border-violet-200 px-2 py-0.5 rounded-full font-medium">📅 Ngắn hạn</span>}
                         </div>
                       )}
 
