@@ -128,6 +128,85 @@ export function redactName(input?: string | null): string {
 }
 
 /**
+ * Lọc số nhà khỏi TÊN TIN ĐĂNG (RoomType.name) trước khi đưa ra công khai.
+ *
+ * Vì sao tách riêng khỏi redactName() (vốn cho TÊN TÒA): tiêu đề tin có văn phong khác hẳn —
+ * mở đầu bằng loại phòng ("1 ngủ 1 khách…", "2N1K…") rồi mới tới địa chỉ sau chữ "tại".
+ * Dùng redactName() ở đây sẽ ăn mất số 1 của "1 ngủ 1 khách" (nó cắt số trần ở ĐẦU chuỗi),
+ * còn redactHouseNumber() thì cắt luôn cả chuỗi ngõ. Nên phải có luật riêng.
+ *
+ * Phát hiện 07/08/2026 khi kiểm định: 89/622 tin công khai (14%) có số nhà nằm ngay trong TÊN,
+ * mà tên thì đi thẳng ra <title> của /tin/[id] (Google đã lập chỉ mục), thẻ tin mọi trang công
+ * khai, JSON-LD, thẻ OG và ảnh bìa. Địa chỉ đã che số nhà đúng từ lâu, nhưng TÊN thì chưa ai che
+ * → luật riêng tư cốt lõi bị lách qua đường khác.
+ */
+export function redactTitle(input?: string | null): string {
+  if (!input) return '';
+  let s = String(input).trim().replace(/^["'“”']+/, '').replace(/["'“”']+$/, '');
+  s = collapseDoubled(s);
+  let removed = false;
+  const cut = (re: RegExp, rep: string) => {
+    const next = s.replace(re, rep);
+    if (next !== s) { removed = true; s = next; }
+  };
+
+  // "nhà 44", "số nhà 91", "Nhà số 19" ở bất kỳ đâu trong tiêu đề
+  cut(HOUSE_MID, ' ');
+  // "Số 24b", "SỐ 26A" (kèm chuỗi ngõ dính liền nếu có)
+  cut(/\b(?:số\s*nhà|số)\s*\d+[a-zA-Z]?(?:\s*[-–]\s*\d+[a-zA-Z]?)?(?:\s*\/\s*\d+[a-zA-Z]?)*\b/gi, ' ');
+  // số nhà TRẦN ngay sau "tại/ở": "tại 44 Trần Thái Tông" → "tại Trần Thái Tông".
+  // Chặn nuốt nhầm số đếm mô tả: "tại 2 phòng ngủ", "tại 5 tầng"...
+  // ⚠️ Danh sách chặn KHÔNG được có "tr"/"k": cờ /i khiến "tr\b" khớp luôn "Tr" của
+  // Trần/Trương/Trung (sau "Tr" là "ầ" — không phải \w nên \b khớp), làm chết cả luật.
+  cut(/\b(tại|tai|ở)\s+\d+[a-zA-Z]?(?:\s*\/\s*\d+[a-zA-Z]?)*\s+(?!(?:tầng|tang|phòng|phong|ngủ|ngu|khách|khach|người|nguoi|giường|giuong|m2|m²|triệu)\b)(?=[^\d\s])/gi, '$1 ');
+  // số nhà TRẦN đứng ngay trước "ngõ/ngách/hẻm" ("26A NGÁCH 52" → bỏ "26A").
+  // Số CỦA ngõ nằm SAU từ khoá nên không bị đụng.
+  // Lookbehind: số ĐỨNG SAU một từ khoá ngõ/ngách là số CỦA ngõ đó, không phải số nhà
+  // ("NGÕ 58 NGÁCH 32" phải giữ 58). Thiếu lookbehind là cắt nhầm thành "NGÕ NGÁCH 32".
+  cut(/(?<!(?:ngõ|ngo|ngách|ngach|hẻm|hem)\s{1,4})\b\d+[a-zA-Z]?(?:\s*\/\s*\d+[a-zA-Z]?)*\s+(?=(?:ngách|ngach|ngõ|ngo|hẻm|hem)\b)/gi, '');
+  // số nhà ngay sau từ loại hình nhà ("CCMN 69A NGUYỄN TRÃI"), chừa số đếm mô tả
+  cut(/\b(ccmn|trọ|tro|nhà\s*trọ|chung\s*cư(?:\s*mini)?|toà|tòa|toa)\s+\d+[a-zA-Z]?(?:\s*\/\s*\d+[a-zA-Z]?)*(?!\s*(?:tầng|tang|phòng|phong|tháng|thang|m2|m²|triệu|tr\b|k\b|người|nguoi))\b\s*/gi, '$1 ');
+
+  // QUY TẮC CHUỖI NGÕ (giống redactHouseNumber): chưa cắt được số nhà tường minh nào
+  // → đoạn CUỐI của chuỗi "ngõ 205/37" chính là số nhà, phải bỏ.
+  if (!removed) {
+    s = s.replace(/\b(ngõ|ngo|ngách|ngach|hẻm|hem)\s+(\d+[a-zA-Z]?(?:\s*\/\s*\d+[a-zA-Z]?)+)/gi,
+      (_m, kw, chain) => `${kw} ${chain.split('/').map((x: string) => x.trim()).slice(0, -1).join('/')}`);
+  }
+
+  // Dọn rác do cắt để lại: ", ," · "tại ," · " ." · mảnh "-C5" mồ côi · thừa khoảng trắng
+  s = s.replace(/\s*-\s*(?=[A-Za-zÀ-ỹ]?\d)/g, ' ')
+       .replace(/([,.;])\s*(?=[,.;])/g, '')
+       .replace(/\b(tại|tai|ở)\s*[,.]\s*/gi, '$1 ')
+       .replace(/\s+([,.;])/g, '$1')
+       .replace(/\s{2,}/g, ' ')
+       .replace(/^[\s,.;\-]+|[\s,.;\-]+$/g, '');
+
+  return s.trim() || String(input).trim(); // cắt sạch quá thì trả tên gốc, thà lộ còn hơn tiêu đề trống
+}
+
+/**
+ * Lọc SỐ ĐIỆN THOẠI / handle Zalo khỏi văn bản tự do trước khi cho khách xem (mô tả tin).
+ *
+ * Luật của dự án: khách qua link share chỉ thấy khu vực + tiện ích, KHÔNG thấy SĐT — để CTV
+ * không bị nhảy cóc mất hoa hồng. Nhưng mô tả là ô gõ tự do, chủ nhà vẫn kẹp số vào
+ * (kiểm định 07/08/2026 bắt được 2 tin đang lộ). Che ở tầng hiển thị thì cả tin cũ lẫn tin
+ * mới đều an toàn, không phải đi sửa từng bản ghi.
+ *
+ * Bắt cả các kiểu né: "0378 791 103", "0378.791.103", "037-879-1103", "+84378791103".
+ */
+export function redactPublicText(input?: string | null): string {
+  if (!input) return '';
+  return String(input)
+    // +84 / 84 / 0 + 9 chữ số, cho phép chen . - khoảng trắng giữa các chữ số
+    .replace(/(?:\+?84|0)(?:[\s.\-]?\d){9}\b/g, '[đã ẩn]')
+    // "zalo: abc", "zalo 0378..." — phần số đã bị thay ở trên, dọn nốt nhãn thừa
+    .replace(/\b(zalo|sđt|sdt|số\s*đt|điện\s*thoại|liên\s*hệ|lh)\s*[:\-]?\s*(?=\[đã ẩn\])/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+/**
  * Tách BEST-EFFORT số nhà từ fullAddress (để backfill field houseNumber + prefill form).
  * Không dùng cho việc ẩn (việc ẩn dùng redactHouseNumber). Trả '' nếu không nhận ra.
  */

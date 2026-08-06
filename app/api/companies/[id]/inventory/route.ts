@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { applyRateLimit } from '@/lib/rate-limit';
-import { redactName, redactHouseNumber } from '@/lib/address';
+import { redactName, redactHouseNumber, redactTitle } from '@/lib/address';
 
 // Kho phòng CÔNG KHAI của 1 CÔNG TY — phục vụ link share cố định /share/company/[id].
 // Trả company (chỉ khi đang hoạt động) + tất cả phòng trống/sắp trống ĐÃ DUYỆT thuộc công ty.
@@ -53,7 +53,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     const rooms = roomTypes.map(rt => ({
       id: rt.id,
-      name: rt.name,
+      // Tên tin do chủ nhà tự gõ, rất hay kèm số nhà → phải che trước khi ra công khai (redactTitle)
+      name: redactTitle(rt.name),
       typeName: rt.typeName,
       areaSqm: rt.areaSqm,
       priceMonthly: rt.priceMonthly,

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination';
 import { applyRateLimit } from '@/lib/rate-limit';
-import { redactName, redactHouseNumber } from '@/lib/address';
+import { redactName, redactHouseNumber, redactTitle } from '@/lib/address';
 import { HANOI_UNIVERSITIES } from '@/lib/hanoi-locations';
 
 // Khoảng cách km giữa 2 tọa độ (haversine) — dùng cho lọc "gần trường ĐH"
@@ -181,7 +181,8 @@ export async function GET(req: NextRequest) {
       return {
         ...(distanceKm !== undefined ? { distanceKm, uniShort: uni?.short } : {}),
         id: rt.id,
-        name: rt.name,
+        // Tên tin do chủ nhà tự gõ, rất hay kèm số nhà → phải che trước khi ra công khai (redactTitle)
+        name: redactTitle(rt.name),
         listingCode: rt.listingCode,
         typeName: rt.typeName,
         areaSqm: rt.areaSqm,

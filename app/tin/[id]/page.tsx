@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { cache } from 'react';
 import prisma from '@/lib/prisma';
 import ShareViewClient from '@/app/share/[token]/ShareViewClient';
-import { publicAddress } from '@/lib/address';
+import { publicAddress, redactTitle, redactPublicText } from '@/lib/address';
 import { ogImage, largeCard } from '@/lib/og';
 import { SITE_URL } from '@/lib/seo-locations';
 
@@ -28,9 +28,12 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   // Ẩn số nhà: tiêu đề dùng địa chỉ công khai (ngõ/ngách + đường), không dùng tên tòa (có thể chứa số nhà).
   const loc = publicAddress(rt.property?.fullAddress, rt.property?.streetName) || rt.property?.district || '';
   // KHÔNG tự thêm "| MixStay": app/layout.tsx đã có title.template '%s | MixStay'
-  const title = `${rt.name}${loc ? ` - ${loc}` : ''}`;
-  const description = `${rt.name} ${rt.areaSqm}m² tại ${rt.property?.district}. Giá từ ${(rt.priceMonthly / 1000000).toFixed(1)} triệu/tháng.`;
-  const images = [ogImage(rt.id, rt.name)];
+  // Tên tin do chủ nhà tự gõ RẤT hay kèm số nhà ("Studio tại Số 17 Ngõ 105 Phú Xá") và tiêu đề
+  // này đã bị Google lập chỉ mục — phải che y như địa chỉ, nếu không luật ẩn số nhà vô nghĩa.
+  const safeName = redactTitle(rt.name);
+  const title = `${safeName}${loc ? ` - ${loc}` : ''}`;
+  const description = `${safeName} ${rt.areaSqm}m² tại ${rt.property?.district}. Giá từ ${(rt.priceMonthly / 1000000).toFixed(1)} triệu/tháng.`;
+  const images = [ogImage(rt.id, safeName)];
 
   return {
     title,
@@ -57,10 +60,11 @@ export default async function PublicListingPage({ params }: { params: { id: stri
     ? {
         '@context': 'https://schema.org',
         '@type': 'Product',
-        name: rt.name,
+        // Che số nhà y như tiêu đề — JSON-LD là thứ Google đọc và hiện ra kết quả tìm kiếm
+        name: redactTitle(rt.name),
         description:
-          (rt.description || '').slice(0, 300) ||
-          `${rt.name} ${rt.areaSqm}m² tại ${rt.property?.district || 'Hà Nội'}`,
+          redactPublicText(rt.description).slice(0, 300) ||
+          `${redactTitle(rt.name)} ${rt.areaSqm}m² tại ${rt.property?.district || 'Hà Nội'}`,
         image: `${SITE_URL}/api/og/${rt.id}`,
         url: `${SITE_URL}/tin/${rt.id}`,
         category: 'Cho thuê phòng, chung cư mini',

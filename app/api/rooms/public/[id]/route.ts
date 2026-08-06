@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { applyRateLimit } from '@/lib/rate-limit';
-import { publicAddress, redactName, redactHouseNumber } from '@/lib/address';
+import { publicAddress, redactName, redactHouseNumber, redactTitle, redactPublicText } from '@/lib/address';
 
 // GET /api/rooms/public/[id] — public listing detail by room id (no auth, no share token).
 // Customer-safe fields ONLY (same as the share-link view): NO fullAddress, lat/lng,
@@ -59,6 +59,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const safeStreet = redactHouseNumber(streetName);
     const safe = {
       ...roomType,
+      // Tên tin do chủ nhà tự gõ, rất hay kèm số nhà → phải che trước khi ra công khai (redactTitle)
+      name: redactTitle(roomType.name),
+      // Mô tả là ô gõ tự do — che SĐT/Zalo lọt vào để khách không nhảy cóc qua CTV
+      description: redactPublicText(roomType.description),
       property: {
         ...restProp,
         name: redactName(name),

@@ -1,6 +1,6 @@
 // SERVER-ONLY: file này import prisma nên chỉ được dùng trong Server Component / API route.
 import prisma from '@/lib/prisma';
-import { redactName, redactHouseNumber } from '@/lib/address';
+import { redactName, redactHouseNumber, redactTitle } from '@/lib/address';
 import { SEO_UNIS, UNI_RADIUS_KM, type SeoUni } from '@/lib/seo-locations';
 
 // Truy vấn dữ liệu cho TRANG ĐÍCH SEO — chạy trên server, render sẵn HTML (ISR) để Google
@@ -74,7 +74,8 @@ export type ListingCardData = {
 function toCard(rt: any, distanceKm?: number): ListingCardData {
   return {
     id: rt.id,
-    name: rt.name,
+    // Tên tin do chủ nhà tự gõ, rất hay kèm số nhà → phải che trước khi ra công khai (redactTitle)
+    name: redactTitle(rt.name),
     typeName: rt.typeName,
     areaSqm: rt.areaSqm,
     priceMonthly: rt.priceMonthly,

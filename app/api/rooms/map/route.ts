@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { redactName, redactHouseNumber } from '@/lib/address';
+import { redactName, redactHouseNumber, redactTitle } from '@/lib/address';
 
 /**
  * GET /api/rooms/map — Dữ liệu bản đồ tìm phòng (CÔNG KHAI, không cần đăng nhập).
@@ -56,7 +56,8 @@ export async function GET() {
       minPrice: p.roomTypes[0]?.priceMonthly ?? null,
       listings: p.roomTypes.map(rt => ({
         id: rt.id,
-        name: rt.name,
+        // Tên tin do chủ nhà tự gõ, rất hay kèm số nhà → phải che trước khi ra công khai (redactTitle)
+        name: redactTitle(rt.name),
         typeName: rt.typeName,
         priceMonthly: rt.priceMonthly,
         areaSqm: rt.areaSqm,

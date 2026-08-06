@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import { nanoid } from 'nanoid';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { requirePermission } from '@/lib/permissions-server';
-import { redactName, redactHouseNumber } from '@/lib/address';
+import { redactName, redactHouseNumber, redactTitle } from '@/lib/address';
 
 // GET /api/share-links/system?token=xxx — public: lấy tất cả RoomType trống của landlord
 export async function GET(req: NextRequest) {
@@ -75,6 +75,8 @@ export async function GET(req: NextRequest) {
     // Ẩn SỐ NHÀ với khách (đồng bộ chính sách redact ở mọi endpoint công khai khác).
     const safeProperties = properties.map(p => ({
       ...p,
+      // Tên TIN cũng hay kèm số nhà, không chỉ tên tòa
+      roomTypes: (p as any).roomTypes?.map((rt: any) => ({ ...rt, name: redactTitle(rt.name) })) ?? (p as any).roomTypes,
       name: redactName(p.name),
       streetName: redactHouseNumber(p.streetName),
       publicAddress: redactHouseNumber(p.streetName),

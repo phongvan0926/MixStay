@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { applyRateLimit } from '@/lib/rate-limit';
-import { redactName, redactHouseNumber } from '@/lib/address';
+import { redactName, redactHouseNumber, redactTitle } from '@/lib/address';
 
 const PRICE_TOLERANCE = 0.3; // ±30% → "cùng phân khúc giá"
 const MAX_PER_BUCKET = 9;    // trả dư để client xáo trộn → mỗi lần xem thấy bộ khác
@@ -127,6 +127,8 @@ export async function GET(req: NextRequest) {
         .filter(Boolean)
         .map((r: any) => ({
           ...r,
+          // Tên tin do chủ nhà tự gõ, rất hay kèm số nhà → phải che trước khi ra công khai (redactTitle)
+          name: redactTitle(r.name),
           // Ẩn số nhà: redact tên tòa + tên đường trước khi trả cho khách.
           property: r.property
             ? { ...r.property, name: redactName(r.property.name), streetName: redactHouseNumber(r.property.streetName) }

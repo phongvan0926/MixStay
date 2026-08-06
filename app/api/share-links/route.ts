@@ -7,7 +7,7 @@ import { getPaginationParams, paginatedResponse } from '@/lib/pagination';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { shareLinkCreateSchema, validateBody } from '@/lib/validations';
 import { requirePermission } from '@/lib/permissions-server';
-import { publicAddress, redactName, redactHouseNumber } from '@/lib/address';
+import { publicAddress, redactName, redactHouseNumber, redactTitle, redactPublicText } from '@/lib/address';
 
 // Ẩn số nhà: redact name + streetName, thêm publicAddress (ngõ/ngách + đường), loại fullAddress khỏi payload khách.
 function sanitizeProperty<T extends { name?: string | null; fullAddress?: string | null; streetName?: string | null }>(p: T) {
@@ -15,6 +15,10 @@ function sanitizeProperty<T extends { name?: string | null; fullAddress?: string
   const safeStreet = redactHouseNumber(streetName);
   return {
     ...rest,
+    // Tên TIN do chủ nhà tự gõ cũng hay kèm số nhà — che luôn, không chỉ tên tòa
+    ...((rest as any).roomTypes
+      ? { roomTypes: (rest as any).roomTypes.map((rt: any) => ({ ...rt, name: redactTitle(rt.name) })) }
+      : {}),
     name: redactName(name),
     streetName: safeStreet,
     publicAddress: publicAddress(fullAddress, safeStreet),
@@ -162,6 +166,12 @@ export async function GET(req: NextRequest) {
       // Ẩn số nhà cho khách: thay property bằng bản đã redact (publicAddress thay fullAddress).
       if (link.roomType?.property) {
         (link.roomType as any).property = sanitizeProperty(link.roomType.property as any);
+      }
+      // Tên tin đăng: che số nhà trước khi ra trang share công khai
+      if (link.roomType) {
+        (link.roomType as any).name = redactTitle((link.roomType as any).name);
+        // Mô tả là ô gõ tự do — che SĐT/Zalo lọt vào để khách không nhảy cóc qua CTV
+        (link.roomType as any).description = redactPublicText((link.roomType as any).description);
       }
 
       // Link do BROKER tạo: kèm token KHO TỔNG của cộng tác viên (find-or-create) để trang share lẻ

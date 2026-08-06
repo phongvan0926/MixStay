@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { ImageResponse } from 'next/og';
 import prisma from '@/lib/prisma';
 import { getVideoThumbnail } from '@/lib/video-utils';
-import { redactHouseNumber } from '@/lib/address';
+import { redactHouseNumber, redactTitle } from '@/lib/address';
 import { formatListingCode } from '@/lib/listing-code';
 
 /**
@@ -101,7 +101,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             display: 'flex', color: '#ffffff', fontSize: 58, fontWeight: 700, lineHeight: 1.18,
             marginBottom: 24, maxHeight: 220, overflow: 'hidden',
           }}>
-            {rt.name}
+            {redactTitle(rt.name)}
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
