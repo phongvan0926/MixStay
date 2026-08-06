@@ -16,6 +16,14 @@ export async function GET(req: NextRequest) {
 
   try {
     const session = await getServerSession(authOptions);
+
+    // 🔴 BẮT BUỘC ĐĂNG NHẬP: đây là endpoint NỘI BỘ (kho hàng của admin/CTV/chủ nhà).
+    // Trước đây chỉ dùng session để quyết định có lọc isApproved hay không, nên khách vãng lai
+    // vẫn kéo được toàn bộ danh mục tin. Khách phải đi qua /api/rooms/public (đã redact).
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const url = new URL(req.url);
     const propertyId = url.searchParams.get('propertyId');
     const available = url.searchParams.get('available');

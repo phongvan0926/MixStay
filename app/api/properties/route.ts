@@ -15,6 +15,25 @@ export async function GET(req: NextRequest) {
 
   try {
     const session = await getServerSession(authOptions);
+
+    // 🔴 BẮT BUỘC ĐĂNG NHẬP. Trước đây route này CHỈ dùng session để LỌC BỚT cho chủ nhà chứ
+    // không hề kiểm tra có phiên hay không → khách vãng lai gọi thẳng /api/properties là nhận
+    // TOÀN BỘ 472 tòa kèm fullAddress (nguyên số nhà), toạ độ GPS, zaloPhone, landlordNotes,
+    // tên/SĐT/email chủ nhà — đúng thứ mà cả hệ thống redact sinh ra để giấu. Phát hiện khi
+    // kiểm định hộp đen 07/08/2026. Đây là endpoint NỘI BỘ; khách dùng /api/rooms/public.
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const role = session.user.role;
+    if (role === 'CUSTOMER') {
+      return NextResponse.json({ error: 'Không có quyền xem danh sách tòa nhà' }, { status: 403 });
+    }
+    // Cùng luật với /api/rooms: CTV chỉ thấy liên hệ khi admin đã cấp canViewContact.
+    // Chủ nhà luôn thấy đủ vì where đã khoá về đúng tòa của họ.
+    const canContact =
+      role === 'ADMIN' || role === 'ADMIN_STAFF' || role === 'LANDLORD' ||
+      (role === 'BROKER' && !!(session.user as any).canViewContact);
+
     const url = new URL(req.url);
     const status = url.searchParams.get('status');
     const landlordId = url.searchParams.get('landlordId');
@@ -78,7 +97,15 @@ export async function GET(req: NextRequest) {
       prisma.property.count({ where }),
     ]);
 
-    return NextResponse.json(paginatedResponse(properties, total, page, limit));
+    // Không đủ quyền xem liên hệ → BỎ HẲN các field nhạy cảm khỏi payload (không chỉ ẩn trên UI)
+    const safe = canContact
+      ? properties
+      : properties.map(({ fullAddress, latitude, longitude, zaloPhone, landlordNotes, ...rest }: any) => ({
+          ...rest,
+          landlord: rest.landlord ? { id: rest.landlord.id, name: rest.landlord.name } : rest.landlord,
+        }));
+
+    return NextResponse.json(paginatedResponse(safe, total, page, limit));
   } catch (error: any) {
     console.error('/api/properties error:', error);
     return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });
