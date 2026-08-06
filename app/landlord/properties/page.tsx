@@ -341,11 +341,16 @@ export default function LandlordPropertiesPage() {
     setEditAvailableNames(rt.availableRoomNames || '');
   };
   const saveAvailable = async (id: string) => {
-    await fetch('/api/rooms', {
+    const res = await fetch('/api/rooms', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, availableUnits: editAvailableUnits, availableRoomNames: editAvailableNames }),
     });
-    toast.success('Đã cập nhật phòng trống!');
+    // Server tự nắn trạng thái cho khớp số phòng trống (lib/room-status.ts) — nói rõ ra,
+    // đừng để chủ nhà gõ 0 xong vẫn tưởng tin còn đang chạy.
+    const saved = await res.json().catch(() => null);
+    if (saved?.status === 'UNAVAILABLE') toast.success('Đã cập nhật — tin chuyển sang 🔴 Hết phòng');
+    else if (saved?.status === 'AVAILABLE' && editAvailableUnits > 0) toast.success('Đã cập nhật — tin đang 🟢 Còn phòng');
+    else toast.success('Đã cập nhật phòng trống!');
     setEditingAvailable(null);
     mutate();
   };

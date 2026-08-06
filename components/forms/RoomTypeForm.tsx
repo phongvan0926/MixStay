@@ -557,7 +557,19 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
               min={0}
               placeholder="VD: 1"
               value={form.availableUnits || ''}
-              onChange={e => updateField('availableUnits', parseInt(e.target.value) || 0)}
+              onChange={e => {
+                // Gõ số trống về 0 → tự chuyển 🔴 luôn (và ngược lại), để form khớp với
+                // luật server ở lib/room-status.ts thay vì bị server sửa ngầm sau khi lưu.
+                const n = Math.max(0, parseInt(e.target.value) || 0);
+                setForm(prev => ({
+                  ...prev,
+                  availableUnits: n,
+                  status:
+                    n === 0 && prev.status === 'AVAILABLE' ? 'UNAVAILABLE'
+                      : n > 0 && prev.status === 'UNAVAILABLE' ? 'AVAILABLE'
+                        : prev.status,
+                }));
+              }}
             />
           </div>
           <div className="md:col-span-2">
@@ -584,7 +596,14 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
                 <button
                   key={opt.value}
                   type="button"
-                  onClick={() => updateField('status', opt.value)}
+                  onClick={() => setForm(prev => ({
+                    ...prev,
+                    status: opt.value,
+                    // Bấm "🟢 Còn phòng" mà số trống đang 0 → cho 1 phòng, đừng để tin mâu thuẫn
+                    ...(opt.value === 'AVAILABLE' && prev.availableUnits === 0 ? { availableUnits: 1 } : {}),
+                    // Bấm "🔴 Hết phòng" → dọn số trống về 0 cho khớp
+                    ...(opt.value === 'UNAVAILABLE' ? { availableUnits: 0 } : {}),
+                  }))}
                   className={`px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${
                     form.status === opt.value
                       ? opt.cls
@@ -616,11 +635,10 @@ export default function RoomTypeForm({ initialData, properties, onSubmit, isAdmi
               </div>
             )}
 
-            {form.status === 'AVAILABLE' && form.availableUnits === 0 && (
-              <p className="text-xs text-amber-600 mt-2">
-                ⚠️ Đang chọn &ldquo;Còn phòng&rdquo; nhưng số phòng trống = 0. Cập nhật lại?
-              </p>
-            )}
+            <p className="text-xs text-stone-400 mt-2">
+              Trạng thái và số phòng trống luôn đi cùng nhau: gõ số trống về 0 thì tin tự chuyển
+              🔴 Hết phòng, gõ lên lại thì tự mở 🟢 Còn phòng.
+            </p>
           </div>
         </div>
       </div>

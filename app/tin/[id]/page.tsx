@@ -15,7 +15,7 @@ const getListing = cache((id: string) =>
     where: { id, isApproved: true, property: { status: 'APPROVED', isActive: true } },
     select: {
       id: true, name: true, areaSqm: true, priceMonthly: true, description: true,
-      status: true, updatedAt: true, amenities: true,
+      status: true, availableUnits: true, updatedAt: true, amenities: true,
       property: { select: { fullAddress: true, streetName: true, district: true } },
     },
   })
@@ -75,8 +75,10 @@ export default async function PublicListingPage({ params }: { params: { id: stri
             priceCurrency: 'VND',
             unitText: 'tháng',
           },
+          // Còn 0 phòng thì KHÔNG khai InStock, kể cả khi trạng thái còn sót 🟢 —
+          // Google quảng cáo "còn phòng" mà khách bấm vào thấy hết là mất uy tín (và bị phạt).
           availability:
-            rt.status === 'AVAILABLE'
+            rt.status === 'AVAILABLE' && (rt.availableUnits ?? 0) > 0
               ? 'https://schema.org/InStock'
               : rt.status === 'UPCOMING'
                 ? 'https://schema.org/PreOrder'

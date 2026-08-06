@@ -184,7 +184,9 @@ export default function SavedComparePage() {
                         <td className="text-stone-500">Còn trống</td>
                         {alive.map(r => (
                           <td key={r.id}>
-                            {r.status === 'AVAILABLE' ? `🟢 ${r.availableUnits} phòng` : r.status === 'UPCOMING' ? '🟡 Sắp trống' : '🔴 Hết phòng'}
+                            {r.status === 'AVAILABLE' && (r.availableUnits ?? 0) > 0
+                              ? `🟢 ${r.availableUnits} phòng`
+                              : r.status === 'UPCOMING' ? '🟡 Sắp trống' : '🔴 Hết phòng'}
                           </td>
                         ))}
                       </tr>

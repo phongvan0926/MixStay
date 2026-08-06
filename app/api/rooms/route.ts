@@ -8,6 +8,7 @@ import { roomTypeCreateSchema, roomTypeUpdateSchema, validateBody } from '@/lib/
 import { requirePermission } from '@/lib/permissions-server';
 import { normalizeListingCode, LISTING_CODE_REGEX, parseComposedListingCode } from '@/lib/listing-code';
 import { generateUniqueListingCode } from '@/lib/listing-code-server';
+import { reconcileAvailability, type RoomStatusValue } from '@/lib/room-status';
 
 export async function GET(req: NextRequest) {
   const rateLimited = await applyRateLimit(req, 'api');
@@ -252,6 +253,18 @@ export async function POST(req: NextRequest) {
     // Mã tin đăng bất biến, sinh server-side (client KHÔNG gửi được listingCode)
     const listingCode = await generateUniqueListingCode(prisma);
 
+    // Trạng thái và số phòng trống phải khớp nhau ngay từ lúc tạo (xem lib/room-status.ts)
+    const fresh = reconcileAvailability(
+      {
+        status: (body.status || 'AVAILABLE') as RoomStatusValue,
+        availableUnits: Number.isFinite(parseInt(body.availableUnits))
+          ? parseInt(body.availableUnits)
+          : (parseInt(body.totalUnits) || 1),
+        totalUnits: parseInt(body.totalUnits) || 1,
+      },
+      { status: body.status !== undefined, availableUnits: body.availableUnits !== undefined },
+    );
+
     const roomType = await prisma.roomType.create({
       data: {
         propertyId: body.propertyId,
@@ -267,17 +280,15 @@ export async function POST(req: NextRequest) {
         images: body.images || [],
         videos: body.videos || [],
         videoLinks: body.videoLinks || [],
-        totalUnits: parseInt(body.totalUnits) || 1,
-        availableUnits: Number.isFinite(parseInt(body.availableUnits))
-          ? parseInt(body.availableUnits)
-          : (parseInt(body.totalUnits) || 1),
+        totalUnits: fresh.totalUnits!,
+        availableUnits: fresh.availableUnits,
         availableRoomNames: body.availableRoomNames || null,
         commissionJson: body.commissionJson || null,
         shortTermAllowed: body.shortTermAllowed ?? false,
         shortTermMonths: body.shortTermMonths || null,
         shortTermPrice: body.shortTermPrice ? parseFloat(body.shortTermPrice) : null,
         landlordNotes: body.landlordNotes || null,
-        status: body.status || 'AVAILABLE',
+        status: fresh.status,
         expectedAvailableDate: body.expectedAvailableDate ? new Date(body.expectedAvailableDate) : null,
         isApproved: session.user.role === 'ADMIN' ? (body.isApproved ?? true) : false,
         createdById: session.user.id, // truy vết: tài khoản thực sự bấm tạo (kể cả admin tạo hộ chủ nhà)
@@ -316,7 +327,12 @@ export async function PUT(req: NextRequest) {
     // Load bản hiện tại để (a) kiểm tra sở hữu của LANDLORD, (b) diff isApproved cho staff
     const existing = await prisma.roomType.findUnique({
       where: { id },
-      select: { isApproved: true, property: { select: { landlordId: true } } },
+      select: {
+        isApproved: true,
+        // cần cho reconcileAvailability: sửa nhanh chỉ gửi 1 field, phải trộn với bản đang có
+        status: true, availableUnits: true, totalUnits: true,
+        property: { select: { landlordId: true } },
+      },
     });
     if (!existing) return NextResponse.json({ error: 'Không tìm thấy tin đăng' }, { status: 404 });
     if (role === 'LANDLORD' && existing.property.landlordId !== session.user.id) {
@@ -341,6 +357,27 @@ export async function PUT(req: NextRequest) {
       }
     }
 
+    // Trộn field được gửi lên với bản đang có, rồi nắn cho trạng thái ↔ số phòng trống khớp nhau.
+    // Sửa nhanh "số phòng trống" ở trang chủ nhà chỉ gửi mỗi availableUnits — nếu không nắn ở đây,
+    // gõ 0 sẽ để lại tin 🟢 "Còn 0 phòng" cho khách xem (xem lib/room-status.ts).
+    const nextStatus = (data.status !== undefined ? data.status : existing.status) as RoomStatusValue;
+    const nextUnits = data.availableUnits !== undefined ? parseInt(data.availableUnits) : existing.availableUnits;
+    const fixed = reconcileAvailability(
+      {
+        status: nextStatus,
+        availableUnits: nextUnits,
+        totalUnits: data.totalUnits !== undefined ? parseInt(data.totalUnits) : existing.totalUnits,
+      },
+      // "đổi sang giá trị mới", KHÔNG phải "có gửi lên" — form luôn gửi kèm cả 2 field
+      { status: nextStatus !== existing.status, availableUnits: nextUnits !== existing.availableUnits },
+    );
+    // Chỉ ghi đè khi giá trị thực sự đổi, để không đụng vào field người dùng không nhắc tới
+    const availabilityPatch = {
+      ...(fixed.status !== existing.status && { status: fixed.status }),
+      ...(fixed.availableUnits !== existing.availableUnits && { availableUnits: fixed.availableUnits }),
+      ...(fixed.totalUnits !== existing.totalUnits && { totalUnits: fixed.totalUnits }),
+    };
+
     const roomType = await prisma.roomType.update({
       where: { id },
       data: {
@@ -356,15 +393,13 @@ export async function PUT(req: NextRequest) {
         ...(data.images !== undefined && { images: data.images }),
         ...(data.videos !== undefined && { videos: data.videos }),
         ...(data.videoLinks !== undefined && { videoLinks: data.videoLinks }),
-        ...(data.totalUnits !== undefined && { totalUnits: parseInt(data.totalUnits) }),
-        ...(data.availableUnits !== undefined && { availableUnits: parseInt(data.availableUnits) }),
+        ...availabilityPatch, // totalUnits + availableUnits + status, đã nắn cho khớp nhau
         ...(data.availableRoomNames !== undefined && { availableRoomNames: data.availableRoomNames }),
         ...(data.commissionJson !== undefined && { commissionJson: data.commissionJson }),
         ...(data.shortTermAllowed !== undefined && { shortTermAllowed: data.shortTermAllowed }),
         ...(data.shortTermMonths !== undefined && { shortTermMonths: data.shortTermMonths }),
         ...(data.shortTermPrice !== undefined && { shortTermPrice: data.shortTermPrice ? parseFloat(data.shortTermPrice) : null }),
         ...(data.landlordNotes !== undefined && { landlordNotes: data.landlordNotes }),
-        ...(data.status !== undefined && { status: data.status }),
         ...(data.expectedAvailableDate !== undefined && {
           expectedAvailableDate: data.expectedAvailableDate ? new Date(data.expectedAvailableDate) : null,
         }),

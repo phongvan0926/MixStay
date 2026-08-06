@@ -276,6 +276,16 @@ mixstay/
 
 ## Changelog
 
+### v9.45 — 2026-08-06 (rà soát định kỳ: vá lỗi "Còn 0 phòng" lọt ra khách + sửa 3 bản ghi lệch)
+- **🐛 Lỗi thật:** 2 tin công khai (`MS-8P68ST`, `MS-ETCR26`) để `status = AVAILABLE` 🟢 nhưng `availableUnits = 0` → thẻ tin in thẳng **"Còn 0 phòng"** cho khách đọc, và JSON-LD vẫn khai **`InStock`** nên Google quảng cáo là còn phòng.
+- **Nguyên nhân gốc:** trang chủ nhà cho sửa nhanh số phòng trống bằng 1 ô số, `PUT /api/rooms` **chỉ gửi mỗi `availableUnits`** — trạng thái giữ nguyên 🟢. Chủ nhà cho thuê hết, gõ 0, tin thành mâu thuẫn. Form đầy đủ chỉ cảnh báo bằng chữ vàng, không chặn.
+- **`lib/room-status.ts` (MỚI):** `reconcileAvailability()` — nắn `status` ↔ `availableUnits` cho luôn khớp. Nguyên tắc: **sửa cái người dùng KHÔNG động tới, giữ nguyên cái họ vừa đổi.** Gõ số về 0 → tự 🔴; bấm 🟢 khi số đang 0 → cho 1 phòng (không ẩn tin); bấm 🔴 → dọn số về 0; 🟡 UPCOMING không đụng (cron lifecycle lo). Kèm chặn `availableUnits > totalUnits` ("Còn 3/2 phòng") và số âm. **11/11 ca kiểm thử đạt.**
+- **⚠️ Bẫy đã tránh:** kho có **142 tin 🔴 cũ vẫn còn `availableUnits > 0`** (khách không thấy vì tin 🔴 bị lọc khỏi trang công khai). Nếu luật kích hoạt theo *"có gửi field lên"* thì mọi thao tác lưu tin sẽ **đăng lại cả 142 tin đã cho thuê xong**. Vì vậy tham số của hàm là `changed` = **"đổi sang giá trị mới"**, không phải "có gửi lên".
+- **Áp dụng:** `POST` + `PUT /api/rooms` (server là chốt chặn cuối, mọi đường ghi đều qua); `RoomTypeForm` tự đổi trạng thái ngay khi gõ số (khỏi bị server sửa ngầm sau khi lưu); trang chủ nhà báo rõ *"tin chuyển sang 🔴 Hết phòng"* thay vì thông báo chung chung.
+- **Chắn ở tầng hiển thị:** `ListingCard`, `PublicSearch`, `/da-luu` **không bao giờ in "Còn 0 phòng"** nữa — dữ liệu lệch thì hiện "🔴 Hết phòng". JSON-LD ở `/tin/[id]` chỉ khai `InStock` khi `status = AVAILABLE` **và** `availableUnits > 0`.
+- **Sửa 3 bản ghi production:** 2 tin trên → 🔴 Hết phòng; `MS-A3NNJT` ghi **401m²** → **41m²** (chính mô tả của tin ghi "Diện tích 41m2"; tin này đang đứng đầu mọi kết quả sắp xếp "diện tích lớn nhất"). Rà lại toàn kho: 0 tin lệch, 0 tin "còn > tổng", 0 tin > 300m².
+- **Phần kiểm tra thấy BÌNH THƯỜNG:** 11/11 trang production trả 200 (chậm nhất 0.68s); cron lifecycle chạy đúng 08:00 VN, 0 tin 🟡 quá hạn bị kẹt; backup ảnh/video chạy hằng ngày 03:00 (4.568 file / 4.0GB, ổ dùng 13%); 472/472 tòa đã duyệt có toạ độ; quét 60 tin công khai — **0 rò rỉ** `fullAddress`/toạ độ/`zaloPhone`/`availableRoomNames`/hoa hồng, 0 địa chỉ còn số nhà.
+
 ### v9.44 — 2026-07-31 (dọn dấu vết tên dự án cũ trên GitHub + vá lỗi thiếu dấu ở màn hình chờ)
 - **🐛 Lỗi thật phát hiện khi rà:** `app/loading.tsx` — màn hình chờ toàn cục hiện **"Dang tai..."** (mất dấu tiếng Việt). Đã sửa thành **"Đang tải…"**.
 - **🏷️ Tên dự án cũ trên GitHub:** danh sách file của GitHub hiển thị *thông điệp commit cuối cùng chạm vào file đó* — 5 file chưa ai sửa từ hồi đổi tên nên vẫn treo dòng "MiniAppart Manager v2". **Đã kiểm tra: KHÔNG file nào còn chứa tên cũ trong nội dung** (việc đổi tên đã xong từ trước, chỉ còn dấu vết ở metadata git).

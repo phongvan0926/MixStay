@@ -39,9 +39,14 @@ export default function ListingCard({ rt, uniShort }: { rt: ListingCardData; uni
             <span className="inline-flex items-center rounded-full bg-amber-500 px-2.5 py-1 text-xs font-semibold text-white shadow">
               🟡 Sắp trống{rt.expectedAvailableDate ? ` ${new Date(rt.expectedAvailableDate).toLocaleDateString('vi-VN')}` : ''}
             </span>
-          ) : (
+          ) : rt.availableUnits > 0 ? (
             <span className="inline-flex items-center rounded-full bg-emerald-500 px-2.5 py-1 text-xs font-semibold text-white shadow">
               Còn {rt.availableUnits} phòng
+            </span>
+          ) : (
+            // Không bao giờ in "Còn 0 phòng" — dữ liệu lệch thì nói thẳng là hết
+            <span className="inline-flex items-center rounded-full bg-stone-500 px-2.5 py-1 text-xs font-semibold text-white shadow">
+              🔴 Hết phòng
             </span>
           )}
         </div>
