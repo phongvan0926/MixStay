@@ -276,6 +276,14 @@ mixstay/
 
 ## Changelog
 
+### v9.46 — 2026-08-06 (đổi hotline sang 0352 871 177 + gom số về một nguồn duy nhất)
+- **Vì sao:** công ty chuyển toàn bộ hotline sang số mới **0352 871 177**. Số cũ (0379 838 222) bị **chép cứng ở 5 chỗ rời nhau** — riêng trang chủ in ra 12 lần. Sót một chỗ là khách còn gọi vào số đã ngắt.
+- **`lib/contact.ts` (MỚI):** `SUPPORT_PHONE` / `SUPPORT_PHONE_DISPLAY` / `SUPPORT_ZALO` — **nguồn duy nhất**, lần sau đổi số chỉ sửa 1 file. Thay ở: footer trang chủ, `CallFab` (nút gọi nổi), `/share/[token]`, `/share/system/[token]`, nút "nhờ admin hỗ trợ" ở kho CTV.
+- `SUPPORT_ZALO` vẫn cho `NEXT_PUBLIC_SUPPORT_ZALO` ghi đè (để trỏ về nhóm Zalo), nhưng **mặc định bám theo `SUPPORT_PHONE`** thay vì số cứng.
+- **Sửa 2 bản ghi production:** công ty **Homevn** lưu `03528711777` — **11 chữ số**, đúng bằng số mới gõ thừa một số 7 → sửa thành `0352871177`; tài khoản LANDLORD **"Mixstay"** (9 tòa) vẫn giữ **hotline cũ** làm SĐT → đổi sang số mới.
+- **KHÔNG đụng vào:** `zaloGroupLink` của 26 công ty (link **nhóm** Zalo vẫn hoạt động, khách vào nhóm là đúng ý — chủ dự án chốt), và SĐT riêng của từng công ty đối tác / CTV / chủ nhà (`lib/zalo.ts` định tuyến về đúng người giữ link để không cướp lead của họ).
+- **Rà lại toàn bộ database:** 0 công ty / 0 tài khoản / 0 tòa nhà còn giữ số cũ. ⚠️ Còn 1 SĐT sai định dạng của công ty đối tác **BNBHOLDING** (`09366258556` — 11 chữ số), không thuộc phạm vi lần đổi này.
+
 ### v9.45 — 2026-08-06 (rà soát định kỳ: vá lỗi "Còn 0 phòng" lọt ra khách + sửa 3 bản ghi lệch)
 - **🐛 Lỗi thật:** 2 tin công khai (`MS-8P68ST`, `MS-ETCR26`) để `status = AVAILABLE` 🟢 nhưng `availableUnits = 0` → thẻ tin in thẳng **"Còn 0 phòng"** cho khách đọc, và JSON-LD vẫn khai **`InStock`** nên Google quảng cáo là còn phòng.
 - **Nguyên nhân gốc:** trang chủ nhà cho sửa nhanh số phòng trống bằng 1 ô số, `PUT /api/rooms` **chỉ gửi mỗi `availableUnits`** — trạng thái giữ nguyên 🟢. Chủ nhà cho thuê hết, gõ 0, tin thành mâu thuẫn. Form đầy đủ chỉ cảnh báo bằng chữ vàng, không chặn.
