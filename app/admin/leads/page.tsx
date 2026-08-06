@@ -8,6 +8,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
 import ViewingRequestTable from '@/components/leads/ViewingRequestTable';
 import toast from 'react-hot-toast';
+import { telHref, zaloHref } from '@/lib/phone';
 
 const TYPE_LABEL: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1N1K', '2k1n': '2N1K', studio: 'Studio', duplex: 'Duplex',
@@ -134,9 +135,9 @@ function SavedSearchesTab() {
                 <tr key={s.id} className={`border-b border-stone-50 ${s.isActive ? '' : 'opacity-50'}`}>
                   <td className="px-4 py-3">
                     <p className="font-medium text-stone-800">{s.name || 'Khách'}</p>
-                    <a href={`tel:${s.phone}`} className="text-brand-600 font-mono text-xs hover:underline">{s.phone}</a>
+                    <a href={telHref(s.phone) || undefined} className="text-brand-600 font-mono text-xs hover:underline">{s.phone}</a>
                     {' · '}
-                    <a href={`https://zalo.me/${s.phone}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs hover:underline">Zalo</a>
+                    {zaloHref(s.phone) && <a href={zaloHref(s.phone)!} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs hover:underline">Zalo</a>}
                   </td>
                   <td className="px-4 py-3 text-stone-600">
                     {[

@@ -11,6 +11,7 @@ import Logo from '@/components/ui/Logo';
 import Avatar from '@/components/ui/Avatar';
 import { getSystemZaloLink } from '@/lib/zalo';
 import { SUPPORT_PHONE } from '@/lib/contact';
+import { extractVNPhone } from '@/lib/phone';
 
 const roomTypeLabels: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1 ngủ 1 khách',
@@ -148,13 +149,14 @@ export default function SystemShareClient() {
   const isBroker = !!data.isBrokerLink;
   const contact = isBroker ? data.broker : data.landlord;
   const contactName = contact?.name || (isBroker ? 'Cộng tác viên' : 'Chủ nhà');
-  const contactDigits = (contact?.phone || '').replace(/\D/g, '');
+  // Bóc số + loại số không hợp lệ (xem lib/phone.ts) — không thì nút gọi/Zalo dẫn vào hư không
+  const contactDigits = extractVNPhone(contact?.phone);
   // CTV chưa điền SĐT trong hồ sơ → KHÔNG bỏ trống nút liên hệ (trước đây trang kho không có nút
   // nào cả), mà lùi về Zalo/hotline hệ thống — giống trang tin đăng lẻ (/share/[token]).
   const zaloLink = isBroker
     ? (contactDigits ? `https://zalo.me/${contactDigits}` : getSystemZaloLink(null))
     : getSystemZaloLink({ landlord: data.landlord, properties: data.properties });
-  const callDigits = contactDigits || SUPPORT_PHONE;
+  const callDigits = contactDigits || SUPPORT_PHONE; // luôn có số dùng được: lùi về hotline
 
   return (
     <div className="min-h-screen bg-stone-50">

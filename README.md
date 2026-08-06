@@ -276,6 +276,14 @@ mixstay/
 
 ## Changelog
 
+### v9.48 — 2026-08-06 (vá NỐT lỗi link gọi/Zalo chết — 7 chỗ v9.47 quét sót)
+- **Vì sao có bản này:** v9.47 chỉ sửa kho CTV vì lần rà đó chỉ tìm dạng nối chuỗi `'tel:' + phone`, **bỏ sót toàn bộ dạng template `` `tel:${...}` ``** — còn 7 chỗ nữa vẫn dựng link từ SĐT chưa kiểm, trong đó có chỗ **khách hàng đang nhìn thấy**.
+- **🔴 Lỗi còn sống với khách:** trang kho công ty `/share/company/[id]` của **BNBHOLDING (9 tòa)** — SĐT lưu `09366258556` (11 số) và công ty không có link nhóm Zalo → nút Zalo ra `zalo.me/09366258556` và nút gọi ra `tel:09366258556`, **cả hai đều chết**.
+- **Gốc rễ khác với lần trước:** v9.47 vá kiểu "bóc số khỏi chuỗi có tên". Nhưng các chỗ còn lại dùng `.replace(/\D/g,'')` — bỏ được chữ nhưng **vẫn cho số sai định dạng đi qua**. Nay tất cả dùng `extractVNPhone()`: bóc số VÀ loại số không hợp lệ, trả `null` để nơi gọi **ẩn nút** thay vì đưa link chết.
+- **Đã vá:** `lib/zalo.ts` (bộ định tuyến chính của mọi trang share — `normalizeZaloInput`, `getZaloLink`, `getSystemZaloLink`), `ShareViewClient`, `SystemShareClient`, `CompanyCatalogClient`, `/admin/rooms`, `/admin/leads`, `components/leads/ViewingRequestTable`.
+- **Giữ nguyên luật kinh doanh:** CTV giữ link mà SĐT hỏng thì **bỏ qua cấp đó, lùi về chủ nhà** (không dẫn khách vào hư không); trang kho công ty **vẫn tuyệt đối không lùi về hotline MixStay** — không có số dùng được thì ẩn nút, chứ không cướp khách của công ty. `CallFab` có thêm lớp phòng thủ cuối chuẩn hoá số nhưng **không tự lùi về hotline** vì đúng lý do đó.
+- **9/9 ca kiểm thử đạt** trên chính dữ liệu thật đang lỗi. Rà lại toàn repo: **0 chỗ** còn dựng `tel:`/`zalo.me/` từ SĐT chưa kiểm.
+
 ### v9.47 — 2026-08-06 (hotline sửa được trong Cài đặt + vá nút gọi méo + cảnh báo SĐT sai định dạng)
 - **⚙️ Đổi hotline không cần lập trình viên:** thêm mục **"Hotline công ty"** ở `/admin/settings` — số + link Zalo lưu ở bảng `settings`, mọi trang công khai đọc qua `getSupportContact()` (`lib/contact-server.ts`). Ô nhập kiểm ngay tại chỗ, số sai **không lưu được**, và có khung xem trước đúng thứ khách sẽ thấy. Trang công khai đặt `revalidate = 600` → đổi số là toàn web theo trong ~10 phút.
 - **📐 Nút gọi trên điện thoại bị méo (người dùng báo):** trên mobile chữ bị ẩn nhưng nút vẫn để `h-14 px-3` → rộng 48px mà cao 56px = **bầu dục**, lại thêm `paddingBottom: env(safe-area-inset-bottom)` **bên trong** nút cao cố định nên **đẩy icon lệch lên**. Nay ép `w-14 h-14` tròn đều, icon to lên 26px, safe-area chuyển hết sang `bottom`. Đo bằng trình duyệt thật: **56×56px, icon lệch tâm 0.0px** (trước: 48×56px, icon lệch). Sửa cho cả `CallFab` lẫn `ZaloFab`.

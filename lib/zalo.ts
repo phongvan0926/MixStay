@@ -1,3 +1,5 @@
+import { extractVNPhone } from '@/lib/phone';
+
 /**
  * Resolve Zalo support link with fallback chain:
  *  1. Company group Zalo (if landlord works for a company) — highest priority
@@ -26,11 +28,12 @@ export function normalizeZaloInput(raw: string | null | undefined): string | nul
   if (!v) return null;
   if (/^https?:\/\//i.test(v)) return v;
   if (/^(www\.)?zalo\.me\//i.test(v)) return 'https://' + v.replace(/^www\./i, '');
-  // Chỉ gồm ký tự của số điện thoại → coi là SĐT
+  // Chỉ gồm ký tự của số điện thoại → coi là SĐT.
+  // Số KHÔNG hợp lệ thì trả null thay vì đẻ ra link chết: thà không có nút Zalo
+  // còn hơn khách bấm vào rơi vào hư không (BNBHOLDING "09366258556" — 11 số).
   if (/^[\d\s+\-.()]+$/.test(v)) {
-    let digits = v.replace(/\D/g, '');
-    if (v.startsWith('+84')) digits = '0' + digits.slice(2);
-    if (digits) return `https://zalo.me/${digits}`;
+    const phone = extractVNPhone(v);
+    return phone ? `https://zalo.me/${phone}` : null;
   }
   return v;
 }
@@ -49,16 +52,15 @@ export function getZaloLink(source: ContactSource | null | undefined, linkBroker
   if (company?.zaloGroupLink) return company.zaloGroupLink;
 
   // Broker-created share link → deeplink to the BROKER (keep the lead with them).
-  if (linkBroker?.role === 'BROKER' && linkBroker.phone) {
-    const brokerDigits = linkBroker.phone.replace(/\D/g, '');
-    if (brokerDigits) return `https://zalo.me/${brokerDigits}`;
+  // extractVNPhone: bóc số khỏi chuỗi kiểu "Lâm 0394632595" VÀ loại số không hợp lệ —
+  // .replace(/\D/g,'') cũ bóc được tên nhưng vẫn cho "09366258556" ra link chết.
+  if (linkBroker?.role === 'BROKER') {
+    const brokerPhone = extractVNPhone(linkBroker.phone);
+    if (brokerPhone) return `https://zalo.me/${brokerPhone}`;
   }
 
-  const phone = source?.property?.landlord?.phone;
-  if (phone) {
-    const digits = phone.replace(/\D/g, '');
-    if (digits) return `https://zalo.me/${digits}`;
-  }
+  const landlordPhone = extractVNPhone(source?.property?.landlord?.phone);
+  if (landlordPhone) return `https://zalo.me/${landlordPhone}`;
 
   return process.env.NEXT_PUBLIC_SUPPORT_ZALO || 'https://zalo.me/';
 }
@@ -78,11 +80,8 @@ export function getSystemZaloLink(source: SystemContactSource | null | undefined
   const groupLink = source?.properties?.find(p => p.company?.zaloGroupLink)?.company?.zaloGroupLink;
   if (groupLink) return groupLink;
 
-  const phone = source?.landlord?.phone;
-  if (phone) {
-    const digits = phone.replace(/\D/g, '');
-    if (digits) return `https://zalo.me/${digits}`;
-  }
+  const phone = extractVNPhone(source?.landlord?.phone);
+  if (phone) return `https://zalo.me/${phone}`;
 
   return process.env.NEXT_PUBLIC_SUPPORT_ZALO || 'https://zalo.me/';
 }

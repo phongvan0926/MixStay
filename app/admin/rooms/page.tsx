@@ -12,6 +12,7 @@ import OptimizedImage from '@/components/ui/OptimizedImage';
 import SearchableSelect from '@/components/ui/SearchableSelect';
 import { useRoomTypes, useProperties, useCompanies } from '@/hooks/useData';
 import { SkeletonTable } from '@/components/ui/Skeleton';
+import { telHref } from '@/lib/phone';
 import { formatListingCode } from '@/lib/listing-code';
 import PostExportModal from '@/components/ui/PostExportModal';
 
@@ -778,7 +779,7 @@ function AdminRoomsInner() {
                     <div className="flex items-start gap-2">
                       <span className="text-stone-400 w-20 flex-shrink-0">SĐT</span>
                       {editingRoom.property?.landlord?.phone
-                        ? <a href={`tel:${editingRoom.property.landlord.phone}`} className="font-medium text-brand-600 hover:underline">{editingRoom.property.landlord.phone}</a>
+                        ? <a href={telHref(editingRoom.property.landlord.phone) || undefined} className="font-medium text-brand-600 hover:underline">{editingRoom.property.landlord.phone}</a>
                         : <span className="font-medium text-stone-800">—</span>}
                     </div>
                     <div className="flex items-start gap-2">

@@ -1,6 +1,7 @@
 'use client';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
+import { telHref, zaloHref } from '@/lib/phone';
 
 // Bảng "Khách xin xem phòng" dùng chung cho admin (thấy mọi lead) và CTV (chỉ lead từ link
 // của mình). Khác nhau đúng một cột: admin cần biết lead thuộc CTV nào để chia hoa hồng.
@@ -66,9 +67,9 @@ export default function ViewingRequestTable({
             <tr key={r.id} className={`border-b border-stone-50 ${r.status === 'CANCELLED' ? 'opacity-50' : ''}`}>
               <td className="px-4 py-3">
                 <p className="font-medium text-stone-800">{r.name || 'Khách'}</p>
-                <a href={`tel:${r.phone}`} className="text-brand-600 font-mono text-xs hover:underline">{r.phone}</a>
+                <a href={telHref(r.phone) || undefined} className="text-brand-600 font-mono text-xs hover:underline">{r.phone}</a>
                 {' · '}
-                <a href={`https://zalo.me/${r.phone}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs hover:underline">Zalo</a>
+                {zaloHref(r.phone) && <a href={zaloHref(r.phone)!} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs hover:underline">Zalo</a>}
               </td>
               <td className="px-4 py-3">
                 <a href={`/tin/${r.roomType?.id}`} target="_blank" rel="noopener noreferrer"

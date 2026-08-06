@@ -16,6 +16,7 @@ import CallFab from '@/components/ui/CallFab';
 import Logo from '@/components/ui/Logo';
 import Avatar from '@/components/ui/Avatar';
 import { getZaloLink } from '@/lib/zalo';
+import { extractVNPhone } from '@/lib/phone';
 import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/contact';
 
 const roomTypeLabels: Record<string, string> = {
@@ -238,14 +239,16 @@ export default function ShareViewClient() {
   // Chỉ kích hoạt khi id khớp đúng công ty của tin (chống gắn ?kho= bừa) và KHÔNG phải link CTV.
   const company = property?.company;
   const companyMode = !token && !!khoParam && !!company?.id && khoParam === company.id;
-  const landlordDigits = (property?.landlord?.phone || '').replace(/\D/g, '');
+  // extractVNPhone thay cho .replace(/\D/g,''): vừa bóc số khỏi chuỗi "Tên + SĐT", vừa LOẠI
+  // số không hợp lệ. Bản cũ chỉ bỏ ký tự lạ nên số 11 chữ số vẫn ra link/nút gọi chết.
+  const landlordDigits = extractVNPhone(property?.landlord?.phone);
   // Liên hệ trong chế độ kho: CHỈ về công ty hoặc chủ tòa (quản lý) — TUYỆT ĐỐI không fallback
   // Zalo/hotline hệ thống MixStay, để công ty không mất khách.
   const companyZalo = companyMode
     ? (company?.zaloGroupLink || (landlordDigits ? `https://zalo.me/${landlordDigits}` : null))
     : null;
   const companyCallPhone = companyMode
-    ? ((company?.phone || '').replace(/\D/g, '') || landlordDigits || null)
+    ? (extractVNPhone(company?.phone) || landlordDigits || null)
     : null;
 
   const contactPhone: string | null = data.broker?.phone || null;
@@ -508,8 +511,8 @@ export default function ShareViewClient() {
           (không có thì ẨN — tuyệt đối không hiện hotline MixStay); trang công khai /tin thường → hotline */}
       {companyMode ? (
         companyCallPhone && <CallFab phone={companyCallPhone} label="Gọi ngay" showNumber={false} stacked={!!companyZalo} />
-      ) : contactPhone ? (
-        <CallFab phone={contactPhone.replace(/\D/g, '')} display={contactPhone} label="Gọi ngay" showNumber={false} />
+      ) : extractVNPhone(contactPhone) ? (
+        <CallFab phone={extractVNPhone(contactPhone)!} display={contactPhone!} label="Gọi ngay" showNumber={false} />
       ) : (
         <CallFab label="Gọi ngay" showNumber={false} />
       )}

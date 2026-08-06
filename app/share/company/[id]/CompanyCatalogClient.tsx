@@ -5,6 +5,7 @@ import Logo from '@/components/ui/Logo';
 import ListingImageMosaic from '@/components/ui/ListingImageMosaic';
 import ZaloFab from '@/components/ui/ZaloFab';
 import CallFab from '@/components/ui/CallFab';
+import { extractVNPhone } from '@/lib/phone';
 
 const TYPE_LABEL: Record<string, string> = {
   don: 'Phòng đơn', gac_xep: 'Gác xép', '1k1n': '1 ngủ 1 khách',
@@ -69,7 +70,9 @@ export default function CompanyCatalogClient({ id }: { id: string }) {
   }
 
   const { company, rooms } = data;
-  const companyDigits = (company.phone || '').replace(/\D/g, '');
+  // SĐT công ty phải BÓC + KIỂM trước khi dựng link. BNBHOLDING lưu "09366258556" (11 số):
+  // bản cũ đẻ ra zalo.me/09366258556 và tel:09366258556 — cả 2 nút chết với khách (9 tòa).
+  const companyDigits = extractVNPhone(company.phone);
   const zalo = company.zaloGroupLink
     || (companyDigits ? `https://zalo.me/${companyDigits}` : null);
 

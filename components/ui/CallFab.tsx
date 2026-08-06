@@ -16,6 +16,7 @@
  *    mép màn hình), nút giữ nguyên hình.
  */
 import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/contact';
+import { extractVNPhone } from '@/lib/phone';
 
 interface Props {
   phone?: string;
@@ -37,9 +38,13 @@ export default function CallFab({
   stacked = true,
 }: Props) {
   const shown = display || SUPPORT_PHONE_DISPLAY;
+  // Lớp phòng thủ cuối: chuẩn hoá số trước khi ghép vào tel: (nơi gọi đã kiểm rồi, nhưng
+  // một chỗ nào đó quên là khách bấm gọi không ra). KHÔNG lùi về hotline MixStay ở đây —
+  // trang kho công ty cấm hiện hotline hệ thống, lùi ngầm là cướp khách của công ty.
+  const dial = extractVNPhone(phone) || phone;
   return (
     <a
-      href={`tel:${phone}`}
+      href={`tel:${dial}`}
       aria-label={`Gọi ${shown}`}
       className="fixed z-50 right-4 inline-flex items-center justify-center gap-2 rounded-full bg-brand-700 text-white shadow-lg shadow-brand-900/30 transition-all hover:scale-105 hover:bg-brand-800 hover:shadow-xl active:scale-95
         w-14 h-14 sm:w-auto sm:h-12 sm:px-5
