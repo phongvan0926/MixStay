@@ -583,9 +583,9 @@ function AdminRoomsInner() {
               <tr>
                 <th className="table-header w-8">
                   <input type="checkbox" checked={allPageSelected} onChange={toggleSelectAllPage}
-                    title="Chọn tất cả phòng trang này" className="accent-brand-600 w-4 h-4 cursor-pointer w-5 h-5 cursor-pointer accent-brand-600" />
+                    title="Chọn tất cả phòng trang này" aria-label="Chọn tất cả phòng trang này" className="accent-brand-600 w-5 h-5 cursor-pointer" />
                 </th>
-                <th className="table-header min-w-[250px]">Tin đăng</th>
+                <th className="table-header min-w-[220px]">Tin đăng</th>
                 <th className="table-header min-w-[165px]">Tòa nhà</th>
                 <th className="table-header">Giá thuê</th>
                 <th className="table-header">Phòng trống</th>
@@ -604,9 +604,10 @@ function AdminRoomsInner() {
                   <tr key={r.id} className={`transition-colors ${selectedIds.has(r.id) ? 'bg-brand-50/60' : 'hover:bg-stone-50/50'}`}>
                     <td className="table-cell">
                       <input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleSelect(r.id)}
-                        className="accent-brand-600 w-4 h-4 cursor-pointer" />
+                        aria-label={`Chọn tin ${r.name}`}
+                        className="accent-brand-600 w-5 h-5 cursor-pointer" />
                     </td>
-                    <td className="table-cell min-w-[250px] max-w-[340px]">
+                    <td className="table-cell min-w-[220px] max-w-[340px]">
                       <div className="flex items-start gap-2.5">
                         {r.images && r.images.length > 0 ? (
                           <OptimizedImage src={r.images[0]} alt={r.name} width={48} height={48} className="w-12 h-12 rounded-lg object-cover border border-stone-200 shrink-0" />
