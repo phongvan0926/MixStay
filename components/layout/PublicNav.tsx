@@ -31,11 +31,17 @@ export default function PublicNav() {
               (đo 07/08/2026: tỷ lệ 2.24 trong khi gốc là 3.01 → nén ngang 26%, chữ MixStay méo).
               Logo phải giữ nguyên khổ, mục khác thiếu chỗ thì thu gọn chữ chứ không ép logo. */}
           <Link href="/" className="flex items-center shrink-0" aria-label="MixStay - Trang chủ">
-            {/* Dưới 430px: chỉ BIỂU TƯỢNG (cắt phần trái của logo ngang bằng object-cover, không cần
-                file ảnh mới. w-8 h-9 = cắt 29.6% bề ngang: vừa hết biểu tượng, KHÔNG dính vạch chữ "M"
-                (w-9 thì lộ một vạch dọc của chữ M — đã dựng bảng so 26/28/30/32/36px để chọn)) — nhường 64px cho nút "Bản đồ" GIỮ ĐƯỢC CHỮ. Bản đồ là tính năng cần khoe,
-                để trơ mỗi icon thì khách không hiểu đó là tìm phòng trên bản đồ. */}
-            <Logo variant="light" className="h-9 w-8 shrink-0 object-cover object-left min-[430px]:hidden" />
+            {/* Dưới 430px: logo XẾP DỌC — biểu tượng trên, chữ "MixStay" dưới.
+                Vì sao không dùng logo ngang: nó rộng 96px, ăn hết chỗ của nút "Bản đồ" (tính năng
+                cần khoe, để trơ mỗi icon thì khách không hiểu là tìm phòng trên bản đồ).
+                Vì sao không để mỗi biểu tượng: cụt, không đọc ra tên thương hiệu.
+                Xếp dọc chỉ rộng 44px mà vẫn đủ cả hình lẫn tên.
+                Biểu tượng cắt từ chính logo-nav.png bằng object-cover (khỏi cần file ảnh mới):
+                khung phải là CHỮ NHẬT tỷ lệ ~0.89 — khung vuông cắt 33.2% và lộ một vạch của chữ "M". */}
+            <span className="flex flex-col items-center leading-none min-[430px]:hidden" aria-hidden="true">
+              <Logo variant="light" className="h-7 w-[25px] shrink-0 object-cover object-left" alt="" />
+              <span className="mt-0.5 font-display text-[11px] font-bold tracking-tight text-gold-400">MixStay</span>
+            </span>
             <Logo variant="light" className="hidden min-[430px]:block h-8 sm:h-9 w-auto shrink-0 object-contain" />
           </Link>
           {/* Nổi bật: nền vàng gold trên nav xanh đậm (gold-400 + chữ brand-900 an toàn tương phản), bo vuông giống nút Đăng ký */}

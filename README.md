@@ -286,6 +286,16 @@ mixstay/
 - **Sửa dữ liệu:** BNBHOLDING `09366258556` → **`0936258556`**. Bằng chứng: cả 9 tòa của công ty đứng tên chủ nhà **Anh Biên — 0936258556**, và 3 tòa ghi thẳng `"A Biên 0936258556"`; số lưu sai đúng là số đó **thừa một chữ số 6** (`0936|6|258556`). Kho công ty đã có lại nút gọi + Zalo.
 - **Rà lại toàn bộ nguồn SĐT dựng link:** công ty **0/36 lỗi**, tòa nhà **0/464 lỗi**, tài khoản còn 1 (CTV thử nghiệm "aaa" `1234567890` — đã có cảnh báo lo).
 
+### v9.55 — 2026-08-07 (logo XẾP DỌC trên màn nhỏ — biểu tượng trên, tên dưới)
+Bản v9.54 thu logo còn mỗi biểu tượng. **Chủ dự án bác:** *"chỉ có biểu tượng mà không có tên thì hơi cụt"* — kèm ảnh mẫu logo xếp dọc. Đúng: mất tên thương hiệu là mất nhiều hơn 20px tiết kiệm được.
+
+- Dưới 430px: **biểu tượng trên, chữ "MixStay" dưới** — rộng **44px** (logo ngang là 96px), vẫn đủ chỗ cho nút "Bản đồ" giữ nguyên chữ.
+- **Không cần file ảnh mới:** biểu tượng cắt từ chính `logo-nav.png`, chữ dựng bằng `font-display` (Space Grotesk) màu `gold-400`. Đã dựng bảng so 4 phương án (2 cỡ biểu tượng × 2 phông) cạnh logo thật rồi mới chọn — Space Grotesk giống nét chữ logo hơn Be Vietnam Pro.
+- **Bẫy cắt ảnh:** khung phải là **chữ nhật tỷ lệ ~0.89**, không phải vuông — khung vuông cắt đúng 33.2% bề ngang và **lộ một vạch dọc của chữ "M"**.
+- Đo lại 360 / 390 / 430 / 768px: logo 42×41 trong thanh nav cao 64px, **0 tràn ngang** ở cả 4 khổ, nút bản đồ giữ chữ ở mọi khổ.
+
+**Ba lượt sửa cho cùng một thanh nav** (v9.53 → v9.54 → v9.55) đều vì tôi tự quyết cái gì được hy sinh. Bài học ghi lại: khi chỗ chật, cắt thứ **ít giá trị nhất** chứ không phải thứ **ngắn nhất** — và chỉ chủ dự án mới biết cái nào là cái nào.
+
 ### v9.54 — 2026-08-07 (thu logo thành biểu tượng để nút "Bản đồ" giữ được CHỮ)
 Bản v9.53 giải quyết chỗ chật bằng cách bỏ chữ nút bản đồ dưới 430px. **Chủ dự án bác:** *"để mỗi icon thì người dùng không hiểu đó là tìm phòng theo bản đồ — đây là tính năng hay nhất tôi muốn khoe"*. Đúng: lấy chỗ ở đâu thì lấy, không được lấy từ tính năng cần khoe.
 
