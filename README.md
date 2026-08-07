@@ -286,6 +286,19 @@ mixstay/
 - **Sửa dữ liệu:** BNBHOLDING `09366258556` → **`0936258556`**. Bằng chứng: cả 9 tòa của công ty đứng tên chủ nhà **Anh Biên — 0936258556**, và 3 tòa ghi thẳng `"A Biên 0936258556"`; số lưu sai đúng là số đó **thừa một chữ số 6** (`0936|6|258556`). Kho công ty đã có lại nút gọi + Zalo.
 - **Rà lại toàn bộ nguồn SĐT dựng link:** công ty **0/36 lỗi**, tòa nhà **0/464 lỗi**, tài khoản còn 1 (CTV thử nghiệm "aaa" `1234567890` — đã có cảnh báo lo).
 
+### v9.52 — 2026-08-07 (dựng bộ giao diện MixStay lên Claude Design)
+Thư viện thành phần giao diện, đồng bộ lên **claude.ai/design** — dự án *"MixStay — Bộ giao diện"* (13 thẻ).
+
+| Nhóm | Thẻ |
+|---|---|
+| Nền tảng | Bảng màu (brand / gold / stone / trạng thái, kèm mã hex thật) · Kiểu chữ |
+| Component | Nút · Ô nhập &amp; bộ lọc · Nhãn trạng thái phòng · Thẻ tin đăng · Thẻ &amp; ô số liệu · Nút liên hệ nổi · Thanh công cụ bài đăng · Cảnh báo · Khung chờ tải |
+| Khu quản trị | Bảng quản trị · Thanh điều hướng |
+
+- **Lấy từ mã nguồn thật**, không dựng lại theo trí nhớ: mọi màu/class/kích thước trích từ `tailwind.config.ts` + `app/globals.css`. Nguồn để trong repo tại `design-system/` kèm `build.py` — sửa `globals.css` thì dựng lại và đồng bộ, không để bộ chuẩn nói dối.
+- Mỗi thẻ kèm **lý do**, không chỉ hình dạng — những bài học đã trả giá trong dự án: sàn 44px cho vùng bấm; không bao giờ in "Còn 0 phòng"; luật che số nhà trong tiêu đề tin; **vì sao KHÔNG được ẩn nút "Tải ảnh"/"Copy nội dung"**; vì sao không đặt safe-area vào `padding` của nút (làm nút méo).
+- File HTML **tự chứa** (CSS nội tuyến, không tải gì từ ngoài) và mở đầu bằng `<!-- @dsCard group="…" -->`. Đã kiểm bằng trình duyệt trước khi đẩy: 13/13 render sạch, 0 lỗi JS, 0 tràn ngang.
+
 ### v9.51 — 2026-08-07 (tối ưu UI/UX KHU QUẢN TRỊ — đo trên Chrome đã đăng nhập thật)
 Chủ dự án mở phiên admin trên Chrome để đo trực tiếp, thay vì đoán từ mã nguồn.
 

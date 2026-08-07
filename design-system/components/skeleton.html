@@ -1,0 +1,72 @@
+<!-- @dsCard group="Components" viewport="760" -->
+<!doctype html><html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Khung chờ tải — MixStay</title><style>
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;padding:24px;background:#fafaf9;color:#1c1917;
+  font-family:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:'Space Grotesk',system-ui,sans-serif;margin:0}
+.ds-h{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#78716c;margin:0 0 4px}
+.ds-sub{font-size:13px;color:#78716c;margin:0 0 18px;line-height:1.55}
+.ds-sec{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#a8a29e;margin:26px 0 10px}
+.ds-sec:first-of-type{margin-top:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.col{display:flex;flex-direction:column;gap:10px}
+.note{margin-top:22px;padding:12px 14px;border-radius:12px;background:#f0f6f1;border:1px solid #dcebe0;
+  font-size:12.5px;line-height:1.6;color:#275234}
+.note b{color:#1b3624}
+.warn{background:#fffbeb;border-color:#fde68a;color:#78350f}
+.warn b{color:#78350f}
+.tag{display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;
+  background:#f5f5f4;border:1px solid #e7e5e4;border-radius:6px;padding:1px 6px;color:#57534e}
+
+/* ==== các lớp DÙNG CHUNG, sao y app/globals.css ==== */
+.btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;
+  background:#2f6440;padding:10px 20px;min-height:44px;font-size:14px;font-weight:500;color:#fff;border:0;cursor:pointer;
+  transition:all .15s}
+.btn-primary:hover{background:#275234}
+.btn-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;
+  border:1px solid #e7e5e4;background:#fff;padding:10px 20px;min-height:44px;font-size:14px;font-weight:500;color:#44403c;cursor:pointer}
+.btn-secondary:hover{background:#fafaf9}
+.btn-danger{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;
+  background:#dc2626;padding:10px 20px;min-height:44px;font-size:14px;font-weight:500;color:#fff;border:0;cursor:pointer}
+.btn-success{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;
+  background:#047857;padding:10px 20px;font-size:14px;font-weight:500;color:#fff;border:0;cursor:pointer}
+.btn-ghost{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;
+  padding:8px 16px;font-size:14px;font-weight:500;color:#57534e;background:transparent;border:0;cursor:pointer}
+.btn-ghost:hover{background:#f5f5f4}
+.input-field{width:100%;border-radius:12px;border:1px solid #e7e5e4;background:#fff;padding:10px 16px;min-height:44px;
+  font-size:14px;color:#1c1917;outline:none;font-family:inherit}
+.input-field::placeholder{color:#a8a29e}
+.input-field:focus{border-color:#5d9b6e;box-shadow:0 0 0 2px #dcebe0}
+.card{border-radius:16px;border:1px solid rgba(231,229,228,.6);background:#fff;padding:20px;
+  box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.badge{display:inline-flex;align-items:center;border-radius:9999px;padding:2px 10px;font-size:12px;font-weight:500}
+.stat-card{border-radius:16px;background:#fff;border:1px solid rgba(231,229,228,.6);padding:20px}
+.sidebar-link{display:flex;align-items:center;gap:12px;border-radius:12px;padding:10px 12px;font-size:14px;
+  font-weight:500;color:#57534e}
+.sidebar-link-active{display:flex;align-items:center;gap:12px;border-radius:12px;padding:10px 12px;font-size:14px;
+  font-weight:500;background:#f0f6f1;color:#275234;border:1px solid #dcebe0}
+.table-header{padding:12px 16px;text-align:left;font-size:12px;font-weight:600;letter-spacing:.05em;
+  text-transform:uppercase;color:#78716c}
+.table-cell{padding:14px 16px;font-size:14px;color:#44403c}
+</style></head><body>
+<p class="ds-h">Khung chờ tải</p><p class="ds-sub">Dùng thay chữ “Đang tải…” ở mọi trang có dữ liệu.</p>
+<style>@keyframes p{0%,100%{opacity:1}50%{opacity:.45}}.sk{background:#e7e5e4;border-radius:8px;animation:p 1.6s ease-in-out infinite}</style>
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <div style="width:260px;border-radius:16px;border:1px solid #e7e5e4;background:#fff;overflow:hidden">
+        <div class="sk" style="height:150px;border-radius:0"></div>
+        <div style="padding:16px"><div class="sk" style="height:16px;width:75%"></div>
+          <div class="sk" style="height:12px;width:50%;margin-top:10px"></div>
+          <div class="sk" style="height:22px;width:60%;margin-top:14px"></div></div>
+      </div>
+      <div style="flex:1;min-width:240px">
+        <div class="sk" style="height:70px"></div>
+        <div class="sk" style="height:70px;margin-top:10px"></div>
+        <div class="sk" style="height:70px;margin-top:10px"></div>
+      </div>
+    </div>
+    <div class="note">Màn hình chờ toàn cục ở <span class="tag">app/loading.tsx</span> —
+    nhớ giữ nhẹ để hiện tức thì trên mạng yếu, và <b>viết đúng dấu tiếng Việt</b>
+    (“Đang tải…”, từng có lỗi hiện “Dang tai...”).</div>
+</body></html>
