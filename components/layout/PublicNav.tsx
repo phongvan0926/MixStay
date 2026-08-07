@@ -31,13 +31,18 @@ export default function PublicNav() {
               (đo 07/08/2026: tỷ lệ 2.24 trong khi gốc là 3.01 → nén ngang 26%, chữ MixStay méo).
               Logo phải giữ nguyên khổ, mục khác thiếu chỗ thì thu gọn chữ chứ không ép logo. */}
           <Link href="/" className="flex items-center shrink-0" aria-label="MixStay - Trang chủ">
-            <Logo variant="light" className="h-8 sm:h-9 w-auto shrink-0 object-contain" />
+            {/* Dưới 430px: chỉ BIỂU TƯỢNG (cắt phần trái của logo ngang bằng object-cover, không cần
+                file ảnh mới. w-8 h-9 = cắt 29.6% bề ngang: vừa hết biểu tượng, KHÔNG dính vạch chữ "M"
+                (w-9 thì lộ một vạch dọc của chữ M — đã dựng bảng so 26/28/30/32/36px để chọn)) — nhường 64px cho nút "Bản đồ" GIỮ ĐƯỢC CHỮ. Bản đồ là tính năng cần khoe,
+                để trơ mỗi icon thì khách không hiểu đó là tìm phòng trên bản đồ. */}
+            <Logo variant="light" className="h-9 w-8 shrink-0 object-cover object-left min-[430px]:hidden" />
+            <Logo variant="light" className="hidden min-[430px]:block h-8 sm:h-9 w-auto shrink-0 object-contain" />
           </Link>
           {/* Nổi bật: nền vàng gold trên nav xanh đậm (gold-400 + chữ brand-900 an toàn tương phản), bo vuông giống nút Đăng ký */}
           <Link href="/ban-do" aria-label="Tìm phòng trên bản đồ"
-            className="inline-flex items-center justify-center gap-1 shrink-0 text-sm px-2.5 sm:px-4 py-2 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 rounded-xl font-semibold bg-gold-400 text-brand-900 shadow-sm hover:bg-gold-300 transition-colors whitespace-nowrap">
+            className="inline-flex items-center justify-center gap-1 shrink-0 text-sm px-2.5 sm:px-4 py-2 min-h-11 sm:min-h-0 rounded-xl font-semibold bg-gold-400 text-brand-900 shadow-sm hover:bg-gold-300 transition-colors whitespace-nowrap">
             🗺️
-            <span className="hidden min-[430px]:inline sm:hidden">Bản đồ</span>
+            <span className="sm:hidden">Bản đồ</span>
             <span className="hidden sm:inline">Tìm trên bản đồ</span>
           </Link>
         </div>

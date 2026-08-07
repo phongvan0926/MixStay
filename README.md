@@ -286,6 +286,13 @@ mixstay/
 - **Sửa dữ liệu:** BNBHOLDING `09366258556` → **`0936258556`**. Bằng chứng: cả 9 tòa của công ty đứng tên chủ nhà **Anh Biên — 0936258556**, và 3 tòa ghi thẳng `"A Biên 0936258556"`; số lưu sai đúng là số đó **thừa một chữ số 6** (`0936|6|258556`). Kho công ty đã có lại nút gọi + Zalo.
 - **Rà lại toàn bộ nguồn SĐT dựng link:** công ty **0/36 lỗi**, tòa nhà **0/464 lỗi**, tài khoản còn 1 (CTV thử nghiệm "aaa" `1234567890` — đã có cảnh báo lo).
 
+### v9.54 — 2026-08-07 (thu logo thành biểu tượng để nút "Bản đồ" giữ được CHỮ)
+Bản v9.53 giải quyết chỗ chật bằng cách bỏ chữ nút bản đồ dưới 430px. **Chủ dự án bác:** *"để mỗi icon thì người dùng không hiểu đó là tìm phòng theo bản đồ — đây là tính năng hay nhất tôi muốn khoe"*. Đúng: lấy chỗ ở đâu thì lấy, không được lấy từ tính năng cần khoe.
+
+- **Đảo lại ưu tiên:** nút bản đồ **luôn có chữ** ("🗺️ Bản đồ" dưới 640px, "🗺️ Tìm trên bản đồ" từ 640px). Chỗ trống lấy từ **logo** — dưới 430px chỉ hiện **biểu tượng**, tiết kiệm 64px.
+- **Không cần tạo file ảnh mới:** cắt phần biểu tượng ngay từ `logo-nav.png` bằng `object-cover object-left`. Tỷ lệ cắt = `w / (h × 3.01)`, nên phải chọn khung **chữ nhật** chứ không phải vuông — khung vuông `w-9 h-9` cắt đúng 33.2% và **lộ một vạch dọc của chữ "M"**. Đã dựng bảng so 26/28/30/32/36px rồi chọn **`w-8 h-9`** (29.6%): vừa hết biểu tượng, sạch.
+- **Đo lại 360 / 390 / 430 / 768px:** chữ "Bản đồ" hiện ở **cả 4 khổ**, 0 tràn ngang, 0 chữ lệch.
+
 ### v9.53 — 2026-08-07 (vá thanh nav trên cùng bị ép logo méo + lệch dòng — LỖI DO BẢN v9.50 GÂY RA)
 Người dùng báo kèm ảnh chụp: thanh trên cùng bị **ép logo méo** và **các dòng căn lệch**, thấy rõ nhất ở tài khoản ĐÃ ĐĂNG NHẬP trên điện thoại. Truy ra cả hai đều do bản v9.50 của chính tôi.
 
