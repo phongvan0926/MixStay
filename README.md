@@ -286,6 +286,20 @@ mixstay/
 - **Sửa dữ liệu:** BNBHOLDING `09366258556` → **`0936258556`**. Bằng chứng: cả 9 tòa của công ty đứng tên chủ nhà **Anh Biên — 0936258556**, và 3 tòa ghi thẳng `"A Biên 0936258556"`; số lưu sai đúng là số đó **thừa một chữ số 6** (`0936|6|258556`). Kho công ty đã có lại nút gọi + Zalo.
 - **Rà lại toàn bộ nguồn SĐT dựng link:** công ty **0/36 lỗi**, tòa nhà **0/464 lỗi**, tài khoản còn 1 (CTV thử nghiệm "aaa" `1234567890` — đã có cảnh báo lo).
 
+### v9.53 — 2026-08-07 (vá thanh nav trên cùng bị ép logo méo + lệch dòng — LỖI DO BẢN v9.50 GÂY RA)
+Người dùng báo kèm ảnh chụp: thanh trên cùng bị **ép logo méo** và **các dòng căn lệch**, thấy rõ nhất ở tài khoản ĐÃ ĐĂNG NHẬP trên điện thoại. Truy ra cả hai đều do bản v9.50 của chính tôi.
+
+- **Chữ lệch 4.5px:** v9.50 thêm `min-h-11` vào 5 nút của `PublicNav` bằng cách thay chuỗi hàng loạt, nhưng các nút đó là `display: block` — hộp cao lên 44px mà **chữ vẫn nằm sát đỉnh**. Nút `/ban-do` vốn đã có sẵn `inline-flex items-center` nên lệch 0.0px, đúng là dấu hiệu chỉ ra nguyên nhân. → thêm `inline-flex items-center justify-center` cho cả 4 nút còn lại.
+- **Logo bị bóp méo:** `<Logo>` là `<img class="h-9 w-auto">` nằm trong flex. Khi nội dung tràn, flex **bóp ngang ảnh** — đo được tỷ lệ hiển thị **2.24** trong khi tỷ lệ gốc là **3.01** (nén 26%, chữ "MixStay" bẹp). → `shrink-0` + `object-contain`.
+- **Gốc rễ sâu hơn — thanh nav vốn đã tràn từ trước:** ở 390px, tổng nội dung khi đã đăng nhập là **439px** trong khi chỗ trống chỉ **358px** (thừa 81px). Logo là thứ duy nhất co được nên nó lãnh đủ. Chỉ thêm `shrink-0` mà không dọn chỗ thì tràn ngang. → thiết kế lại theo khổ màn hình:
+  - Logo `h-8` trên điện thoại, `h-9` từ 640px
+  - Nút bản đồ: **chỉ icon** dưới 430px (vuông 44×44) → "Bản đồ" từ 430px → "Tìm trên bản đồ" từ 640px
+  - "Đăng xuất": **icon** trên điện thoại (kèm `aria-label`), có chữ từ 640px — hành động hiếm dùng nên nhường chỗ
+  - **GIỮ ảnh đại diện ở mọi khổ** — chủ dự án đăng nhập nhiều tài khoản trên nhiều trình duyệt, biết mình đang là ai quan trọng hơn tiết kiệm 32px
+  - Thu `px-3` → `px-2.5` trên điện thoại, `shrink-0` cho mọi mục
+- Ô giữ chỗ lúc đang tải nâng lên `h-11` cho khớp chiều cao nút thật — trước đây nav bị "nhảy" một nhịp khi phiên đăng nhập tải xong.
+- **Đo lại ở 360 / 390 / 430 / 768px:** logo đúng tỷ lệ 3.01/3.01 ở cả 4 khổ, 0 chữ lệch, 0 tràn ngang.
+
 ### v9.52 — 2026-08-07 (dựng bộ giao diện MixStay lên Claude Design)
 Thư viện thành phần giao diện, đồng bộ lên **claude.ai/design** — dự án *"MixStay — Bộ giao diện"* (13 thẻ).
 
