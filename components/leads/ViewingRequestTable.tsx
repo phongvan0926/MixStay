@@ -51,27 +51,30 @@ export default function ViewingRequestTable({
 
   return (
     <div className="card overflow-x-auto p-0">
-      <table className="w-full text-sm min-w-[820px]">
-        <thead>
-          <tr className="text-left text-xs text-stone-500 border-b border-stone-100">
-            <th className="px-4 py-3">Khách</th>
-            <th className="px-4 py-3">Tin đăng</th>
-            <th className="px-4 py-3">Ghi chú / hẹn giờ</th>
-            {showBroker && <th className="px-4 py-3">Nguồn</th>}
-            <th className="px-4 py-3">Gửi lúc</th>
-            <th className="px-4 py-3 text-right">Trạng thái</th>
+      <table className="w-full text-sm min-w-[900px]">
+        {/* Dùng .table-header / .table-cell như MỌI bảng quản trị khác (app/globals.css) thay vì
+            px-4 py-3 tự chế — trước đây tiêu đề cột không in hoa, không cùng màu, và cột "Khách"
+            / "Nguồn" không đặt min-w nên tên người bị bẻ đôi ("Ngô Thái / Dương"). */}
+        <thead className="bg-stone-50/80">
+          <tr className="border-b border-stone-100">
+            <th className="table-header min-w-[150px]">Khách</th>
+            <th className="table-header min-w-[220px]">Tin đăng</th>
+            <th className="table-header min-w-[130px]">Ghi chú / hẹn giờ</th>
+            {showBroker && <th className="table-header min-w-[130px]">Nguồn</th>}
+            <th className="table-header min-w-[100px]">Gửi lúc</th>
+            <th className="table-header text-right min-w-[130px]">Trạng thái</th>
           </tr>
         </thead>
         <tbody>
           {rows.map(r => (
             <tr key={r.id} className={`border-b border-stone-50 ${r.status === 'CANCELLED' ? 'opacity-50' : ''}`}>
-              <td className="px-4 py-3">
-                <p className="font-medium text-stone-800">{r.name || 'Khách'}</p>
+              <td className="table-cell align-top">
+                <p className="font-medium text-stone-800 whitespace-nowrap">{r.name || 'Khách'}</p>
                 <a href={telHref(r.phone) || undefined} className="text-brand-600 font-mono text-xs hover:underline">{r.phone}</a>
                 {' · '}
                 {zaloHref(r.phone) && <a href={zaloHref(r.phone)!} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs hover:underline">Zalo</a>}
               </td>
-              <td className="px-4 py-3">
+              <td className="table-cell align-top">
                 <a href={`/tin/${r.roomType?.id}`} target="_blank" rel="noopener noreferrer"
                   className="font-medium text-stone-800 hover:text-brand-600 hover:underline line-clamp-1 max-w-[220px] inline-block">
                   {r.roomType?.name || '—'}
@@ -81,15 +84,15 @@ export default function ViewingRequestTable({
                     .filter(Boolean).join(' · ')}
                 </p>
               </td>
-              <td className="px-4 py-3 text-stone-500 text-xs max-w-[180px]">{r.note || '—'}</td>
+              <td className="table-cell align-top text-stone-500 text-xs max-w-[180px]">{r.note || '—'}</td>
               {showBroker && (
-                <td className="px-4 py-3 text-xs">
-                  <p className="text-stone-700 font-medium">{r.broker?.name || 'Không qua CTV'}</p>
+                <td className="table-cell align-top text-xs">
+                  <p className="text-stone-700 font-medium whitespace-nowrap">{r.broker?.name || 'Không qua CTV'}</p>
                   <p className="text-stone-400">{SOURCE_LABEL[r.source] || r.source}</p>
                 </td>
               )}
-              <td className="px-4 py-3 text-stone-500 text-xs whitespace-nowrap">{formatDate(r.createdAt)}</td>
-              <td className="px-4 py-3">
+              <td className="table-cell align-top text-stone-500 text-xs whitespace-nowrap">{formatDate(r.createdAt)}</td>
+              <td className="table-cell align-top">
                 <div className="flex flex-col items-end gap-1.5">
                   <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium border ${STATUS_META[r.status]?.cls || ''}`}>
                     {STATUS_META[r.status]?.label || r.status}

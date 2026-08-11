@@ -286,6 +286,13 @@ mixstay/
 - **Sửa dữ liệu:** BNBHOLDING `09366258556` → **`0936258556`**. Bằng chứng: cả 9 tòa của công ty đứng tên chủ nhà **Anh Biên — 0936258556**, và 3 tòa ghi thẳng `"A Biên 0936258556"`; số lưu sai đúng là số đó **thừa một chữ số 6** (`0936|6|258556`). Kho công ty đã có lại nút gọi + Zalo.
 - **Rà lại toàn bộ nguồn SĐT dựng link:** công ty **0/36 lỗi**, tòa nhà **0/464 lỗi**, tài khoản còn 1 (CTV thử nghiệm "aaa" `1234567890` — đã có cảnh báo lo).
 
+### v9.56 — 2026-08-11 (trang "Khách để lại thông tin" bị lệch hẳn khỏi bố cục — bọc DashboardLayout HAI LẦN)
+Người dùng báo kèm ảnh: nội dung trang `/admin/leads` **thụt hẳn sang phải**, không thẳng hàng với các module khác.
+
+- **Nguyên nhân:** `app/{admin,broker,landlord}/layout.tsx` đã bọc `<DashboardLayout>` cho toàn bộ khu vực, nhưng **3 trang tự bọc thêm một lần nữa** — `/admin/leads`, `/broker/leads`, `/broker/stats`. 15 trang còn lại thì không. Bọc hai lần khiến **mọi thứ nhân đôi**: 2 sidebar, `lg:ml-60` cộng dồn (đẩy nội dung lệch phải ~240px), `max-w-7xl mx-auto` + padding cộng dồn, và **2 bộ SWR poll thông báo mỗi 30s** (lãng phí request, không chỉ là lỗi nhìn).
+- Gỡ lớp bọc thừa ở cả 3 trang, kèm chú thích cảnh báo ngay đầu file.
+- **Bảng không dùng lớp chuẩn:** `ViewingRequestTable` và bảng "Săn phòng" dùng `px-4 py-3` tự chế thay vì `.table-header` / `.table-cell` như mọi bảng quản trị khác → tiêu đề cột không in hoa, không cùng màu, và **không đặt `min-w` nên tên người bị bẻ đôi** ("Ngô Thái / Dương", "Không qua / CTV / Trang công / khai"). Nay dùng lớp chuẩn + `min-w` từng cột + `whitespace-nowrap` cho tên và ngày, `align-top` cho ô nhiều dòng.
+
 ### v9.55 — 2026-08-07 (logo XẾP DỌC trên màn nhỏ — biểu tượng trên, tên dưới)
 Bản v9.54 thu logo còn mỗi biểu tượng. **Chủ dự án bác:** *"chỉ có biểu tượng mà không có tên thì hơi cụt"* — kèm ảnh mẫu logo xếp dọc. Đúng: mất tên thương hiệu là mất nhiều hơn 20px tiết kiệm được.
 

@@ -1,7 +1,9 @@
 'use client';
+// ⚠️ KHÔNG bọc <DashboardLayout> ở đây — app/{admin,broker,landlord}/layout.tsx đã bọc rồi.
+// Bọc hai lần thì mọi thứ nhân đôi: 2 sidebar, `lg:ml-60` cộng dồn (đẩy nội dung lệch phải
+// ~240px), `max-w-7xl mx-auto` + padding cộng dồn, và 2 bộ SWR poll thông báo mỗi 30s.
 import { useState } from 'react';
 import useSWR from 'swr';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { fetcher } from '@/lib/fetcher';
 import Pagination from '@/components/ui/Pagination';
 import ViewingRequestTable from '@/components/leads/ViewingRequestTable';
@@ -18,7 +20,7 @@ export default function BrokerLeadsPage() {
   const newCount = rows.filter((r: any) => r.status === 'NEW').length;
 
   return (
-    <DashboardLayout>
+    <>
       <div className="mb-6">
         <h1 className="font-display text-2xl font-bold">📥 Khách xin xem phòng</h1>
         <p className="text-sm text-stone-500 mt-1">
@@ -34,6 +36,6 @@ export default function BrokerLeadsPage() {
       {pagination && pagination.totalPages > 1 && (
         <div className="mt-4"><Pagination page={page} totalPages={pagination.totalPages} total={pagination.total} onPageChange={setPage} /></div>
       )}
-    </DashboardLayout>
+    </>
   );
 }

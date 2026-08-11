@@ -1,6 +1,8 @@
 'use client';
+// ⚠️ KHÔNG bọc <DashboardLayout> ở đây — app/{admin,broker,landlord}/layout.tsx đã bọc rồi.
+// Bọc hai lần thì mọi thứ nhân đôi: 2 sidebar, `lg:ml-60` cộng dồn (đẩy nội dung lệch phải
+// ~240px), `max-w-7xl mx-auto` + padding cộng dồn, và 2 bộ SWR poll thông báo mỗi 30s.
 import useSWR from 'swr';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { fetcher } from '@/lib/fetcher';
 import { formatCurrency } from '@/lib/utils';
 
@@ -19,7 +21,7 @@ export default function BrokerStatsPage() {
   const maxCommission = Math.max(1, ...(data?.months || []).map((m: any) => m.commission));
 
   return (
-    <DashboardLayout>
+    <>
       <h1 className="font-display text-2xl font-bold mb-1">📈 Thống kê của tôi</h1>
       <p className="text-sm text-stone-500 mb-6">Hoa hồng, thứ hạng và hiệu quả chia sẻ — cập nhật theo thời gian thực.</p>
 
@@ -99,6 +101,6 @@ export default function BrokerStatsPage() {
           </div>
         </>
       )}
-    </DashboardLayout>
+    </>
   );
 }

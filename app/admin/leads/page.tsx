@@ -1,8 +1,10 @@
 'use client';
+// ⚠️ KHÔNG bọc <DashboardLayout> ở đây — app/{admin,broker,landlord}/layout.tsx đã bọc rồi.
+// Bọc hai lần thì mọi thứ nhân đôi: 2 sidebar, `lg:ml-60` cộng dồn (đẩy nội dung lệch phải
+// ~240px), `max-w-7xl mx-auto` + padding cộng dồn, và 2 bộ SWR poll thông báo mỗi 30s.
 import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { fetcher } from '@/lib/fetcher';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
@@ -26,7 +28,7 @@ function AdminLeadsInner() {
   );
 
   return (
-    <DashboardLayout>
+    <>
       <div className="mb-6">
         <h1 className="font-display text-2xl font-bold">📥 Khách để lại thông tin</h1>
         <p className="text-sm text-stone-500 mt-1">
@@ -51,7 +53,7 @@ function AdminLeadsInner() {
       </div>
 
       {tab === 'xem-phong' ? <ViewingRequestsTab /> : <SavedSearchesTab />}
-    </DashboardLayout>
+    </>
   );
 }
 
@@ -119,27 +121,28 @@ function SavedSearchesTab() {
         </div>
       ) : (
         <div className="card overflow-x-auto p-0">
-          <table className="w-full text-sm min-w-[760px]">
-            <thead>
-              <tr className="text-left text-xs text-stone-500 border-b border-stone-100">
-                <th className="px-4 py-3">Khách</th>
-                <th className="px-4 py-3">Tiêu chí</th>
-                <th className="px-4 py-3">Ghi chú</th>
-                <th className="px-4 py-3">Đăng ký</th>
-                <th className="px-4 py-3">Khớp gần nhất</th>
-                <th className="px-4 py-3 text-right">Thao tác</th>
+          <table className="w-full text-sm min-w-[850px]">
+            {/* Lớp bảng chuẩn giống mọi module quản trị khác — xem app/globals.css */}
+            <thead className="bg-stone-50/80">
+              <tr className="border-b border-stone-100">
+                <th className="table-header min-w-[150px]">Khách</th>
+                <th className="table-header min-w-[200px]">Tiêu chí</th>
+                <th className="table-header min-w-[130px]">Ghi chú</th>
+                <th className="table-header min-w-[100px]">Đăng ký</th>
+                <th className="table-header min-w-[120px]">Khớp gần nhất</th>
+                <th className="table-header text-right min-w-[150px]">Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((s: any) => (
                 <tr key={s.id} className={`border-b border-stone-50 ${s.isActive ? '' : 'opacity-50'}`}>
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-stone-800">{s.name || 'Khách'}</p>
+                  <td className="table-cell align-top">
+                    <p className="font-medium text-stone-800 whitespace-nowrap">{s.name || 'Khách'}</p>
                     <a href={telHref(s.phone) || undefined} className="text-brand-600 font-mono text-xs hover:underline">{s.phone}</a>
                     {' · '}
                     {zaloHref(s.phone) && <a href={zaloHref(s.phone)!} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs hover:underline">Zalo</a>}
                   </td>
-                  <td className="px-4 py-3 text-stone-600">
+                  <td className="table-cell align-top text-stone-600">
                     {[
                       s.district,
                       s.typeName ? TYPE_LABEL[s.typeName] || s.typeName : '',
@@ -147,14 +150,14 @@ function SavedSearchesTab() {
                       s.maxPrice ? `đến ${formatCurrency(s.maxPrice)}` : '',
                     ].filter(Boolean).join(' · ') || <span className="text-stone-400">Mọi phòng</span>}
                   </td>
-                  <td className="px-4 py-3 text-stone-500 text-xs max-w-[180px] truncate">{s.note || '—'}</td>
-                  <td className="px-4 py-3 text-stone-500 text-xs">{formatDate(s.createdAt)}</td>
-                  <td className="px-4 py-3 text-xs">
+                  <td className="table-cell align-top text-stone-500 text-xs max-w-[180px] truncate">{s.note || '—'}</td>
+                  <td className="table-cell align-top text-stone-500 text-xs whitespace-nowrap">{formatDate(s.createdAt)}</td>
+                  <td className="table-cell align-top text-xs whitespace-nowrap">
                     {s.lastMatchedAt ? <span className="text-emerald-600 font-medium">🎯 {formatDate(s.lastMatchedAt)}</span> : <span className="text-stone-400">Chưa có</span>}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="table-cell align-top text-right">
                     <button onClick={() => toggle(s.id, !s.isActive)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                      className={`inline-flex items-center px-3 py-1.5 min-h-8 rounded-lg text-xs font-medium border transition-colors ${
                         s.isActive
                           ? 'border-stone-200 text-stone-600 hover:border-red-300 hover:text-red-600'
                           : 'border-stone-200 text-stone-500 hover:border-emerald-300 hover:text-emerald-600'
@@ -178,7 +181,7 @@ function SavedSearchesTab() {
 
 export default function AdminLeadsPage() {
   return (
-    <Suspense fallback={<DashboardLayout><p className="text-stone-400 text-sm py-10 text-center">Đang tải…</p></DashboardLayout>}>
+    <Suspense fallback={<p className="text-stone-400 text-sm py-10 text-center">Đang tải…</p>}>
       <AdminLeadsInner />
     </Suspense>
   );
