@@ -70,13 +70,41 @@ export async function GET(req: NextRequest) {
     }
     const url = new URL(req.url);
     const { page, limit, skip } = getPaginationParams(url);
-    const onlyActive = url.searchParams.get('active') !== 'false';
-    const where = onlyActive ? { isActive: true } : {};
-    const [rows, total] = await Promise.all([
+    // state: active (đang săn) | off (đã tắt) | all. Giữ tương thích tham số cũ `active=false`
+    // (nghĩa cũ của nó là "hiện cả yêu cầu đã tắt", tức là tất cả).
+    const state = url.searchParams.get('state') || (url.searchParams.get('active') === 'false' ? 'all' : 'active');
+    const q = (url.searchParams.get('q') || '').trim().slice(0, 80);
+    const district = (url.searchParams.get('district') || '').trim();
+    const matched = url.searchParams.get('matched'); // 'no' = chưa có tin nào khớp
+
+    // Lọc ở server (xem chú thích cùng ý trong /api/viewing-requests): danh sách có phân trang
+    // nên lọc phía client sẽ bỏ sót khách ở các trang sau.
+    const base: any = {};
+    if (q) {
+      const digits = q.replace(/\D/g, '');
+      base.OR = [
+        ...(digits ? [{ phone: { contains: digits } }] : []),
+        { name: { contains: q, mode: 'insensitive' } },
+        { note: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+    if (district) base.district = { contains: district, mode: 'insensitive' };
+    if (matched === 'no') base.lastMatchedAt = null;
+
+    const where: any = { ...base };
+    if (state === 'active') where.isActive = true;
+    else if (state === 'off') where.isActive = false;
+
+    const [rows, total, activeCount, offCount] = await Promise.all([
       prisma.savedSearch.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
       prisma.savedSearch.count({ where }),
+      prisma.savedSearch.count({ where: { ...base, isActive: true } }),
+      prisma.savedSearch.count({ where: { ...base, isActive: false } }),
     ]);
-    return NextResponse.json(paginatedResponse(rows, total, page, limit));
+    return NextResponse.json({
+      ...paginatedResponse(rows, total, page, limit),
+      counts: { active: activeCount, off: offCount, all: activeCount + offCount },
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });
   }

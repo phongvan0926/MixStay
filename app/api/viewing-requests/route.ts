@@ -110,12 +110,45 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const { page, limit, skip } = getPaginationParams(url);
     const status = url.searchParams.get('status');
+    const q = (url.searchParams.get('q') || '').trim().slice(0, 80);
+    const broker = url.searchParams.get('broker'); // 'yes' = qua CTV | 'no' = khách tự tìm
+    const days = parseInt(url.searchParams.get('days') || '', 10);
+    const overdue = url.searchParams.get('overdue') === 'true';
 
+    // ── Bộ lọc phải chạy Ở SERVER, không phải lọc mảng của trang hiện tại ──────────────
+    // Danh sách có phân trang: lọc 20 dòng đang hiện thì "🔴 Mới" của trang 3 không bao giờ
+    // hiện ra — admin tưởng đã gọi hết trong khi vẫn còn khách chờ. Vì vậy mọi điều kiện đều
+    // nằm trong `where` của Prisma, và số đếm trên chip lấy bằng groupBy trên TOÀN BỘ tập.
     // CTV chỉ thấy lead từ link CỦA MÌNH; admin thấy tất cả.
-    const where: any = isAdminFamily ? {} : { brokerId: session.user.id };
-    if (status && (STATUSES as readonly string[]).includes(status)) where.status = status;
+    const base: any = isAdminFamily ? {} : { brokerId: session.user.id };
 
-    const [data, total] = await Promise.all([
+    if (q) {
+      const digits = q.replace(/\D/g, '');
+      base.OR = [
+        ...(digits ? [{ phone: { contains: digits } }] : []),
+        { name: { contains: q, mode: 'insensitive' } },
+        { note: { contains: q, mode: 'insensitive' } },
+        { roomType: { name: { contains: q, mode: 'insensitive' } } },
+        { roomType: { listingCode: { contains: q.toUpperCase() } } },
+      ];
+    }
+    // Lọc "qua CTV / khách tự tìm" chỉ có nghĩa với admin — CTV vốn chỉ thấy lead của mình.
+    if (isAdminFamily && broker === 'yes') base.brokerId = { not: null };
+    if (isAdminFamily && broker === 'no') base.brokerId = null;
+    if (days > 0) base.createdAt = { gte: new Date(Date.now() - days * 86400000) };
+
+    const where: any = { ...base };
+    if (overdue) {
+      // "Quá 24h chưa gọi": còn NEW mà đã để quá một ngày — nhóm cần gọi gấp nhất.
+      where.status = 'NEW';
+      where.createdAt = { ...(base.createdAt || {}), lte: new Date(Date.now() - 86400000) };
+    } else if (status === 'PENDING') {
+      where.status = { in: ['NEW', 'CONTACTED'] };
+    } else if (status && (STATUSES as readonly string[]).includes(status)) {
+      where.status = status;
+    }
+
+    const [data, total, grouped, overdueCount] = await Promise.all([
       prisma.viewingRequest.findMany({
         where,
         include: {
@@ -132,9 +165,21 @@ export async function GET(req: NextRequest) {
         take: limit,
       }),
       prisma.viewingRequest.count({ where }),
+      // Số đếm cho chip: tính trên `base` (đã áp dụng tìm kiếm/nguồn/thời gian) nhưng KHÔNG
+      // áp dụng chính bộ lọc trạng thái — nếu không, chip đang chọn sẽ là chip duy nhất có số.
+      prisma.viewingRequest.groupBy({ by: ['status'], where: base, _count: { _all: true } }),
+      prisma.viewingRequest.count({
+        where: { ...base, status: 'NEW', createdAt: { ...(base.createdAt || {}), lte: new Date(Date.now() - 86400000) } },
+      }),
     ]);
 
-    return NextResponse.json(paginatedResponse(data, total, page, limit));
+    const counts: Record<string, number> = { NEW: 0, CONTACTED: 0, DONE: 0, CANCELLED: 0 };
+    for (const g of grouped) counts[g.status] = g._count._all;
+    counts.PENDING = counts.NEW + counts.CONTACTED;
+    counts.ALL = counts.PENDING + counts.DONE + counts.CANCELLED;
+    counts.OVERDUE = overdueCount;
+
+    return NextResponse.json({ ...paginatedResponse(data, total, page, limit), counts });
   } catch (error) {
     console.error('GET /api/viewing-requests error:', error);
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });

@@ -20,14 +20,28 @@ const SOURCE_LABEL: Record<string, string> = {
   tin: 'Trang công khai',
 };
 
+/**
+ * Lead còn 🔴 Mới mà đã để quá 24h → nói thẳng đã chờ bao lâu.
+ * Trả null khi chưa quá hạn (hoặc đã gọi rồi) để không làm rối bảng.
+ */
+function waitingLabel(status: string, createdAt: string | Date) {
+  if (status !== 'NEW') return null;
+  const hours = Math.floor((Date.now() - new Date(createdAt).getTime()) / 3600000);
+  if (hours < 24) return null;
+  return `⏰ Chờ ${Math.floor(hours / 24)} ngày`;
+}
+
 export default function ViewingRequestTable({
   rows,
   mutate,
   showBroker = false,
+  emptyState,
 }: {
   rows: any[];
   mutate: () => void;
   showBroker?: boolean;
+  /** Thay lời nhắn "chưa có khách nào" khi danh sách rỗng VÌ ĐANG LỌC, không phải vì hết dữ liệu */
+  emptyState?: React.ReactNode;
 }) {
   const setStatus = async (id: string, status: string) => {
     const res = await fetch('/api/viewing-requests', {
@@ -40,7 +54,7 @@ export default function ViewingRequestTable({
   };
 
   if (rows.length === 0) {
-    return (
+    return emptyState ? <>{emptyState}</> : (
       <div className="card text-center py-14 text-stone-400">
         <p className="text-4xl mb-3">📭</p>
         <p>Chưa có khách nào xin xem phòng.</p>
@@ -66,8 +80,10 @@ export default function ViewingRequestTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map(r => (
-            <tr key={r.id} className={`border-b border-stone-50 ${r.status === 'CANCELLED' ? 'opacity-50' : ''}`}>
+          {rows.map(r => {
+            const waiting = waitingLabel(r.status, r.createdAt);
+            return (
+            <tr key={r.id} className={`border-b border-stone-50 ${r.status === 'CANCELLED' ? 'opacity-50' : waiting ? 'bg-red-50/50' : ''}`}>
               <td className="table-cell align-top">
                 <p className="font-medium text-stone-800 whitespace-nowrap">{r.name || 'Khách'}</p>
                 <a href={telHref(r.phone) || undefined} className="text-brand-600 font-mono text-xs hover:underline">{r.phone}</a>
@@ -91,7 +107,10 @@ export default function ViewingRequestTable({
                   <p className="text-stone-400">{SOURCE_LABEL[r.source] || r.source}</p>
                 </td>
               )}
-              <td className="table-cell align-top text-stone-500 text-xs whitespace-nowrap">{formatDate(r.createdAt)}</td>
+              <td className="table-cell align-top text-stone-500 text-xs whitespace-nowrap">
+                {formatDate(r.createdAt)}
+                {waiting && <p className="text-red-600 font-semibold mt-0.5">{waiting}</p>}
+              </td>
               <td className="table-cell align-top">
                 <div className="flex flex-col items-end gap-1.5">
                   <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium border ${STATUS_META[r.status]?.cls || ''}`}>
@@ -107,7 +126,8 @@ export default function ViewingRequestTable({
                 </div>
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

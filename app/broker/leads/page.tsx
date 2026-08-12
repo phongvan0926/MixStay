@@ -17,7 +17,9 @@ export default function BrokerLeadsPage() {
   );
   const rows = data?.data || [];
   const pagination = data?.pagination;
-  const newCount = rows.filter((r: any) => r.status === 'NEW').length;
+  // Số khách chưa gọi lấy từ API (đếm TOÀN BỘ lead của CTV này), không đếm mảng đang hiển thị —
+  // đếm 20 dòng của trang hiện tại thì đứng ở trang 2 sẽ báo thiếu.
+  const newCount = data?.counts?.NEW ?? 0;
 
   return (
     <>

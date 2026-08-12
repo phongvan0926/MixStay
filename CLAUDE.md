@@ -47,7 +47,10 @@ app/api/cron/lifecycle → Vercel Cron 8h VN hằng ngày (vercel.json): UPCOMIN
 app/api/broker/stats + app/broker/stats → thống kê cá nhân CTV: hoa hồng, hạng tháng (ẩn danh người khác), chuỗi 6 tháng, views share link
 app/api/viewing-requests/ → "Đặt lịch xem phòng": POST CÔNG KHAI (khách để lại SĐT trên 1 tin cụ thể; ghi công CTV suy từ SHARE TOKEN phía server, KHÔNG tin brokerId client gửi) + GET/PUT cho admin (mọi lead) & CTV (chỉ lead của mình). Báo thông báo cho CTV giữ link + toàn bộ admin
 app/broker/leads/   → CTV xem khách xin xem phòng đến từ link CỦA MÌNH, đổi trạng thái NEW→CONTACTED→DONE
-app/admin/leads/    → Admin xem khách để lại SĐT, 2 tab: "Xin xem phòng" (ViewingRequest, có cột Nguồn = CTV nào) + "Săn phòng" (SavedSearch). Đọc ?tab= bằng useSearchParams + Suspense
+app/admin/leads/    → Admin xem khách để lại SĐT, 2 tab: "Xin xem phòng" (ViewingRequest, có cột Nguồn = CTV nào) + "Săn phòng" (SavedSearch). Đọc ?tab= bằng useSearchParams + Suspense.
+                      BỘ LỌC (v9.57): chip trạng thái kèm số đếm, mặc định mở trang là "🔥 Chưa xử lý" (NEW+CONTACTED), thêm "⏰ Quá 24h chưa gọi"; tìm SĐT/tên/tin/mã tin; lọc nguồn (qua CTV ↔ tự tìm) + thời gian. Tab Săn phòng: Đang săn/Đã tắt/Tất cả + "Chưa khớp tin nào" + lọc quận.
+                      MỌI bộ lọc chạy SERVER-SIDE (xem quy tắc dưới) — đừng lọc mảng của trang hiện tại
+components/leads/    → ViewingRequestTable.tsx (bảng dùng chung admin+CTV, tô đỏ lead NEW quá 24h) + FilterChip.tsx (chip lọc kèm số đếm lấy từ API)
 components/public/ViewingRequestForm.tsx → Ô "Đặt lịch xem phòng" gắn trong ShareViewClient (dùng chung cho /share/[token], /p/[token], /tin/[id], kho công ty)
 app/api/upload/signed-url/ → Tạo Supabase signed upload URL (upload video trực tiếp client → Storage, không qua Vercel serverless)
 app/api/ai/parse-listing/ → "Tạo tin nhanh AI": dán tin FB/Zalo → Gemini structured output bóc property+room+match tòa có sẵn (client đổ vào RoomTypeForm, KHÔNG auto-lưu)
@@ -163,6 +166,7 @@ middleware.ts       → Route protection theo role (+ chặn /admin/{companies,u
 - **Hotline công ty:** lấy bằng `getSupportContact()` (`lib/contact-server.ts`), KHÔNG chép cứng số vào component/trang. Trang gọi hàm này phải khai `export const revalidate`.
 - **Đổi `app/globals.css` hoặc `tailwind.config.ts` → phải cập nhật `design-system/`** (chạy `python3 design-system/build.py` rồi đồng bộ lên claude.ai/design bằng DesignSync). Bộ chuẩn lấy giá trị từ mã nguồn thật; để lệch là nó nói dối người dùng sau.
 - **KHÔNG bọc `<DashboardLayout>` trong trang** — `app/{admin,broker,landlord}/layout.tsx` đã bọc rồi. Bọc hai lần là 2 sidebar, `lg:ml-60` cộng dồn (lệch phải ~240px) và 2 bộ SWR poll thông báo. Đã dính ở 3 trang (v9.56).
+- **Danh sách CÓ PHÂN TRANG thì bộ lọc và số đếm phải chạy SERVER-SIDE.** Lọc/đếm mảng 20 dòng đang hiển thị là sai nghiệp vụ, không phải sai thẩm mỹ: khách "🔴 Mới" nằm ở trang 3 sẽ không bao giờ hiện ra, admin tưởng đã gọi hết. Đã dính ở `/broker/leads` (đếm "N khách chưa gọi" theo trang hiện tại). Số đếm cho chip lấy bằng `groupBy` trên toàn tập, áp dụng các bộ lọc KHÁC nhưng KHÔNG áp dụng chính bộ lọc mà chip đó điều khiển.
 - **Bảng quản trị phải dùng `.table-header` / `.table-cell`** (`app/globals.css`), không tự chế `px-4 py-3` — và đặt `min-w-[…]` cho từng cột, nếu không tên người bị bẻ đôi khi cột hẹp.
 - **Trang quản trị là client component → KHÔNG dùng được `export const metadata`.** Tiêu đề tab do `DashboardLayout` đặt bằng `document.title` theo mục menu; thêm mục menu mới là tự có tiêu đề, không phải làm gì thêm.
 - **Thanh nav chật thì cắt thứ ÍT GIÁ TRỊ NHẤT, không phải thứ NGẮN NHẤT** — và hỏi chủ dự án cái nào là cái nào. Đã sửa 3 lượt (v9.53→v9.55) vì tự quyết: bỏ chữ nút "Bản đồ" (tính năng cần khoe) rồi bỏ tên thương hiệu, cuối cùng đáp án đúng là **xếp dọc logo**. Thứ tự ưu tiên hiện tại: nút Bản đồ có chữ > tên thương hiệu đọc được > kích thước logo.

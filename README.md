@@ -286,6 +286,17 @@ mixstay/
 - **Sửa dữ liệu:** BNBHOLDING `09366258556` → **`0936258556`**. Bằng chứng: cả 9 tòa của công ty đứng tên chủ nhà **Anh Biên — 0936258556**, và 3 tòa ghi thẳng `"A Biên 0936258556"`; số lưu sai đúng là số đó **thừa một chữ số 6** (`0936|6|258556`). Kho công ty đã có lại nút gọi + Zalo.
 - **Rà lại toàn bộ nguồn SĐT dựng link:** công ty **0/36 lỗi**, tòa nhà **0/464 lỗi**, tài khoản còn 1 (CTV thử nghiệm "aaa" `1234567890` — đã có cảnh báo lo).
 
+### v9.57 — 2026-08-12 (bộ lọc "Khách để lại thông tin" — admin vào là thấy ngay khách CHƯA XỬ LÝ)
+Trang `/admin/leads` trước đây đổ ra danh sách phẳng theo thời gian: 26 khách trải 2 trang, admin phải tự dò xem ai đã gọi ai chưa. Nay có bộ lọc đầy đủ ở cả 2 tab.
+
+- **Tab "Xin xem phòng"** — chip trạng thái kèm SỐ ĐẾM: `🔥 Chưa xử lý` (NEW + CONTACTED) · `🔴 Mới` · `🟡 Đã gọi` · `🟢 Đã dẫn xem` · `⚪ Huỷ` · `Tất cả`, thêm chip đỏ **`⏰ Quá 24h chưa gọi`** (lead còn NEW mà đã để quá một ngày — nhóm gấp nhất). Kèm ô tìm theo **SĐT / tên khách / tên tin / mã tin**, lọc **nguồn** (qua CTV ↔ khách tự tìm) và **thời gian** (24h / 7 ngày / 30 ngày).
+- **Mặc định mở trang là lọc sẵn "Chưa xử lý"** — vào là thấy việc còn phải làm; xử lý xong dòng tự biến khỏi danh sách. Bấm "Tất cả" để xem lại lịch sử.
+- **Tab "Săn phòng"** — chip `🔔 Đang săn` / `⚪ Đã tắt` / `Tất cả` (thay ô tick cũ) + chip **`🚫 Chưa khớp tin nào`** (khách chưa từng được chào phòng) + tìm theo SĐT/tên/ghi chú + lọc theo quận.
+- **Trong bảng:** lead NEW quá 24h được **tô nền đỏ nhạt + ghi rõ "⏰ Chờ N ngày"** ở cột thời gian — quét mắt là thấy ai bị bỏ quên.
+- **🚨 Mọi bộ lọc chạy Ở SERVER, không lọc mảng đang hiển thị.** Danh sách có phân trang: lọc 20 dòng của trang hiện tại thì khách "🔴 Mới" nằm ở trang 3 không bao giờ hiện ra — admin tưởng đã gọi hết trong khi vẫn còn người chờ. Số đếm trên chip cũng lấy bằng `groupBy` trên **toàn bộ** tập dữ liệu (đã áp dụng tìm kiếm/nguồn/thời gian, nhưng KHÔNG áp dụng chính bộ lọc trạng thái — nếu áp dụng thì chip đang chọn sẽ là chip duy nhất có số).
+- **Sửa luôn một lỗi cùng gốc ở trang CTV:** `/broker/leads` đếm "đang có N khách chưa gọi" bằng cách đếm mảng 20 dòng đang hiển thị → đứng ở trang 2 là báo thiếu. Nay lấy `counts.NEW` từ API.
+- API: `GET /api/viewing-requests` nhận thêm `q`, `broker=yes|no`, `days`, `overdue=true`, `status=PENDING`, và trả thêm `counts`; `GET /api/saved-searches` nhận thêm `q`, `district`, `matched=no`, `state=active|off|all` (giữ tương thích tham số cũ `active=false`) và trả thêm `counts`. Đã kiểm trên dữ liệu thật: 26 lead → 24 chưa xử lý, 1 quá 24h chưa gọi; tìm "Thảo" → 2, tìm "8220" (4 số cuối) → 2, tìm "studio" → 14.
+
 ### v9.56 — 2026-08-11 (trang "Khách để lại thông tin" bị lệch hẳn khỏi bố cục — bọc DashboardLayout HAI LẦN)
 Người dùng báo kèm ảnh: nội dung trang `/admin/leads` **thụt hẳn sang phải**, không thẳng hàng với các module khác.
 
