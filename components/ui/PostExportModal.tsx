@@ -52,7 +52,9 @@ export default function PostExportModal({
       document.body.appendChild(a);
       a.click();
       a.remove();
-      URL.revokeObjectURL(url);
+      // Revoke TRỄ 60s, không revoke ngay: iOS Safari bật hộp thoại "Tải về?" và người dùng
+      // phải bấm đồng ý — revoke ngay sau click() là thu hồi blob trước khi họ kịp bấm.
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
       toast.success('Đã tải ảnh bìa về máy');
     } catch {
       toast.error('Không tạo được ảnh bìa, thử lại sau');

@@ -286,6 +286,13 @@ mixstay/
 - **Sửa dữ liệu:** BNBHOLDING `09366258556` → **`0936258556`**. Bằng chứng: cả 9 tòa của công ty đứng tên chủ nhà **Anh Biên — 0936258556**, và 3 tòa ghi thẳng `"A Biên 0936258556"`; số lưu sai đúng là số đó **thừa một chữ số 6** (`0936|6|258556`). Kho công ty đã có lại nút gọi + Zalo.
 - **Rà lại toàn bộ nguồn SĐT dựng link:** công ty **0/36 lỗi**, tòa nhà **0/464 lỗi**, tài khoản còn 1 (CTV thử nghiệm "aaa" `1234567890` — đã có cảnh báo lo).
 
+### v9.58 — 2026-08-14 (sửa "Tải ảnh" trên iPhone — pop-up hiện liên tục nhưng chỉ lưu được ảnh CUỐI)
+Lỗi báo từ người dùng iPhone: bấm "⬇️ Tải ảnh" thì hộp thoại tải hiện lên liên tục theo từng ảnh, đồng ý hết nhưng máy chỉ lưu đúng ảnh cuối cùng.
+- **Nguyên nhân kép** ở `ListingActionBar.tsx`: (1) iOS Safari không cho tải nhiều file liên tiếp bằng `<a download>` — các hộp thoại "Tải về?" đè nhau, chỉ lượt cuối được lưu thật; (2) `URL.revokeObjectURL` gọi sau 350ms — blob bị thu hồi TRƯỚC khi người dùng kịp bấm đồng ý trên hộp thoại.
+- **Sửa cho iOS:** nhận diện iPhone/iPad (kể cả iPadOS giả dạng macOS) → dùng **Web Share API với files**: share sheet mở đúng **1 lần**, bấm "Lưu N ảnh" là cả bộ vào Photos — tiện hơn cả rơi vào app Tệp. Người dùng tự đóng share sheet (AbortError) → im lặng, không bắn tiếp pop-up; share hỏng vì lý do khác → tự rơi về cách tải từng file.
+- **Sửa cho mọi trình duyệt:** fallback `<a download>` giờ revoke blob **trễ 60s sau cùng** thay vì 350ms từng ảnh. `PostExportModal` (ảnh bìa Facebook/Zalo) cũng dính revoke-ngay-sau-click → vá cùng cách.
+- **Kiểm thử 4/4 pass** bằng Playwright mô phỏng iPhone Safari (UA + touch + viewport 390×844) trên tin thật 5 ảnh: iOS share OK → **1 lượt share đủ 5 file, 0 anchor**; iOS share hỏng → fallback 5 anchor, **0 revoke sớm**; desktop → 5 anchor như cũ, không share; người dùng đóng share sheet → im lặng. Chưa bấm được trên iPhone vật lý — nếu vẫn lỗi trên máy thật, báo lại để soi tiếp.
+
 ### v9.57 — 2026-08-12 (bộ lọc "Khách để lại thông tin" — admin vào là thấy ngay khách CHƯA XỬ LÝ)
 Trang `/admin/leads` trước đây đổ ra danh sách phẳng theo thời gian: 26 khách trải 2 trang, admin phải tự dò xem ai đã gọi ai chưa. Nay có bộ lọc đầy đủ ở cả 2 tab.
 

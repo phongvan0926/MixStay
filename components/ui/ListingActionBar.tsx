@@ -33,35 +33,64 @@ export default function ListingActionBar({ images = [], shareUrl, copyText, titl
     return shareUrl;
   })();
 
+  // iPadOS giả dạng macOS trong userAgent → nhận diện thêm bằng cảm ứng đa điểm.
+  const isIOS = () =>
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
   const downloadImages = async () => {
     const list = (images || []).filter(Boolean);
     if (!list.length) { toast.error('Bài đăng chưa có ảnh'); return; }
     setDownloading(true);
     try {
-      // Tải TỪNG ẢNH RỜI (không nén zip — khỏi giải nén): fetch về blob rồi kích
-      // <a download> tuần tự. Chrome sẽ hỏi "Cho phép tải nhiều tệp?" đúng 1 lần.
-      let ok = 0;
-      for (let i = 0; i < list.length; i++) {
+      // Fetch hết ảnh về trước (song song), dùng chung cho cả 2 đường tải bên dưới.
+      const files = (await Promise.all(list.map(async (src, i) => {
         try {
-          const res = await fetch(list[i]);
-          if (!res.ok) continue;
+          const res = await fetch(src);
+          if (!res.ok) return null;
           const blob = await res.blob();
           const ext = ((blob.type.split('/')[1] || 'jpg').split('+')[0]).slice(0, 5);
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `${fileBase}-${String(i + 1).padStart(2, '0')}.${ext}`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          // Chờ 1 nhịp giữa các lượt click — kích liên tiếp 0ms dễ bị trình duyệt nuốt bớt lượt tải
-          await new Promise(r => setTimeout(r, 350));
-          URL.revokeObjectURL(url);
-          ok++;
-        } catch { /* bỏ ảnh lỗi */ }
+          return new File([blob], `${fileBase}-${String(i + 1).padStart(2, '0')}.${ext}`, { type: blob.type || 'image/jpeg' });
+        } catch { return null; /* bỏ ảnh lỗi */ }
+      }))).filter((f): f is File => f !== null);
+      if (files.length === 0) { toast.error('Không tải được ảnh, thử lại sau'); return; }
+
+      // ĐƯỜNG iOS — BẮT BUỘC dùng Web Share API với files. iOS Safari không cho tải nhiều
+      // file liên tiếp bằng <a download>: mỗi lượt click bật 1 hộp thoại "Tải về?", các hộp
+      // thoại đè nhau và chỉ lượt CUỐI được lưu thật (lỗi báo 14/08/2026: "pop-up hiện liên
+      // tục nhưng chỉ tải được ảnh cuối"). Share sheet mở đúng 1 lần, bấm "Lưu N ảnh" là cả
+      // bộ vào Photos — còn tiện hơn rơi vào app Tệp.
+      const nav = navigator as any;
+      if (isIOS() && typeof nav.share === 'function' && nav.canShare?.({ files })) {
+        try {
+          await nav.share({ files });
+          toast.success(`Đã gửi ${files.length} ảnh — chọn "Lưu ảnh" để lưu vào máy`);
+          return;
+        } catch (e: any) {
+          if (e?.name === 'AbortError') return; // người dùng tự đóng share sheet — không phải lỗi
+          // NotAllowedError (mạng chậm làm mất user gesture)… → rơi xuống cách tải từng file
+        }
       }
-      if (ok === 0) { toast.error('Không tải được ảnh, thử lại sau'); return; }
-      toast.success(`Đã tải ${ok} ảnh về máy`);
+
+      // ĐƯỜNG CÒN LẠI: tải từng ảnh rời (không nén zip — khỏi giải nén) bằng <a download>
+      // tuần tự. Chrome sẽ hỏi "Cho phép tải nhiều tệp?" đúng 1 lần.
+      const urls: string[] = [];
+      for (const f of files) {
+        const url = URL.createObjectURL(f);
+        urls.push(url);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = f.name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        // Chờ 1 nhịp giữa các lượt click — kích liên tiếp 0ms dễ bị trình duyệt nuốt bớt lượt tải
+        await new Promise(r => setTimeout(r, 350));
+      }
+      // Revoke SAU CÙNG và trễ hẳn 60s: Safari bật hộp thoại xác nhận cho TỪNG file, revoke
+      // sớm là thu hồi blob trước khi người dùng kịp bấm "Tải về" → chỉ file cuối sống sót.
+      setTimeout(() => urls.forEach(u => URL.revokeObjectURL(u)), 60_000);
+      toast.success(`Đã tải ${files.length} ảnh về máy`);
     } catch {
       toast.error('Lỗi khi tải ảnh');
     } finally {
