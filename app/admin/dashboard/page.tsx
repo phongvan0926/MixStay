@@ -44,6 +44,58 @@ function TodoCard({ href, icon, label, value, tone = 'brand' }: {
   );
 }
 
+/**
+ * CUNG ↔ CẦU THEO QUẬN — trả lời "đẩy CTV đi gom hàng ở đâu, ngừng ôm hàng ở đâu".
+ *
+ * Chỉ số là "bao nhiêu TIN mới đẻ ra 1 KHÁCH hỏi" trong 90 ngày: càng THẤP thì khách càng
+ * tranh nhau, kho càng mỏng → gom thêm gấp. Quận không ra khách nào thì không phải "tốt",
+ * mà là vốn chết — xếp riêng xuống dưới. Đo 14/08/2026: Hai Bà Trưng 27 tin ra 15 khách
+ * (1.8), Cầu Giấy 134 tin ra 4 khách (33.5).
+ */
+function SupplyDemandCard({ rows }: { rows: any[] }) {
+  if (!rows.length) return null;
+  const hot = rows.filter(r => r.tinMoiKhach !== null).slice(0, 6);
+  const dead = rows.filter(r => r.tinMoiKhach === null && r.tin >= 10);
+
+  return (
+    <section>
+      <h2 className="font-display font-semibold mb-3">Cung ↔ cầu theo quận (90 ngày)</h2>
+      <div className="card p-5">
+        <p className="text-xs text-stone-500 mb-3">
+          Số nhỏ = khách tranh nhau, kho mỏng → <strong className="text-stone-700">gom thêm hàng</strong>.
+          Số lớn = ôm nhiều tin mà ít khách hỏi.
+        </p>
+        <div className="space-y-2">
+          {hot.map((r, i) => {
+            // 3 quận cháy nhất tô đỏ — đây là chỗ cần hàng ngay, không phải chỗ "đang tốt"
+            const urgent = i < 3;
+            return (
+              <div key={r.district} className="flex items-center gap-3">
+                <span className="text-sm text-stone-700 w-28 shrink-0 truncate">{r.district}</span>
+                <div className="flex-1 h-2 bg-stone-100 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${urgent ? 'bg-red-500' : 'bg-brand-400'}`}
+                    style={{ width: `${Math.max(4, Math.min(100, (1 / r.tinMoiKhach) * 100))}%` }} />
+                </div>
+                <span className={`text-xs font-semibold w-32 shrink-0 text-right ${urgent ? 'text-red-600' : 'text-stone-500'}`}>
+                  {r.tin} tin / {r.khach} khách
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        {dead.length > 0 && (
+          <div className="mt-4 pt-3 border-t border-stone-100">
+            <p className="text-xs text-stone-500">
+              <strong className="text-amber-700">Ôm hàng mà 90 ngày không một khách hỏi:</strong>{' '}
+              {dead.map(r => `${r.district} (${r.tin} tin)`).join(' · ')}
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 /** Dòng "sức khoẻ kho hàng": tốt thì ✓ xanh, có vấn đề thì hiện số + lối đi xử lý. */
 function HealthRow({ label, bad, good, href, unit = 'tin' }: {
   label: string; bad: number; good: string; href?: string; unit?: string;
@@ -222,6 +274,9 @@ export default function AdminDashboardPage() {
             good="cron vòng đời đang chạy đúng" href="/admin/rooms?status=UPCOMING" />
         </div>
       </section>
+
+      {/* ②b CUNG ↔ CẦU THEO QUẬN — đi gom hàng ở đâu */}
+      <SupplyDemandCard rows={data.supplyDemand || []} />
 
       {/* ③ NHỊP KINH DOANH */}
       <section>

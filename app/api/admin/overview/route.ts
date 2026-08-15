@@ -136,8 +136,48 @@ export async function GET(req: NextRequest) {
         .map(u => ({ ...u, reason: checkPhone(u.phone).reason })),
     };
 
+    // ── CUNG ↔ CẦU theo quận ────────────────────────────────────────────────
+    // Trả lời câu hỏi "đẩy CTV đi gom hàng ở đâu": quận nào khách hỏi nhiều mà kho mỏng
+    // (cháy hàng), quận nào ôm hàng mà không ai hỏi (vốn chết). Đo 14/08/2026: Hai Bà Trưng
+    // hút 33% lượng khách bằng 4% kho, còn Cầu Giấy ôm 134 tin chỉ ra 4 khách.
+    const [supplyRows, demandRows] = await Promise.all([
+      prisma.roomType.findMany({
+        where: { isApproved: true, status: 'AVAILABLE', property: { status: 'APPROVED' } },
+        select: { property: { select: { district: true } } },
+      }),
+      prisma.viewingRequest.findMany({
+        where: { createdAt: { gte: new Date(Date.now() - 90 * 86400000) } },
+        select: { roomType: { select: { property: { select: { district: true } } } } },
+      }),
+    ]);
+    const supplyBy = new Map<string, number>();
+    const demandBy = new Map<string, number>();
+    for (const r of supplyRows) {
+      const d = r.property?.district;
+      if (d) supplyBy.set(d, (supplyBy.get(d) || 0) + 1);
+    }
+    for (const v of demandRows) {
+      const d = v.roomType?.property?.district;
+      if (d) demandBy.set(d, (demandBy.get(d) || 0) + 1);
+    }
+    const supplyDemand = Array.from(new Set(Array.from(supplyBy.keys()).concat(Array.from(demandBy.keys()))))
+      .map(district => {
+        const tin = supplyBy.get(district) || 0;
+        const khach = demandBy.get(district) || 0;
+        // "Bao nhiêu tin mới đẻ ra 1 khách" — càng THẤP càng cháy hàng, cần gom thêm gấp.
+        return { district, tin, khach, tinMoiKhach: khach > 0 ? Math.round((tin / khach) * 10) / 10 : null };
+      })
+      .filter(r => r.tin >= 5 || r.khach > 0)
+      .sort((a, b) => {
+        // Cháy hàng lên đầu; quận 0 khách xếp cuối (không phải "tốt nhất", là hàng chết)
+        if (a.tinMoiKhach === null) return 1;
+        if (b.tinMoiKhach === null) return -1;
+        return a.tinMoiKhach - b.tinMoiKhach;
+      });
+
     return NextResponse.json({
       badPhones,
+      supplyDemand,
       todo: {
         pendingRooms,
         pendingProperties,
