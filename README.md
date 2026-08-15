@@ -297,6 +297,8 @@ mixstay/
 
 **🐛 Vá lỗi hẹn lúc nửa đêm.** Khách chọn ngày mà bỏ trống cả buổi lẫn giờ thì `POST /api/viewing-requests` rơi về `00:00` + `slot=null` → màn hình in **"Hẹn 00:00 16/08"**. Một khách thật đã dính đúng chiều 15/08 trước khi vá. Nay rơi về `slot='day'`. Bản ghi bị dính đã sửa lại.
 
+**"📋 Copy gửi người dẫn" chuyển xuống TỪNG LƯỢT, không copy cả ngày.** Mỗi căn một địa điểm khác nhau nên thường mỗi lượt là một người dẫn riêng — gộp cả ngày vào một tin thì người nhận phải tự tách phần của mình, và ai cũng đọc được thông tin khách không phải phần mình. Nay mỗi dòng có nút copy riêng, ra một tin nhắn tự chứa: giờ + thứ/ngày · tên + SĐT khách · mã tin + tên tin · địa chỉ đầy đủ · SĐT chủ nhà · ghi chú của khách. Tiêu đề ngày đổi thành đếm "N chưa có người dẫn".
+
 **Menu quản trị:** "📥 Khách để lại SĐT" chuyển lên **ngay dưới "📊 Tổng quan"** — đây là việc gấp nhất trong ngày (khách đang chờ gọi lại), không phải mục tra cứu; để lẫn dưới Giao dịch thì admin phải lướt qua 4 mục quản lý kho mới tới việc cần làm ngay.
 
 ### v9.60 — 2026-08-15 (khách chọn GIỜ xem phòng + trang "Lịch khách xem phòng" giao việc cho người dẫn)

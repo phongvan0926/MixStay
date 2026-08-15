@@ -62,24 +62,34 @@ export default function ViewingSchedule() {
   };
 
   /**
-   * Soạn lịch để dán Zalo cho người dẫn khách. Địa chỉ dùng bản ĐẦY ĐỦ (fullAddress) —
-   * người dẫn phải tới tận nơi, bản che số nhà cho khách thì không đi được.
+   * Soạn tin nhắn cho MỘT lượt xem phòng, dán Zalo gửi người dẫn.
+   *
+   * Cố ý copy TỪNG LỊCH MỘT, không phải cả ngày: mỗi căn một địa điểm khác nhau nên thường
+   * mỗi lượt là một người dẫn riêng — gộp cả ngày vào một tin thì người nhận phải tự tách,
+   * và ai cũng thấy thông tin của khách không phải phần mình.
+   *
+   * Địa chỉ dùng bản ĐẦY ĐỦ (fullAddress) — người dẫn phải tới tận nơi, bản che số nhà cho
+   * khách thì không đi được.
    */
-  const copyForGuide = async (list: any[], title: string) => {
-    const lines = list.map((r, i) => {
-      const p = r.roomType?.property;
-      return [
-        `${i + 1}. ${timeText(r)} — ${r.name || 'Khách'} ${r.phone}`,
-        `   ${r.roomType?.listingCode || ''} ${r.roomType?.name || ''}`.trimEnd(),
-        `   📍 ${p?.fullAddress || [p?.streetName, p?.district].filter(Boolean).join(', ') || 'chưa có địa chỉ'}`,
-        p?.zaloPhone ? `   ☎ Chủ nhà: ${p.zaloPhone}` : '',
-        r.note ? `   Ghi chú: ${r.note}` : '',
-      ].filter(Boolean).join('\n');
-    });
-    const text = `LỊCH DẪN KHÁCH XEM PHÒNG — ${title}\n\n${lines.join('\n\n')}\n\nTổng ${list.length} lượt. Nhờ anh/chị nhận lịch giúp em nhé!`;
+  const copyOne = async (r: any, dayLabel: string) => {
+    const p = r.roomType?.property;
+    const addr = p?.fullAddress || [p?.streetName, p?.district].filter(Boolean).join(', ') || 'chưa có địa chỉ';
+    const time = r.preferredSlot === 'day' ? 'chưa chốt giờ' : timeText(r);
+    const text = [
+      'LỊCH DẪN KHÁCH XEM PHÒNG',
+      '',
+      `⏰ ${time} — ${dayLabel}`,
+      `👤 ${r.name || 'Khách'} — ${r.phone}`,
+      `🏠 ${[r.roomType?.listingCode, r.roomType?.name].filter(Boolean).join(' ')}`,
+      `📍 ${addr}`,
+      p?.zaloPhone ? `☎ Chủ nhà: ${p.zaloPhone}` : '',
+      r.note ? `📝 Khách ghi: ${r.note}` : '',
+      '',
+      'Nhờ anh/chị dẫn khách giúp em nhé!',
+    ].filter(l => l !== null).join('\n');
     try {
       await navigator.clipboard.writeText(text);
-      toast.success(`Đã copy ${list.length} lịch — dán vào Zalo gửi người dẫn`);
+      toast.success('Đã copy — dán vào Zalo gửi người dẫn');
     } catch { toast.error('Không copy được'); }
   };
 
@@ -97,8 +107,8 @@ export default function ViewingSchedule() {
   return (
     <>
       <p className="text-sm text-stone-500 mb-3">
-        Các cuộc hẹn <strong>sắp tới</strong>, xếp theo giờ đi xem. Copy lịch từng ngày gửi Zalo cho
-        người dẫn khách, gửi xong bấm <strong>“Đã giao”</strong> để khỏi giao trùng.
+        Các cuộc hẹn <strong>sắp tới</strong>, xếp theo giờ đi xem. Mỗi lượt copy riêng một tin nhắn
+        gửi Zalo cho người dẫn căn đó, gửi xong bấm <strong>“Đã giao”</strong> để khỏi giao trùng.
       </p>
 
       <div className="card p-3 sm:p-4 mb-4 flex flex-wrap gap-2">
@@ -135,10 +145,9 @@ export default function ViewingSchedule() {
                 <p className={`font-display font-semibold text-sm ${g.head.urgent ? 'text-amber-900' : 'text-stone-700'}`}>
                   {g.head.label} <span className="font-normal text-stone-500">· {g.items.length} lượt xem phòng</span>
                 </p>
-                <button type="button" onClick={() => copyForGuide(g.items, g.head.label)}
-                  className="inline-flex items-center min-h-9 px-3 rounded-lg text-xs font-medium border border-brand-200 bg-brand-50 text-brand-700 hover:border-brand-400 whitespace-nowrap">
-                  📋 Copy gửi người dẫn
-                </button>
+                <span className="text-xs text-stone-400">
+                  {g.items.filter((x: any) => !x.guideSentAt).length} chưa có người dẫn
+                </span>
               </div>
 
               <div className="divide-y divide-stone-50">
@@ -172,14 +181,23 @@ export default function ViewingSchedule() {
                         {r.note && <p className="text-xs text-stone-400 mt-0.5">Ghi chú: {r.note}</p>}
                       </div>
 
-                      <button type="button" onClick={() => setGuideSent(r.id, !r.guideSentAt)}
-                        className={`inline-flex items-center min-h-9 px-3 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap ${
-                          r.guideSentAt
-                            ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:border-emerald-400'
-                            : 'bg-white border-stone-200 text-stone-600 hover:border-brand-300 hover:text-brand-700'
-                        }`}>
-                        {r.guideSentAt ? '✅ Đã giao' : 'Đánh dấu đã giao'}
-                      </button>
+                      {/* Copy LẺ TỪNG LỊCH — mỗi căn thường một người dẫn riêng. Copy xong mới
+                          bấm "đã giao" (copy chưa phải là đã gửi). */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button type="button" onClick={() => copyOne(r, g.head.label)}
+                          className="inline-flex items-center min-h-9 px-3 rounded-lg text-xs font-medium border border-brand-200 bg-brand-50 text-brand-700 hover:border-brand-400 whitespace-nowrap">
+                          📋 Copy gửi người dẫn
+                        </button>
+                        <button type="button" onClick={() => setGuideSent(r.id, !r.guideSentAt)}
+                          title={r.guideSentAt ? 'Bỏ đánh dấu' : 'Đánh dấu đã giao cho người dẫn'}
+                          className={`inline-flex items-center min-h-9 px-3 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap ${
+                            r.guideSentAt
+                              ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:border-emerald-400'
+                              : 'bg-white border-stone-200 text-stone-600 hover:border-brand-300 hover:text-brand-700'
+                          }`}>
+                          {r.guideSentAt ? '✅ Đã giao' : 'Đã giao'}
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
