@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import { redactHouseNumber, redactTitle } from '@/lib/address';
 
 /**
  * SERVER-ONLY. Bộ khớp "Săn phòng" ↔ kho tin — dùng chung cho 3 đường:
@@ -63,9 +64,15 @@ export function countMatches(s: SearchCriteria) {
   return prisma.roomType.count({ where: roomWhereForSearch(s) });
 }
 
-/** Danh sách tin khớp, mới nhất trước — admin bấm vào xem để gọi chào phòng. */
-export function findMatches(s: SearchCriteria, take = 20) {
-  return prisma.roomType.findMany({
+/**
+ * Danh sách tin khớp, mới nhất trước — admin bấm vào xem để gọi chào phòng.
+ *
+ * ⚠️ Tên tin + tên đường ĐÃ REDACT dù đây là màn hình admin: nội dung này được copy nguyên
+ * văn để gửi cho KHÁCH qua Zalo (nút "Copy gửi Zalo"), mà chủ nhà rất hay gõ số nhà vào
+ * tiêu đề. Không redact ở đây là luật ẩn số nhà bị lách qua đường copy-paste.
+ */
+export async function findMatches(s: SearchCriteria, take = 20) {
+  const rows = await prisma.roomType.findMany({
     where: roomWhereForSearch(s),
     // select tường minh: KHÔNG include property (kéo cả fullAddress, toạ độ, zaloPhone).
     select: {
@@ -76,6 +83,13 @@ export function findMatches(s: SearchCriteria, take = 20) {
     orderBy: { updatedAt: 'desc' },
     take,
   });
+  return rows.map(r => ({
+    ...r,
+    name: redactTitle(r.name),
+    property: r.property
+      ? { ...r.property, streetName: redactHouseNumber(r.property.streetName) }
+      : r.property,
+  }));
 }
 
 const adminIds = () =>

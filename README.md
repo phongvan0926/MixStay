@@ -292,7 +292,8 @@ Soi dữ liệu thật giữa mùa cao điểm rồi vá đúng chỗ đang ch�
 **1. "Săn phòng" khớp NGƯỢC vào kho có sẵn.** Cơ chế cũ chỉ khớp khi có tin MỚI được duyệt — khách để lại tiêu chí hôm nay thì im lặng vô thời hạn dù kho sẵn hàng đúng ý. Đo được **10/15 khách đang săn có tin khớp mà không ai được báo** (một khách Hà Đông ≤4tr trong khi kho có 28 tin).
 - `lib/saved-search-match.ts`: bộ khớp dùng chung 3 đường — khách vừa đăng ký (`POST /api/saved-searches`), tin mới duyệt (`PUT /api/rooms`), cron quét lại hằng ngày.
 - Cron chỉ báo phần tin MỚI sau lần báo gần nhất → sáng nào cũng chạy nhưng không nhắc lại cùng một bộ tin.
-- `/admin/leads` tab Săn phòng: cột **"Kho có hàng?"** hiện `🎯 N tin khớp`, bấm mở ra danh sách mã tin + giá để đọc thẳng cho khách qua điện thoại, kèm nút copy.
+- `/admin/leads` tab Săn phòng: cột **"Kho có hàng?"** hiện `🎯 N tin khớp`, bấm mở ra danh sách mã tin + giá để đọc thẳng cho khách qua điện thoại.
+- Nút **"📋 Copy gửi Zalo (kèm link)"** dựng sẵn tin nhắn hoàn chỉnh — mỗi phòng một dòng tên + diện tích + giá + quận, kèm **link `mixstay.vn/tin/<id>` tuyệt đối** để khách bấm trong Zalo là mở xem đủ ảnh/video. Tên tin và tên đường trong nội dung copy đi qua `redactTitle()`/`redactHouseNumber()` ở SERVER: chủ nhà hay gõ số nhà vào tiêu đề (tin thật: *"Phòng Studio tại Số 5/25 Yên Phúc"*), không che là luật ẩn số nhà bị lách qua đúng đường copy-paste này.
 - Sửa luật so quận: `includes` chuỗi khiến "Từ Liêm" ăn nhầm cả Bắc/Nam Từ Liêm. Chặn khách bỏ trống tiêu chí (khớp 632 tin = rác) khỏi khớp tự động.
 - **Kiểm trên dữ liệu thật: 14/15 khách sẽ được báo, 1 khách kho thật sự hết.**
 

@@ -2,7 +2,7 @@
 import useSWR from 'swr';
 import { fetcher } from '@/lib/fetcher';
 import { formatCurrency } from '@/lib/utils';
-import { TYPE_LABEL } from '@/lib/seo-locations';
+import { SITE_URL, TYPE_LABEL } from '@/lib/seo-locations';
 import toast from 'react-hot-toast';
 
 /**
@@ -24,20 +24,32 @@ export default function SavedSearchMatches({ searchId, open }: { searchId: strin
   if (isLoading) return <p className="text-xs text-stone-400 py-3">Đang tìm tin khớp…</p>;
   if (!rows.length) return <p className="text-xs text-stone-400 py-3">Kho chưa có tin nào khớp tiêu chí này.</p>;
 
-  const copyCodes = async () => {
-    const text = rows.map((r: any) =>
-      `${r.listingCode || ''} — ${formatCurrency(r.priceMonthly)} — ${r.property?.district || ''}`).join('\n');
-    try { await navigator.clipboard.writeText(text); toast.success('Đã copy danh sách mã tin'); }
+  /**
+   * Copy thành TIN NHẮN GỬI ĐƯỢC NGAY, không phải danh sách mã trơ.
+   * Mỗi tin kèm link /tin/<id> tuyệt đối để khách bấm trong Zalo là mở xem đầy đủ ảnh + video
+   * (link tương đối dán sang Zalo sẽ chết). Địa chỉ trong nội dung đã che số nhà từ server.
+   */
+  const copyForZalo = async () => {
+    const lines = rows.map((r: any, i: number) => {
+      const info = [
+        r.areaSqm ? `${r.areaSqm}m²` : '',
+        `${formatCurrency(r.priceMonthly)}/tháng`,
+        r.property?.district,
+      ].filter(Boolean).join(' · ');
+      return `${i + 1}. ${r.name}\n${info}\n${SITE_URL}/tin/${r.id}`;
+    });
+    const text = `MixStay gửi bạn ${rows.length} phòng phù hợp nhu cầu:\n\n${lines.join('\n\n')}\n\nBạn bấm vào link để xem ảnh + video từng phòng nhé.`;
+    try { await navigator.clipboard.writeText(text); toast.success(`Đã copy ${rows.length} phòng kèm link — dán vào Zalo gửi khách`); }
     catch { toast.error('Không copy được'); }
   };
 
   return (
     <div className="py-3">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-xs font-semibold text-stone-600">{rows.length} tin khớp — đọc mã cho khách:</p>
-        <button type="button" onClick={copyCodes}
-          className="inline-flex items-center min-h-8 px-2.5 rounded-lg text-xs border border-stone-200 text-stone-600 hover:border-brand-300 hover:text-brand-700">
-          📋 Copy danh sách
+        <p className="text-xs font-semibold text-stone-600">{rows.length} tin khớp — gửi khách hoặc đọc mã qua điện thoại:</p>
+        <button type="button" onClick={copyForZalo}
+          className="inline-flex items-center min-h-8 px-2.5 rounded-lg text-xs font-medium border border-brand-200 bg-brand-50 text-brand-700 hover:border-brand-400">
+          📋 Copy gửi Zalo (kèm link)
         </button>
       </div>
       <div className="flex flex-wrap gap-2">
