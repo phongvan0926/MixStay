@@ -951,6 +951,9 @@ function AdminRoomsInner() {
           open
           onClose={() => setPostRoom(null)}
           roomTypeId={postRoom.id}
+          isApproved={postRoom.isApproved !== false}
+          canApprove={canApprove}
+          onApproved={() => mutate()}
           post={{
             name: postRoom.name,
             typeName: postRoom.typeName,

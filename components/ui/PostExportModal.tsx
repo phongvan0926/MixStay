@@ -17,18 +17,50 @@ export default function PostExportModal({
   onClose,
   roomTypeId,
   post,
+  isApproved = true,
+  canApprove = false,
+  onApproved,
 }: {
   open: boolean;
   onClose: () => void;
   roomTypeId: string;
   post: SocialPostInput;
+  /** Tin đã được duyệt chưa — chưa duyệt thì KHÔNG đăng được (xem chặn bên dưới) */
+  isApproved?: boolean;
+  /** Người đang xem có quyền duyệt tin không (admin-family) */
+  canApprove?: boolean;
+  /** Duyệt xong → trang cha tải lại danh sách */
+  onApproved?: () => void;
 }) {
   const [caption, setCaption] = useState(() => buildSocialPost(post));
   const [downloading, setDownloading] = useState(false);
+  const [approving, setApproving] = useState(false);
+  const [approved, setApproved] = useState(isApproved);
+  const [posterError, setPosterError] = useState(false);
 
   if (!open) return null;
 
   const posterUrl = `/api/poster/${roomTypeId}`;
+
+  const approveNow = async () => {
+    setApproving(true);
+    try {
+      const res = await fetch('/api/rooms', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: roomTypeId, isApproved: true }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        toast.error(j.error || 'Không duyệt được tin');
+        return;
+      }
+      setApproved(true);
+      onApproved?.();
+      toast.success('Đã duyệt tin — giờ đăng được rồi');
+    } finally {
+      setApproving(false);
+    }
+  };
 
   const copyCaption = async () => {
     try {
@@ -80,12 +112,50 @@ export default function PostExportModal({
           <button onClick={onClose} className="text-stone-400 hover:text-stone-700 text-2xl leading-none px-2" aria-label="Đóng">×</button>
         </div>
 
+        {/* CHẶN ĐĂNG TIN CHƯA DUYỆT. Không phải khó tính: trang công khai /tin/[id] lọc
+            isApproved nên khách bấm link trong caption sẽ thấy "Tin đăng không tồn tại", và
+            /api/poster cũng từ chối dựng ảnh (đó chính là ô ảnh vỡ báo ngày 16/08/2026).
+            Đăng lên là mất trắng một bài Facebook + mất uy tín với người xem. */}
+        {!approved ? (
+          <div className="p-5">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <p className="font-semibold text-amber-900">⏳ Tin này chưa được duyệt nên chưa đăng được</p>
+              <p className="text-sm text-amber-800 mt-1.5 leading-relaxed">
+                Tin chưa duyệt không hiện trên web: khách bấm link trong bài đăng sẽ thấy
+                <strong> “Tin đăng không tồn tại”</strong>, và ảnh bìa cũng không dựng được.
+                Duyệt tin trước rồi hãy đăng.
+              </p>
+              {canApprove ? (
+                <button onClick={approveNow} disabled={approving}
+                  className="btn-primary mt-3 px-4 py-2.5 text-sm disabled:opacity-60">
+                  {approving ? 'Đang duyệt…' : '✅ Duyệt tin này rồi đăng'}
+                </button>
+              ) : (
+                <p className="text-sm text-amber-900 mt-3 font-medium">
+                  Nhờ quản trị viên duyệt tin giúp, sau đó quay lại đây để lấy ảnh bìa và nội dung.
+                </p>
+              )}
+            </div>
+            <button onClick={onClose} className="btn-secondary w-full mt-3 py-2.5 text-sm">Đóng</button>
+          </div>
+        ) : (
         <div className="p-5 grid sm:grid-cols-[260px_1fr] gap-5">
           <div>
             <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">Ảnh bìa (1080×1350)</p>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={posterUrl} alt="Ảnh bìa bài đăng" className="w-full rounded-xl border border-stone-200 bg-stone-100" />
-            <button onClick={downloadPoster} disabled={downloading}
+            {/* Ảnh dựng server (Satori) có thể hỏng vì ảnh gốc chết/quá nặng — bắt onError để
+                hiện chữ đọc được thay vì icon ảnh vỡ, người dùng không đoán được chuyện gì. */}
+            {posterError ? (
+              <div className="w-full aspect-[4/5] rounded-xl border border-stone-200 bg-stone-50 flex flex-col items-center justify-center text-center px-4">
+                <span className="text-3xl mb-2">🖼️</span>
+                <p className="text-sm font-medium text-stone-600">Chưa dựng được ảnh bìa</p>
+                <p className="text-xs text-stone-400 mt-1">Thường do tin chưa có ảnh nào, hoặc ảnh gốc bị lỗi. Bạn vẫn copy nội dung đăng bình thường được.</p>
+              </div>
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={posterUrl} alt="Ảnh bìa bài đăng" onError={() => setPosterError(true)}
+                className="w-full rounded-xl border border-stone-200 bg-stone-100" />
+            )}
+            <button onClick={downloadPoster} disabled={downloading || posterError}
               className="btn-primary w-full mt-2.5 py-2.5 text-sm disabled:opacity-60">
               {downloading ? 'Đang tạo…' : '⬇️ Tải ảnh bìa'}
             </button>
@@ -115,6 +185,7 @@ export default function PostExportModal({
             </p>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

@@ -30,6 +30,27 @@ const TYPE_LABEL: Record<string, string> = {
 
 const trieu = (n: number) => `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')} triệu`;
 
+/**
+ * Tải ảnh về rồi ép sang JPEG data-URI cho Satori đọc được.
+ * Đồng thời resize đúng khung ảnh bìa: ảnh gốc 4000px nhúng nguyên là phình bộ nhớ vô ích.
+ * Lỗi mạng / ảnh hỏng → trả null để nơi gọi rơi về ảnh mặc định, KHÔNG làm hỏng cả ảnh bìa.
+ */
+async function photoAsJpeg(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const input = Buffer.from(await res.arrayBuffer());
+    const sharp = (await import('sharp')).default;
+    const out = await sharp(input)
+      .resize(W, H, { fit: 'cover', position: 'attention' })
+      .jpeg({ quality: 78 })
+      .toBuffer();
+    return `data:image/jpeg;base64,${out.toString('base64')}`;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   // Dựng ảnh là việc NẶNG (tải ảnh gốc + render). Không giới hạn thì khách vãng lai bắn vòng
   // lặp kèm ?cb=random (mỗi query string là một cache key khác → CDN MISS 100%) là đốt CPU
@@ -53,11 +74,18 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   if (!rt) return new Response('Không tìm thấy tin đăng', { status: 404 });
 
   const origin = req.nextUrl.origin;
-  const photo =
+  const photoUrl =
     rt.images?.[0] ||
     rt.property?.images?.[0] ||
     (rt.videoLinks || []).map(getVideoThumbnail).find(Boolean) ||
     `${origin}/default.jpg`;
+
+  // 🔴 PHẢI CHUYỂN ẢNH SANG JPEG TRƯỚC KHI NHÚNG.
+  // Satori (bộ dựng của next/og) chỉ đọc PNG / JPEG / SVG. Ảnh upload lên Storage phần lớn là
+  // WebP — Satori gặp WebP thì LẶNG LẼ BỎ QUA, không báo lỗi, nên ảnh bìa ra nền xanh trơn
+  // không có ảnh phòng. Đo ngày 16/08/2026: 531/756 tin đã duyệt (70%) dính lỗi này, tức phần
+  // lớn ảnh bìa đang phát cho Facebook đều trống. Cũng vá luôn HEIC (ảnh iPhone).
+  const photo = (await photoAsJpeg(photoUrl)) || `${origin}/default.jpg`;
 
   // Font tải qua HTTP từ chính site (public/fonts) — Satori cần buffer TTF, và đây là cách
   // chắc chắn chạy trên serverless (không phụ thuộc file tracing của bundle).

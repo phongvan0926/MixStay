@@ -923,6 +923,7 @@ export default function BrokerInventoryPage() {
           open
           onClose={() => setPostRoom(null)}
           roomTypeId={postRoom.room.id}
+          isApproved={postRoom.room.isApproved !== false}
           post={{
             name: postRoom.room.name,
             typeName: postRoom.room.typeName,

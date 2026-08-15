@@ -286,6 +286,15 @@ mixstay/
 - **Sửa dữ liệu:** BNBHOLDING `09366258556` → **`0936258556`**. Bằng chứng: cả 9 tòa của công ty đứng tên chủ nhà **Anh Biên — 0936258556**, và 3 tòa ghi thẳng `"A Biên 0936258556"`; số lưu sai đúng là số đó **thừa một chữ số 6** (`0936|6|258556`). Kho công ty đã có lại nút gọi + Zalo.
 - **Rà lại toàn bộ nguồn SĐT dựng link:** công ty **0/36 lỗi**, tòa nhà **0/464 lỗi**, tài khoản còn 1 (CTV thử nghiệm "aaa" `1234567890` — đã có cảnh báo lo).
 
+### v9.63 — 2026-08-16 (🐛 ảnh bìa đăng Facebook: 70% tin ra ảnh TRỐNG + chặn đăng tin chưa duyệt)
+Báo lỗi "ảnh bìa bài đăng bị vỡ" hoá ra là **hai lỗi chồng nhau**, lỗi thứ hai nặng hơn nhiều.
+
+**🐛 Lỗi 1 — 531/756 tin đã duyệt (70%) có ảnh bìa TRỐNG.** Satori (bộ dựng của `next/og`) chỉ đọc PNG / JPEG / SVG. Ảnh upload lên Storage phần lớn là **WebP** — Satori gặp WebP thì **lặng lẽ bỏ qua, không báo lỗi**, nên ảnh bìa ra nền xanh trơn không có ảnh phòng. Chữ (giá/diện tích/khu vực) vẫn in nên nhìn thoáng tưởng bình thường. Nay tải ảnh về, ép sang JPEG bằng `sharp` + resize đúng khung 1080×1350 rồi mới nhúng; vá luôn HEIC (ảnh iPhone, 3 tin). Ảnh lỗi/mạng hỏng → rơi về ảnh mặc định chứ không làm hỏng cả tấm bìa.
+
+**🐛 Lỗi 2 — đăng tin CHƯA DUYỆT là mất trắng bài Facebook.** Nút "📢 Đăng" hiện cả ở 40 tin đang chờ duyệt. Tin chưa duyệt thì `/api/poster` từ chối dựng ảnh (đúng ô ảnh vỡ trong báo cáo) **và** trang công khai `/tin/[id]` trả *"Tin đăng không tồn tại"* — khách bấm link trong caption sẽ vào trang chết. Nay modal chặn hẳn, nói rõ lý do, kèm nút **"✅ Duyệt tin này rồi đăng"** ngay tại chỗ cho người có quyền duyệt; không có quyền thì hướng dẫn nhờ quản trị viên.
+
+**Phòng vệ:** ô ảnh bìa có `onError` → hiện chữ *"Chưa dựng được ảnh bìa"* + gợi ý nguyên nhân thay vì icon ảnh vỡ, và tắt nút Tải ảnh bìa.
+
 ### v9.62 — 2026-08-16 (mọi việc trên Tổng quan bấm được và tới ĐÚNG danh sách cần xử lý)
 Thẻ "🖼️ Tin thiếu ảnh" bấm vào chỉ mở `/admin/rooms` chung chung, admin vẫn phải tự dò 856 tin; dòng "Tòa nhà thiếu toạ độ" thì **không bấm được** — có số mà không có lối xử lý.
 - **Bộ lọc mới:** `/admin/rooms?issue=no-image | stale | overdue-upcoming` và `/admin/properties?issue=no-geo`; "Tòa chưa gán công ty" dùng `?companyId=__none__` (đã có sẵn); "Công ty chờ duyệt" dùng `?approved=false` (trang Công ty nay đọc query qua `useSearchParams` + Suspense).
