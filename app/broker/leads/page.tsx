@@ -7,19 +7,24 @@ import useSWR from 'swr';
 import { fetcher } from '@/lib/fetcher';
 import Pagination from '@/components/ui/Pagination';
 import ViewingRequestTable from '@/components/leads/ViewingRequestTable';
+import FilterChip from '@/components/leads/FilterChip';
 
 // Khách xin xem phòng ĐẾN TỪ LINK CỦA CHÍNH CTV NÀY (API tự lọc theo brokerId của session).
 // Đây là lý do để CTV chịu gửi link: gửi link → khách để lại SĐT → lead ghi tên mình.
 export default function BrokerLeadsPage() {
   const [page, setPage] = useState(1);
+  // Chỉ khách đã CHỌN giờ hẹn trong hôm nay/ngày mai — CTV vào ca sáng bấm 1 nút là biết
+  // hôm nay phải dẫn ai đi xem. Lọc + đếm chạy ở SERVER (danh sách có phân trang).
+  const [appt, setAppt] = useState(false);
   const { data, isLoading, mutate } = useSWR(
-    `/api/viewing-requests?page=${page}&limit=20`, fetcher, { revalidateOnFocus: false }
+    `/api/viewing-requests?page=${page}&limit=20${appt ? '&appt=today' : ''}`, fetcher, { revalidateOnFocus: false }
   );
   const rows = data?.data || [];
   const pagination = data?.pagination;
   // Số khách chưa gọi lấy từ API (đếm TOÀN BỘ lead của CTV này), không đếm mảng đang hiển thị —
   // đếm 20 dòng của trang hiện tại thì đứng ở trang 2 sẽ báo thiếu.
   const newCount = data?.counts?.NEW ?? 0;
+  const apptCount = data?.counts?.APPT ?? 0;
 
   return (
     <>
@@ -30,6 +35,14 @@ export default function BrokerLeadsPage() {
           {newCount > 0 && <strong className="text-red-600"> Đang có {newCount} khách chưa gọi.</strong>}
         </p>
       </div>
+
+      {apptCount > 0 && (
+        <div className="mb-4">
+          <FilterChip active={appt} count={apptCount} onClick={() => { setAppt(v => !v); setPage(1); }}>
+            📅 Hẹn hôm nay/mai
+          </FilterChip>
+        </div>
+      )}
 
       {isLoading
         ? <p className="text-stone-400 text-sm py-10 text-center">Đang tải…</p>

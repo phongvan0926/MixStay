@@ -20,7 +20,8 @@ Kết nối 4 vai trò: Admin (Công ty), Cộng tác viên (CTV), Chủ nhà, K
 
 ## Cấu trúc quan trọng
 ```
-app/page.tsx        → Trang chủ public: hero + bộ lọc + grid phòng trống công khai (PublicSearch)
+app/page.tsx        → Trang chủ public: hero + bộ lọc (PublicSearch) + khối "Phòng nổi bật" (FeaturedRooms)
+app/FeaturedRooms.tsx → Khối tin trang chủ, 3 TAB 🆕 Mới đăng / 💰 Giá tốt / 🔥 Xem nhiều (cùng API, khác ?sort=), cache theo tab. Thẻ hiện TIỆN ÍCH ĐẶC BIỆT của tòa giống thẻ ở /phong
 app/PublicSearch.tsx → Client component tìm kiếm phòng public cho trang chủ
 app/phong/          → Trang xem TOÀN BỘ phòng mới nhất (public, PublicSearch autoLoad) + khối liên kết quận/trường ở chân trang
 app/tin/[id]/       → Trang chi tiết tin CÔNG KHAI theo id (không cần login/token). Dùng chung ShareViewClient. Có JSON-LD `Product`+`Offer` (giá VND theo THÁNG qua UnitPriceSpecification, availability theo trạng thái phòng) + canonical → Google hiện giá/ảnh trong kết quả tìm kiếm
@@ -38,20 +39,21 @@ app/thue-phong-tro/ → TRANG ĐÍCH SEO theo QUẬN (hub `/thue-phong-tro` + `/
 app/phong-tro-gan/  → TRANG ĐÍCH SEO theo TRƯỜNG ĐH (hub `/phong-tro-gan` + `/phong-tro-gan/[uni]`, VD /phong-tro-gan/bach-khoa). Tin trong bán kính 3km quanh trường, xếp gần nhất trước, mỗi thẻ ghi "cách ~X km" (toạ độ KHÔNG ra HTML)
 app/api/            → API routes (companies, properties, properties/duplicate-check, rooms, rooms/public, rooms/related, rooms/import, rooms/map, deals, deals/stats, users, users/stats, geocode, ai/parse-listing, ai/listing, ai/search, share-links, share-links/system, inquiries, notifications, saved-searches, broker/stats, cron/lifecycle, settings, upload, upload/signed-url, viewing-requests, poster/[id], og/[id], admin/overview, saved-listings, me/company)
 app/api/ai/search/  → Tìm phòng NGÔN NGỮ TỰ NHIÊN: câu khách gõ → Gemini bóc thành bộ lọc (district/type/giá/uni/flags) — client đổ vào form, KHÔNG tự tìm
-app/api/rooms/public → hỗ trợ ?sort=price_asc|price_desc|newest|area_desc + ?uni=<short HANOI_UNIVERSITIES> — tính khoảng cách server-side (KHÔNG trả lat/lng), sort gần nhất, trả distanceKm
+app/api/rooms/public → hỗ trợ ?sort=price_asc|price_desc|newest|area_desc|views_desc + ?uni=<short HANOI_UNIVERSITIES> — tính khoảng cách server-side (KHÔNG trả lat/lng), sort gần nhất, trả distanceKm + viewCount
 app/api/me/company   → GET công ty của chủ nhà (kèm canEdit) + PUT cho chủ nhà TỰ sửa logo/liên hệ công ty DO MÌNH TẠO (createdById); tên/mã/duyệt vẫn của admin
 app/api/users/me     → GET/PUT hồ sơ cá nhân: name, phone, avatar (ảnh hiện ở topbar + đầu mọi link share)
 app/broker/profile + app/landlord/profile → trang hồ sơ (ảnh đại diện + SĐT); trang landlord kèm ô đổi LOGO CÔNG TY
-app/api/saved-searches → "Săn phòng": khách (không cần tài khoản) để lại tiêu chí + SĐT; tin mới DUYỆT khớp → notification cho ADMIN (xem PUT /api/rooms); admin quản lý ở /admin/leads
-app/api/cron/lifecycle → Vercel Cron 8h VN hằng ngày (vercel.json): UPCOMING đến hạn → tự AVAILABLE + báo chủ nhà; tin 30 ngày không cập nhật → nhắc chủ nhà xác nhận (chỉ nhắc 1 lần khi chạm mốc)
+app/api/saved-searches → "Săn phòng": khách (không cần tài khoản) để lại tiêu chí + SĐT; admin quản lý ở /admin/leads. KHỚP TIN 3 ĐƯỜNG qua lib/saved-search-match.ts: khách vừa đăng ký → quét NGƯỢC kho có sẵn ngay; tin mới duyệt → quét xuôi (PUT /api/rooms); cron quét lại hằng ngày (chỉ báo phần tin MỚI sau lần báo gần nhất). ?matchesFor=<id> trả danh sách tin khớp cho 1 khách
+app/api/cron/lifecycle → Vercel Cron 8h VN hằng ngày (vercel.json): UPCOMING đến hạn → tự AVAILABLE + báo chủ nhà; tin 30 ngày không cập nhật → nhắc chủ nhà xác nhận (chỉ nhắc 1 lần khi chạm mốc); quét lại "săn phòng" → báo admin khách nào có tin mới khớp
 app/api/broker/stats + app/broker/stats → thống kê cá nhân CTV: hoa hồng, hạng tháng (ẩn danh người khác), chuỗi 6 tháng, views share link
 app/api/viewing-requests/ → "Đặt lịch xem phòng": POST CÔNG KHAI (khách để lại SĐT trên 1 tin cụ thể; ghi công CTV suy từ SHARE TOKEN phía server, KHÔNG tin brokerId client gửi) + GET/PUT cho admin (mọi lead) & CTV (chỉ lead của mình). Báo thông báo cho CTV giữ link + toàn bộ admin
-app/broker/leads/   → CTV xem khách xin xem phòng đến từ link CỦA MÌNH, đổi trạng thái NEW→CONTACTED→DONE
+app/broker/leads/   → CTV xem khách xin xem phòng đến từ link CỦA MÌNH, đổi trạng thái NEW→CONTACTED→DONE. Có chip "📅 Hẹn hôm nay/mai" (lọc + đếm ở server)
 app/admin/leads/    → Admin xem khách để lại SĐT, 2 tab: "Xin xem phòng" (ViewingRequest, có cột Nguồn = CTV nào) + "Săn phòng" (SavedSearch). Đọc ?tab= bằng useSearchParams + Suspense.
                       BỘ LỌC (v9.57): chip trạng thái kèm số đếm, mặc định mở trang là "🔥 Chưa xử lý" (NEW+CONTACTED), thêm "⏰ Quá 24h chưa gọi"; tìm SĐT/tên/tin/mã tin; lọc nguồn (qua CTV ↔ tự tìm) + thời gian. Tab Săn phòng: Đang săn/Đã tắt/Tất cả + "Chưa khớp tin nào" + lọc quận.
+                      BỘ LỌC (v9.59): thêm chip "📅 Hẹn hôm nay/mai" (khách đã chọn giờ hẹn); tab Săn phòng có cột "Kho có hàng?" → bấm mở danh sách tin khớp.
                       MỌI bộ lọc chạy SERVER-SIDE (xem quy tắc dưới) — đừng lọc mảng của trang hiện tại
-components/leads/    → ViewingRequestTable.tsx (bảng dùng chung admin+CTV, tô đỏ lead NEW quá 24h) + FilterChip.tsx (chip lọc kèm số đếm lấy từ API)
-components/public/ViewingRequestForm.tsx → Ô "Đặt lịch xem phòng" gắn trong ShareViewClient (dùng chung cho /share/[token], /p/[token], /tin/[id], kho công ty)
+components/leads/    → ViewingRequestTable.tsx (bảng dùng chung admin+CTV: cột Lịch hẹn riêng, tô đỏ lead NEW quá 24h, tô vàng hàng có hẹn hôm nay/mai) + FilterChip.tsx (chip lọc kèm số đếm lấy từ API) + SavedSearchMatches.tsx (mở ra danh sách tin khớp của 1 khách săn phòng)
+components/public/ViewingRequestForm.tsx → Ô "Đặt lịch xem phòng" gắn trong ShareViewClient (dùng chung cho /share/[token], /p/[token], /tin/[id], kho công ty). Lịch hẹn CHỌN được (Hôm nay/Ngày mai/Ngày kia + lịch, rồi Sáng/Chiều/Tối) thay vì gõ chữ tự do
 app/api/upload/signed-url/ → Tạo Supabase signed upload URL (upload video trực tiếp client → Storage, không qua Vercel serverless)
 app/api/ai/parse-listing/ → "Tạo tin nhanh AI": dán tin FB/Zalo → Gemini structured output bóc property+room+match tòa có sẵn (client đổ vào RoomTypeForm, KHÔNG auto-lưu)
 app/api/rooms/map/  → Dữ liệu bản đồ public (tòa APPROVED có toạ độ + tin hiệu lực; redactName/redactHouseNumber; cache 5 phút)
@@ -65,6 +67,8 @@ components/ai/AIQuickCreate.tsx → Nút + modal "⚡ Tạo tin nhanh AI" (paste
 lib/gemini.ts       → Helper gọi Gemini server-side dùng chung (getGeminiKeys xoay nhiều key khi 429, callGemini)
 lib/geocode.ts      → geocodeAddress() Nominatim/OSM server-only (query kèm quận tránh pin nhầm khu) — POST/PUT properties + import Excel tự geocode khi thiếu toạ độ (fail không chặn lưu)
 lib/ai-listing-styles.ts → AI_LISTING_STYLES: các phong cách viết tin (ngắn gọn / chuyên nghiệp / …) cho nút "AI hỗ trợ chuẩn hoá tin đăng" — client render nút bằng key+label, server dựng prompt bằng instruction (dùng ở components/forms/AiListingAssistant.tsx + app/api/ai/listing)
+lib/saved-search-match.ts → SERVER-ONLY. Bộ khớp "Săn phòng" ↔ kho dùng chung cho cả 3 đường trên. roomWhereForSearch() tách `district` theo dấu phẩy rồi so BẰNG (đừng dùng `includes` chuỗi — "Từ Liêm" ăn nhầm cả Bắc/Nam Từ Liêm); hasCriteria() chặn khách bỏ trống hết tiêu chí khỏi khớp tự động (khớp 632 tin = rác, không phải việc)
+lib/appointment.ts  → Client-safe. Diễn giải LỊCH HẸN xem phòng (preferredDate + preferredSlot) → "Hẹn chiều mai" / "Hẹn 19/08 tối", kèm cờ urgent (hôm nay/mai) và past. Dùng ở ViewingRequestTable + thông báo
 lib/room-status.ts  → reconcileAvailability(): nắn `status` ↔ `availableUnits` cho KHÔNG mâu thuẫn (gõ số trống về 0 → tự 🔴 Hết phòng; bấm 🟢 khi số đang 0 → cho 1 phòng; bấm 🔴 → dọn số về 0; 🟡 UPCOMING không đụng). Tham số `changed` = "ĐỔI sang giá trị mới", KHÔNG phải "có gửi field lên" — vì kho còn 142 tin 🔴 cũ vẫn có availableUnits > 0, nếu nắn theo "có gửi" thì mọi lần lưu tin sẽ đăng lại cả 142 tin đã cho thuê xong. Dùng ở POST+PUT /api/rooms + RoomTypeForm
 lib/listing-options.ts → AMENITY_OPTIONS + ROOM_TYPE_OPTIONS dùng chung form + AI enum (client-safe)
 lib/listing-code.ts → LISTING_CODE_REGEX, normalizeListingCode, formatListingCode (ghép mã công ty MS-066-XXXXXX — DISPLAY, không đổi listingCode gốc), parseComposedListingCode, normalizeCompanyCode
@@ -121,7 +125,7 @@ middleware.ts       → Route protection theo role (+ chặn /admin/{companies,u
 - deals: id, roomTypeId, brokerId, dealPrice, commissionTotal, commissionBroker, commissionCompany, status (PENDING/CONFIRMED/PAID/CANCELLED)
 - share_links: id, roomTypeId?, brokerId, token (unique), viewCount, isSystem, isActive, expiresAt
 - room_inquiries: id, roomTypeId, brokerId, message, reply (CÒN/HẾT), repliedAt, dismissedAt (admin bấm "Bỏ qua" ở Tổng quan — ẩn khỏi việc cần làm mà KHÔNG báo CTV)
-- viewing_requests: id, roomTypeId, brokerId? (ghi công CTV — suy từ share token PHÍA SERVER), companyId?, name?, phone, note?, source (share/system/company/tin), status (NEW/CONTACTED/DONE/CANCELLED)
+- viewing_requests: id, roomTypeId, brokerId? (ghi công CTV — suy từ share token PHÍA SERVER), companyId?, name?, phone, note?, **preferredDate? + preferredSlot?** (lịch hẹn CÓ CẤU TRÚC — khách chọn ngày + buổi sáng/chiều/tối thay vì gõ "sáng mai" vào ghi chú), source (share/system/company/tin), status (NEW/CONTACTED/DONE/CANCELLED)
 - notifications: id, userId, type, title, message, isRead
 - users: … + `phoneConfirmedAt` (người dùng bấm "Số này đúng" trên cảnh báo SĐT sai định dạng → thôi nhắc; tự xoá về null khi đổi số)
 - companies: … + `phoneConfirmedAt` (admin xác nhận hộ — công ty không có tài khoản để tự bấm)
@@ -168,12 +172,15 @@ middleware.ts       → Route protection theo role (+ chặn /admin/{companies,u
 - **Đổi `app/globals.css` hoặc `tailwind.config.ts` → phải cập nhật `design-system/`** (chạy `python3 design-system/build.py` rồi đồng bộ lên claude.ai/design bằng DesignSync). Bộ chuẩn lấy giá trị từ mã nguồn thật; để lệch là nó nói dối người dùng sau.
 - **KHÔNG bọc `<DashboardLayout>` trong trang** — `app/{admin,broker,landlord}/layout.tsx` đã bọc rồi. Bọc hai lần là 2 sidebar, `lg:ml-60` cộng dồn (lệch phải ~240px) và 2 bộ SWR poll thông báo. Đã dính ở 3 trang (v9.56).
 - **Danh sách CÓ PHÂN TRANG thì bộ lọc và số đếm phải chạy SERVER-SIDE.** Lọc/đếm mảng 20 dòng đang hiển thị là sai nghiệp vụ, không phải sai thẩm mỹ: khách "🔴 Mới" nằm ở trang 3 sẽ không bao giờ hiện ra, admin tưởng đã gọi hết. Đã dính ở `/broker/leads` (đếm "N khách chưa gọi" theo trang hiện tại). Số đếm cho chip lấy bằng `groupBy` trên toàn tập, áp dụng các bộ lọc KHÁC nhưng KHÔNG áp dụng chính bộ lọc mà chip đó điều khiển.
+- **Ngày/giờ nghiệp vụ phải tính theo GIỜ VN, không theo giờ máy chủ.** Vercel chạy UTC: `new Date().setHours(0,0,0,0)` trên server cho ra nửa đêm UTC = 7h sáng VN, nên "hẹn hôm nay" lệch nguyên một ngày. Dựng mốc bằng `Date.UTC(...) - 7*3600000` (mẫu ở `GET /api/viewing-requests`), và ở client dựng chuỗi `YYYY-MM-DD` bằng `getFullYear/getMonth/getDate` chứ KHÔNG `toISOString()` (nó quy về UTC).
+- **Trường ngày/giờ do KHÁCH gửi lên phải validate trước khi lưu** — dữ liệu này về sau dùng để LỌC/ĐẾM ở server, rác lọt vào là hỏng bộ đếm. Chỉ nhận đúng định dạng, chặn ngày quá khứ/quá xa, enum buổi phải nằm trong danh sách cố định (mẫu ở `POST /api/viewing-requests`).
 - **Bảng quản trị phải dùng `.table-header` / `.table-cell`** (`app/globals.css`), không tự chế `px-4 py-3` — và đặt `min-w-[…]` cho từng cột, nếu không tên người bị bẻ đôi khi cột hẹp.
 - **Trang quản trị là client component → KHÔNG dùng được `export const metadata`.** Tiêu đề tab do `DashboardLayout` đặt bằng `document.title` theo mục menu; thêm mục menu mới là tự có tiêu đề, không phải làm gì thêm.
 - **Thanh nav chật thì cắt thứ ÍT GIÁ TRỊ NHẤT, không phải thứ NGẮN NHẤT** — và hỏi chủ dự án cái nào là cái nào. Đã sửa 3 lượt (v9.53→v9.55) vì tự quyết: bỏ chữ nút "Bản đồ" (tính năng cần khoe) rồi bỏ tên thương hiệu, cuối cùng đáp án đúng là **xếp dọc logo**. Thứ tự ưu tiên hiện tại: nút Bản đồ có chữ > tên thương hiệu đọc được > kích thước logo.
 - **`min-h-*` chỉ có tác dụng đúng trên `inline-flex`/`flex` + `items-center`.** Gắn `min-h-11` vào phần tử `display:block` thì hộp cao lên nhưng CHỮ vẫn nằm sát đỉnh — đúng lỗi đã gây ra ở `PublicNav` (v9.50 → v9.53). Sửa chiều cao hàng loạt bằng thay chuỗi thì phải kiểm lại `display` của từng chỗ.
 - **Ảnh trong flex phải có `shrink-0`** (và `object-contain` nếu dùng `w-auto`) — nếu không, hàng tràn là ảnh bị BÓP NGANG cho vừa, logo méo mà không có cảnh báo nào.
 - **Vùng bấm tối thiểu 44×44px, chữ tối thiểu 12px** trên trang KHÁCH xem. Lớp dùng chung (`btn-*`, `input-field`) đã có `min-h-11`; chip/pill tự viết thì thêm `min-h-11 sm:min-h-0 inline-flex items-center` (44px trên điện thoại, gọn trên máy tính). Bảng quản trị được phép dày hơn (11px) nhưng NÚT thì không.
+- **ĐỪNG đề xuất lại "giá theo đầu người / ở ghép" cho ô tìm kiếm.** Đã làm đủ (ô chọn số người, khoảng giá hiểu theo đầu người, badge "≈2,5tr/người" trên thẻ tin) và đo được hiệu quả thật (ngân sách 3tr: 50 tin → 572 tin), nhưng chủ dự án BÁC ngày 15/08/2026: khách tự chia nhẩm được, không đáng để ô tìm kiếm dài thêm và thẻ tin rối thêm. Đã gỡ sạch cả UI lẫn tham số `people` ở API.
 - **`ListingActionBar` (Tải ảnh / Copy nội dung / Chia sẻ) CỐ Ý mở cho MỌI người, kể cả khách chưa đăng nhập** — đây là tính năng, không phải sơ hở: mục tiêu là để người ta mang tin đi đăng lại trên nhiều nền tảng khác, càng nhiều nơi đăng thì càng tới được nhiều khách thuê. Số nhà đã che ở tầng dữ liệu nên nội dung mang đi vẫn an toàn. **ĐỪNG đề xuất ẩn 2 nút này** — đã bị chủ dự án bác bỏ ngày 07/08/2026.
 - **Tiêu đề trang:** `app/layout.tsx` đã có `title.template: '%s | MixStay'` → KHÔNG tự nối thêm `| MixStay` trong `generateMetadata` (từng ra "… | MixStay | MixStay").
 - **🚨 KHÔNG xoá** `metadata.verification.google` trong `app/layout.tsx` và `public/google1b741701c683e2a6.html` — mất xác minh Google Search Console.

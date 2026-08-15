@@ -2,6 +2,7 @@
 import { formatCurrency, formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import { telHref, zaloHref } from '@/lib/phone';
+import { appointmentLabel } from '@/lib/appointment';
 
 // Bảng "Khách xin xem phòng" dùng chung cho admin (thấy mọi lead) và CTV (chỉ lead từ link
 // của mình). Khác nhau đúng một cột: admin cần biết lead thuộc CTV nào để chia hoa hồng.
@@ -65,7 +66,7 @@ export default function ViewingRequestTable({
 
   return (
     <div className="card overflow-x-auto p-0">
-      <table className="w-full text-sm min-w-[900px]">
+      <table className="w-full text-sm min-w-[1020px]">
         {/* Dùng .table-header / .table-cell như MỌI bảng quản trị khác (app/globals.css) thay vì
             px-4 py-3 tự chế — trước đây tiêu đề cột không in hoa, không cùng màu, và cột "Khách"
             / "Nguồn" không đặt min-w nên tên người bị bẻ đôi ("Ngô Thái / Dương"). */}
@@ -73,7 +74,8 @@ export default function ViewingRequestTable({
           <tr className="border-b border-stone-100">
             <th className="table-header min-w-[150px]">Khách</th>
             <th className="table-header min-w-[220px]">Tin đăng</th>
-            <th className="table-header min-w-[130px]">Ghi chú / hẹn giờ</th>
+            <th className="table-header min-w-[120px]">Lịch hẹn</th>
+            <th className="table-header min-w-[130px]">Ghi chú</th>
             {showBroker && <th className="table-header min-w-[130px]">Nguồn</th>}
             <th className="table-header min-w-[100px]">Gửi lúc</th>
             <th className="table-header text-right min-w-[130px]">Trạng thái</th>
@@ -82,8 +84,13 @@ export default function ViewingRequestTable({
         <tbody>
           {rows.map(r => {
             const waiting = waitingLabel(r.status, r.createdAt);
+            const appt = r.status === 'DONE' || r.status === 'CANCELLED'
+              ? null : appointmentLabel(r.preferredDate, r.preferredSlot);
             return (
-            <tr key={r.id} className={`border-b border-stone-50 ${r.status === 'CANCELLED' ? 'opacity-50' : waiting ? 'bg-red-50/50' : ''}`}>
+            <tr key={r.id} className={`border-b border-stone-50 ${
+              r.status === 'CANCELLED' ? 'opacity-50'
+                : appt?.urgent ? 'bg-amber-50/70'
+                : waiting ? 'bg-red-50/50' : ''}`}>
               <td className="table-cell align-top">
                 <p className="font-medium text-stone-800 whitespace-nowrap">{r.name || 'Khách'}</p>
                 <a href={telHref(r.phone) || undefined} className="text-brand-600 font-mono text-xs hover:underline">{r.phone}</a>
@@ -99,6 +106,19 @@ export default function ViewingRequestTable({
                   {[r.roomType?.property?.district, r.roomType?.priceMonthly ? formatCurrency(r.roomType.priceMonthly) : null]
                     .filter(Boolean).join(' · ')}
                 </p>
+              </td>
+              {/* Lịch hẹn tách hẳn khỏi ghi chú: đây là thứ quyết định gọi ai TRƯỚC.
+                  Hẹn hôm nay/mai tô đỏ đậm; hẹn đã trôi qua mà chưa xong thì gạch mờ. */}
+              <td className="table-cell align-top text-xs whitespace-nowrap">
+                {appt ? (
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-semibold border ${
+                    appt.past ? 'bg-stone-100 text-stone-400 border-stone-200'
+                      : appt.urgent ? 'bg-red-50 text-red-700 border-red-200'
+                      : 'bg-blue-50 text-blue-700 border-blue-200'
+                  }`}>
+                    📅 {appt.text}
+                  </span>
+                ) : <span className="text-stone-300">—</span>}
               </td>
               <td className="table-cell align-top text-stone-500 text-xs max-w-[180px]">{r.note || '—'}</td>
               {showBroker && (

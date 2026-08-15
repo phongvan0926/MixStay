@@ -383,7 +383,12 @@ model ViewingRequest {
   companyId  String? // chế độ kho công ty (/tin/[id]?kho=…) — lead thuộc về công ty đó
   name       String? // tên khách (tuỳ chọn)
   phone      String // SĐT/Zalo khách — kênh liên hệ chính
-  note       String? // khách ghi thêm: hẹn giờ xem, yêu cầu riêng…
+  note       String? // khách ghi thêm: yêu cầu riêng…
+  // LỊCH HẸN CÓ CẤU TRÚC. Trước đây khách gõ giờ hẹn vào `note` ("8h sáng Chủ nhật 16.8",
+  // "sáng mai") → admin phải đọc chữ, mùa cao điểm lead dồn dập là lỡ hẹn. Nullable vì
+  // toàn bộ lead cũ + khách không chọn giờ đều để trống.
+  preferredDate DateTime? // ngày khách muốn xem (chỉ dùng phần ngày)
+  preferredSlot String? // 'morning' | 'afternoon' | 'evening'
   source     String   @default("tin") // share | system | company | tin — vào từ đâu
   status     String   @default("NEW") // NEW | CONTACTED | DONE | CANCELLED
   createdAt  DateTime @default(now())
@@ -395,6 +400,7 @@ model ViewingRequest {
   @@index([brokerId, createdAt])
   @@index([roomTypeId])
   @@index([status, createdAt])
+  @@index([preferredDate]) // lọc/đếm "hẹn hôm nay · ngày mai" ở server
   @@map("viewing_requests")
 }
 

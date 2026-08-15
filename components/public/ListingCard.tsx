@@ -4,7 +4,6 @@ import { formatCurrency } from '@/lib/utils';
 import { TYPE_LABEL } from '@/lib/seo-locations';
 import type { ListingCardData } from '@/lib/seo-listings';
 import SaveHeart from '@/components/public/SaveHeart';
-import { formatPerPerson, suggestedOccupancy } from '@/lib/share-cost';
 
 /**
  * Thẻ tin đăng render SẴN PHÍA SERVER — dùng cho các trang đích SEO.
@@ -12,12 +11,7 @@ import { formatPerPerson, suggestedOccupancy } from '@/lib/share-cost';
  * Khác với thẻ trong PublicSearch (client, chỉ có sau khi fetch xong): thẻ này nằm thẳng
  * trong HTML trả về nên Google đọc được nội dung + link tới /tin/[id] mà không cần chạy JS.
  */
-export default function ListingCard({ rt, uniShort, shareWith }: {
-  rt: ListingCardData;
-  uniShort?: string;
-  /** Số người khách đang định ở ghép (từ bộ lọc) — không có thì suy theo loại phòng + diện tích */
-  shareWith?: number;
-}) {
+export default function ListingCard({ rt, uniShort }: { rt: ListingCardData; uniShort?: string }) {
   const p = rt.property;
   const hasVideo = (rt.videos?.length || 0) + (rt.videoLinks?.length || 0) > 0;
   const hasFlags = p?.parkingCar || p?.parkingBike || p?.evCharging || p?.petAllowed || p?.foreignerOk || rt.shortTermAllowed;
@@ -77,19 +71,6 @@ export default function ListingCard({ rt, uniShort, shareWith }: {
           </span>
           <span className="text-xs text-stone-500">{rt.areaSqm}m²</span>
         </div>
-
-        {/* Giá theo đầu người khi ở ghép — mùa sinh viên gần như ai cũng ghép, mà bảng giá
-            nguyên phòng làm phòng 6tr trông ngoài tầm với dù chia đôi chỉ còn 3tr. */}
-        {(() => {
-          const people = shareWith || suggestedOccupancy(rt.typeName, rt.areaSqm);
-          const per = formatPerPerson(rt.priceMonthly, people);
-          if (!per) return null;
-          return (
-            <p className="mt-1 text-xs font-medium text-emerald-700">
-              👥 Ở ghép {people} người: {per}
-            </p>
-          );
-        })()}
 
         {hasFlags && (
           <div className="flex flex-wrap gap-1.5 mt-3">

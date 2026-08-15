@@ -75,6 +75,7 @@ function ViewingRequestsTab() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<string>('PENDING');
   const [overdue, setOverdue] = useState(false);
+  const [appt, setAppt] = useState(false); // chỉ khách CÓ HẸN trong hôm nay/ngày mai
   const [broker, setBroker] = useState('');
   const [days, setDays] = useState('');
   const [qInput, setQInput] = useState('');
@@ -90,6 +91,7 @@ function ViewingRequestsTab() {
   // "Quá 24h chưa gọi" tự nó đã là NEW + quá hạn → không gửi kèm status để khỏi chọi nhau.
   if (overdue) params.set('overdue', 'true');
   else if (status !== 'ALL') params.set('status', status);
+  if (appt) params.set('appt', 'today');
   if (q) params.set('q', q);
   if (broker) params.set('broker', broker);
   if (days) params.set('days', days);
@@ -101,9 +103,9 @@ function ViewingRequestsTab() {
   const pagination = data?.pagination;
   const counts = data?.counts || {};
 
-  const filtering = overdue || status !== 'PENDING' || !!q || !!broker || !!days;
+  const filtering = overdue || appt || status !== 'PENDING' || !!q || !!broker || !!days;
   const reset = () => {
-    setStatus('PENDING'); setOverdue(false); setBroker(''); setDays('');
+    setStatus('PENDING'); setOverdue(false); setAppt(false); setBroker(''); setDays('');
     setQInput(''); setQ(''); setPage(1);
   };
   const pick = (fn: () => void) => { fn(); setPage(1); };
@@ -138,6 +140,15 @@ function ViewingRequestsTab() {
             onClick={() => pick(() => setOverdue(v => !v))}
           >
             ⏰ Quá 24h chưa gọi
+          </FilterChip>
+          {/* Khách đã CHỌN giờ hẹn (từ v9.59) — việc phải chạy trong 48h tới, ưu tiên cao
+              nhất vì đã hứa với khách một khung giờ cụ thể. */}
+          <FilterChip
+            active={appt}
+            count={counts.APPT}
+            onClick={() => pick(() => setAppt(v => !v))}
+          >
+            📅 Hẹn hôm nay/mai
           </FilterChip>
         </div>
 

@@ -5,7 +5,6 @@ import ListingImageMosaic from '@/components/ui/ListingImageMosaic';
 import { formatCurrency } from '@/lib/utils';
 import DistrictPills from '@/components/ui/DistrictPills';
 import PriceRangeSlider from '@/components/ui/PriceRangeSlider';
-import { formatPerPerson, suggestedOccupancy } from '@/lib/share-cost';
 import { HANOI_UNIVERSITIES } from '@/lib/hanoi-locations';
 import SaveHeart from '@/components/public/SaveHeart';
 import CompareBar from '@/components/public/CompareBar';
@@ -71,8 +70,7 @@ type Filters = {
   minPrice: string;
   maxPrice: string;
   uni: string; // lọc "gần trường ĐH" (short name trong HANOI_UNIVERSITIES)
-  people: string; // '' | '2' | '3' — ở ghép mấy người; khi ≥2 thì khoảng giá hiểu là MỖI NGƯỜI
-  sort: string; // '' (phù hợp nhất) | price_asc | price_desc | newest | area_desc
+  sort: string; // '' (phù hợp nhất) | price_asc | price_desc | newest | area_desc | views_desc
   features: Record<FeatureKey, boolean>;
 };
 
@@ -80,10 +78,10 @@ const EMPTY_FEATURES: Record<FeatureKey, boolean> = {
   parkingCar: false, parkingBike: false, evCharging: false, petAllowed: false, foreignerOk: false,
 };
 const EMPTY_FILTERS: Filters = {
-  keyword: '', district: [], typeName: '', minPrice: '', maxPrice: '', uni: '', people: '', sort: '', features: EMPTY_FEATURES,
+  keyword: '', district: [], typeName: '', minPrice: '', maxPrice: '', uni: '', sort: '', features: EMPTY_FEATURES,
 };
 const FEATURE_KEYS = Object.keys(EMPTY_FEATURES) as FeatureKey[];
-const URL_KEYS = ['q', 'district', 'typeName', 'minPrice', 'maxPrice', 'uni', 'people', 'sort', 'p', ...FEATURE_KEYS];
+const URL_KEYS = ['q', 'district', 'typeName', 'minPrice', 'maxPrice', 'uni', 'sort', 'p', ...FEATURE_KEYS];
 
 // Bộ lọc -> query string (dùng cho cả URL trình duyệt lẫn gọi API)
 const filtersToQuery = (f: Filters) => {
@@ -94,7 +92,6 @@ const filtersToQuery = (f: Filters) => {
   if (f.minPrice) p.set('minPrice', f.minPrice);
   if (f.maxPrice) p.set('maxPrice', f.maxPrice);
   if (f.uni) p.set('uni', f.uni);
-  if (f.people) p.set('people', f.people);
   if (f.sort) p.set('sort', f.sort);
   FEATURE_KEYS.forEach(k => { if (f.features[k]) p.set(k, 'true'); });
   return p;
@@ -111,7 +108,6 @@ const queryToFilters = (search: string) => {
     minPrice: sp.get('minPrice') || '',
     maxPrice: sp.get('maxPrice') || '',
     uni: sp.get('uni') || '',
-    people: sp.get('people') || '',
     sort: sp.get('sort') || '',
     features,
   };
@@ -128,7 +124,6 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [uni, setUni] = useState('');
-  const [people, setPeople] = useState(''); // ở ghép mấy người — đổi cách hiểu khoảng giá
   const [sort, setSort] = useState('');
   const [features, setFeatures] = useState<Record<FeatureKey, boolean>>({
     parkingCar: false,
@@ -159,7 +154,6 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
     setMinPrice('');
     setMaxPrice('');
     setUni('');
-    setPeople('');
     setSort('');
     setFeatures(EMPTY_FEATURES);
     // Đang có kết quả → tìm lại không lọc (URL cũng được dọn theo) để URL luôn khớp danh sách đang hiện
@@ -179,7 +173,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
   // API kẹp limit ở 100 → khôi phục tối đa 8 trang (96 tin) trong 1 lần gọi, "Xem thêm" chạy tiếp từ đó
   const MAX_RESTORE_PAGES = 8;
 
-  const currentFilters = (): Filters => ({ keyword, district, typeName, minPrice, maxPrice, uni, people, sort, features });
+  const currentFilters = (): Filters => ({ keyword, district, typeName, minPrice, maxPrice, uni, sort, features });
 
   // Gọi AI bóc câu mô tả nhu cầu → đổ vào bộ lọc rồi tìm luôn (khách vẫn chỉnh lại được)
   const runAiSearch = async () => {
@@ -200,7 +194,6 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
         minPrice: json.minPrice ? String(json.minPrice) : '',
         maxPrice: json.maxPrice ? String(json.maxPrice) : '',
         uni: json.uni || '',
-        people: '',
         sort: '',
         features: {
           ...EMPTY_FEATURES,
@@ -209,7 +202,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
         },
       };
       setKeyword(f.keyword); setDistrict(f.district); setTypeName(f.typeName);
-      setMinPrice(f.minPrice); setMaxPrice(f.maxPrice); setUni(f.uni); setPeople(''); setSort(''); setFeatures(f.features);
+      setMinPrice(f.minPrice); setMaxPrice(f.maxPrice); setUni(f.uni); setSort(''); setFeatures(f.features);
       runSearch(f, 1);
     } catch (err: any) {
       setAiError(err.message || 'Có lỗi, dùng bộ lọc thường nhé');
@@ -351,7 +344,6 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
       setMinPrice(filters.minPrice);
       setMaxPrice(filters.maxPrice);
       setUni(filters.uni);
-      setPeople(filters.people);
       setSort(filters.sort);
       setFeatures(filters.features);
       runSearch(filters, Math.min(MAX_RESTORE_PAGES, pagesLoaded));
@@ -477,37 +469,13 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
               </select>
             </div>
 
-            <div className="md:col-span-1">
-              <label className="block text-xs font-medium text-stone-500 mb-1">👥 Ở mấy người</label>
-              <select
-                aria-label="Số người ở ghép"
-                className="input-field text-sm"
-                value={people}
-                onChange={e => setPeople(e.target.value)}
-              >
-                <option value="">Ở một mình</option>
-                <option value="2">Ở ghép 2 người</option>
-                <option value="3">Ở ghép 3 người</option>
-              </select>
-            </div>
-
             <div className="md:col-span-2">
-              <label className="block text-xs font-medium text-stone-500 mb-1">
-                {people ? `Ngân sách MỖI NGƯỜI` : 'Khoảng giá thuê'}
-              </label>
+              <label className="block text-xs font-medium text-stone-500 mb-1">Khoảng giá thuê</label>
               <PriceRangeSlider
                 minValue={minPrice}
                 maxValue={maxPrice}
                 onChange={({ min, max }) => { setMinPrice(min); setMaxPrice(max); }}
               />
-              {/* Nói rõ phép nhân đang chạy — khách thấy phòng 8tr trong kết quả mà không hiểu
-                  vì sao thì sẽ nghĩ bộ lọc hỏng. */}
-              {people && maxPrice && (
-                <p className="text-[11px] text-emerald-700 mt-1 font-medium">
-                  {people} người × {(Number(maxPrice) / 1e6).toFixed(1).replace('.', ',')}tr → hiện phòng tới{' '}
-                  {(Number(maxPrice) * Number(people) / 1e6).toFixed(1).replace('.', ',')}tr/tháng
-                </p>
-              )}
             </div>
           </div>
 
@@ -644,6 +612,7 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
                   <option value="price_desc">Giá cao → thấp</option>
                   <option value="newest">Mới đăng nhất</option>
                   <option value="area_desc">Diện tích lớn nhất</option>
+                  <option value="views_desc">Nhiều người xem nhất</option>
                 </select>
               </label>
             </div>
@@ -712,13 +681,6 @@ export default function PublicSearch({ autoLoad = false }: { autoLoad?: boolean 
                         </span>
                         <span className="text-xs text-stone-500">{rt.areaSqm}m²</span>
                       </div>
-
-                      {/* Giá chia đầu người — ưu tiên số người khách vừa chọn ở bộ lọc */}
-                      {(() => {
-                        const n = Number(people) || suggestedOccupancy(rt.typeName, rt.areaSqm);
-                        const per = formatPerPerson(rt.priceMonthly, n);
-                        return per ? <p className="mt-1 text-xs font-medium text-emerald-700">👥 Ở ghép {n} người: {per}</p> : null;
-                      })()}
 
                       {/* Property-level special amenities */}
                       {(rt.property?.parkingCar || rt.property?.parkingBike || rt.property?.evCharging || rt.property?.petAllowed || rt.property?.foreignerOk || rt.shortTermAllowed) && (

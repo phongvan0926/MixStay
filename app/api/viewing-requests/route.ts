@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { applyRateLimit } from '@/lib/rate-limit';
+import { appointmentLabel } from '@/lib/appointment';
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination';
 
 /**
@@ -31,6 +32,21 @@ export async function POST(req: NextRequest) {
     const note: string | null = (body.note || '').trim().slice(0, 500) || null;
     const shareToken: string | null = (body.shareToken || '').trim() || null;
     const companyId: string | null = (body.companyId || '').trim() || null;
+
+    // LỊCH HẸN CÓ CẤU TRÚC. Chỉ nhận ngày dạng YYYY-MM-DD và buổi trong danh sách cố định —
+    // dữ liệu này về sau dùng để LỌC/ĐẾM ở server ("hẹn hôm nay"), rác lọt vào là hỏng bộ đếm.
+    // Ngày quá khứ hoặc quá 60 ngày tới → bỏ qua, coi như khách không chọn.
+    const SLOTS = ['morning', 'afternoon', 'evening'];
+    const rawDate: string = (body.preferredDate || '').trim();
+    let preferredDate: Date | null = null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+      const d = new Date(`${rawDate}T00:00:00+07:00`); // giờ VN — tránh lệch ngày do UTC
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      if (!isNaN(d.getTime()) && d.getTime() >= today.getTime() - 86400000
+          && d.getTime() <= Date.now() + 60 * 86400000) preferredDate = d;
+    }
+    const rawSlot: string = (body.preferredSlot || '').trim();
+    const preferredSlot = preferredDate && SLOTS.includes(rawSlot) ? rawSlot : null;
 
     if (!roomTypeId) return NextResponse.json({ error: 'Thiếu tin đăng' }, { status: 400 });
     if (!isPhone(phone)) {
@@ -63,7 +79,7 @@ export async function POST(req: NextRequest) {
     }
 
     const request = await prisma.viewingRequest.create({
-      data: { roomTypeId, brokerId, companyId, name, phone, note, source },
+      data: { roomTypeId, brokerId, companyId, name, phone, note, source, preferredDate, preferredSlot },
     });
 
     // Báo NGAY cho người phải gọi khách: CTV giữ link (nếu có) + toàn bộ admin.
@@ -77,12 +93,15 @@ export async function POST(req: NextRequest) {
 
     if (targets.size > 0) {
       const who = name ? `${name} (${phone})` : phone;
+      const appt = appointmentLabel(preferredDate, preferredSlot);
       await prisma.notification.createMany({
         data: Array.from(targets, ([userId, link]) => ({
           userId,
           type: 'viewing_request',
           title: '📅 Khách xin xem phòng',
-          message: `${who} muốn xem "${roomType.name}"${roomType.property?.district ? ` — ${roomType.property.district}` : ''}${note ? `. Ghi chú: ${note}` : ''}`,
+          // Giờ hẹn đứng NGAY SAU tên khách: người nhận thông báo cần biết "phải gọi trước
+          // lúc nào" chứ không phải đọc hết câu mới thấy.
+          message: `${who}${appt ? ` — ${appt.text}` : ''} muốn xem "${roomType.name}"${roomType.property?.district ? ` — ${roomType.property.district}` : ''}${note ? `. Ghi chú: ${note}` : ''}`,
           link,
         })),
       });
@@ -114,6 +133,16 @@ export async function GET(req: NextRequest) {
     const broker = url.searchParams.get('broker'); // 'yes' = qua CTV | 'no' = khách tự tìm
     const days = parseInt(url.searchParams.get('days') || '', 10);
     const overdue = url.searchParams.get('overdue') === 'true';
+    const appt = url.searchParams.get('appt'); // 'today' = có hẹn hôm nay/ngày mai
+
+    // Mốc ngày theo GIỜ VN — server Vercel chạy UTC, lấy nhầm mốc là "hẹn hôm nay" lệch 1 ngày.
+    const vnMidnight = (offsetDays: number) => {
+      const now = new Date();
+      const vn = new Date(now.getTime() + 7 * 3600000); // → giờ VN
+      const d = Date.UTC(vn.getUTCFullYear(), vn.getUTCMonth(), vn.getUTCDate() + offsetDays);
+      return new Date(d - 7 * 3600000); // → mốc UTC tương ứng 00:00 giờ VN
+    };
+    const apptWindow = { gte: vnMidnight(0), lt: vnMidnight(2) }; // hôm nay + ngày mai
 
     // ── Bộ lọc phải chạy Ở SERVER, không phải lọc mảng của trang hiện tại ──────────────
     // Danh sách có phân trang: lọc 20 dòng đang hiện thì "🔴 Mới" của trang 3 không bao giờ
@@ -147,8 +176,13 @@ export async function GET(req: NextRequest) {
     } else if (status && (STATUSES as readonly string[]).includes(status)) {
       where.status = status;
     }
+    if (appt === 'today') {
+      // "Hẹn hôm nay/mai" — việc phải chạy trong 48h tới. Chỉ tính lead chưa dẫn xem xong.
+      where.preferredDate = apptWindow;
+      if (!where.status) where.status = { in: ['NEW', 'CONTACTED'] };
+    }
 
-    const [data, total, grouped, overdueCount] = await Promise.all([
+    const [data, total, grouped, overdueCount, apptCount] = await Promise.all([
       prisma.viewingRequest.findMany({
         where,
         include: {
@@ -171,6 +205,11 @@ export async function GET(req: NextRequest) {
       prisma.viewingRequest.count({
         where: { ...base, status: 'NEW', createdAt: { ...(base.createdAt || {}), lte: new Date(Date.now() - 86400000) } },
       }),
+      // Đếm trên TOÀN TẬP (không phải trang hiện tại) — chip "Hẹn hôm nay" mà đếm 20 dòng
+      // đang hiện thì khách hẹn chiều nay nằm ở trang 2 sẽ biến mất khỏi số đếm.
+      prisma.viewingRequest.count({
+        where: { ...base, status: { in: ['NEW', 'CONTACTED'] }, preferredDate: apptWindow },
+      }),
     ]);
 
     const counts: Record<string, number> = { NEW: 0, CONTACTED: 0, DONE: 0, CANCELLED: 0 };
@@ -178,6 +217,7 @@ export async function GET(req: NextRequest) {
     counts.PENDING = counts.NEW + counts.CONTACTED;
     counts.ALL = counts.PENDING + counts.DONE + counts.CANCELLED;
     counts.OVERDUE = overdueCount;
+    counts.APPT = apptCount;
 
     return NextResponse.json({ ...paginatedResponse(data, total, page, limit), counts });
   } catch (error) {

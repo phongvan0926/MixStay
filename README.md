@@ -286,6 +286,34 @@ mixstay/
 - **Sửa dữ liệu:** BNBHOLDING `09366258556` → **`0936258556`**. Bằng chứng: cả 9 tòa của công ty đứng tên chủ nhà **Anh Biên — 0936258556**, và 3 tòa ghi thẳng `"A Biên 0936258556"`; số lưu sai đúng là số đó **thừa một chữ số 6** (`0936|6|258556`). Kho công ty đã có lại nút gọi + Zalo.
 - **Rà lại toàn bộ nguồn SĐT dựng link:** công ty **0/36 lỗi**, tòa nhà **0/464 lỗi**, tài khoản còn 1 (CTV thử nghiệm "aaa" `1234567890` — đã có cảnh báo lo).
 
+### v9.59 — 2026-08-15 (mùa sinh viên nhập học: khớp phòng cho khách đang chờ, lịch hẹn có cấu trúc, bản đồ cung–cầu)
+Soi dữ liệu thật giữa mùa cao điểm rồi vá đúng chỗ đang chảy máu.
+
+**1. "Săn phòng" khớp NGƯỢC vào kho có sẵn.** Cơ chế cũ chỉ khớp khi có tin MỚI được duyệt — khách để lại tiêu chí hôm nay thì im lặng vô thời hạn dù kho sẵn hàng đúng ý. Đo được **10/15 khách đang săn có tin khớp mà không ai được báo** (một khách Hà Đông ≤4tr trong khi kho có 28 tin).
+- `lib/saved-search-match.ts`: bộ khớp dùng chung 3 đường — khách vừa đăng ký (`POST /api/saved-searches`), tin mới duyệt (`PUT /api/rooms`), cron quét lại hằng ngày.
+- Cron chỉ báo phần tin MỚI sau lần báo gần nhất → sáng nào cũng chạy nhưng không nhắc lại cùng một bộ tin.
+- `/admin/leads` tab Săn phòng: cột **"Kho có hàng?"** hiện `🎯 N tin khớp`, bấm mở ra danh sách mã tin + giá để đọc thẳng cho khách qua điện thoại, kèm nút copy.
+- Sửa luật so quận: `includes` chuỗi khiến "Từ Liêm" ăn nhầm cả Bắc/Nam Từ Liêm. Chặn khách bỏ trống tiêu chí (khớp 632 tin = rác) khỏi khớp tự động.
+- **Kiểm trên dữ liệu thật: 14/15 khách sẽ được báo, 1 khách kho thật sự hết.**
+
+**2. Trang chủ: khối "Phòng nổi bật" có 3 TAB + tiện ích đặc biệt.** Trước đây trang chủ chỉ khoe 6 tin mới nhất trong kho 636 tin còn trống — khách quay lại lần hai vẫn thấy đúng ngần ấy phòng, và thẻ tin không hề hiện tiện ích của tòa dù đó là thứ khách lọc nhiều nhất ở `/phong`.
+- 3 tab **🆕 Mới đăng · 💰 Giá tốt · 🔥 Xem nhiều** (nhãn ngắn để nằm gọn 1 hàng trên điện thoại 390px), cache theo tab nên đổi qua lại không chớp skeleton.
+- Thêm `?sort=views_desc` + trả `viewCount` ở `/api/rooms/public`; tab "Xem nhiều" in huy hiệu `👁 N lượt xem` lên ảnh. Bộ chọn sắp xếp ở `/phong` cũng có thêm "Nhiều người xem nhất".
+- Thẻ tin trang chủ hiện tiện ích đặc biệt của tòa (🚗 ô tô · 🏍️ xe máy · ⚡ sạc điện · 🐾 thú cưng · 🌍 người nước ngoài · 📅 ngắn hạn) — cùng bộ nhãn với thẻ ở `/phong`.
+
+**Đã thử rồi BỎ — bộ lọc "Ở mấy người" (giá theo đầu người).** Ý tưởng: khách khai ở ghép 2 người thì khoảng giá hiểu là ngân sách MỖI NGƯỜI, đo được ngân sách 3tr cho **50 tin → 572 tin**. Chủ dự án bác 15/08/2026 vì **khách tự chia nhẩm được, không đáng để ô tìm kiếm dài thêm** — đã gỡ sạch cả ô chọn, badge "≈2,5tr/người" trên thẻ tin lẫn tham số `people` ở API; thanh kéo giá đưa lên chỗ ô đó. **Đừng đề xuất lại.**
+
+**3. Lịch hẹn xem phòng CÓ CẤU TRÚC.** Khách đang gõ giờ hẹn vào ô ghi chú tự do — dữ liệu thật: *"8h sáng Chủ nhật 16.8"*, *"sáng mai"*, *"19/8/2026 em sẽ ra xem"*. 45 lead dồn vào một tháng mà admin phải đọc từng dòng mới biết ai hẹn khi nào.
+- Thêm 2 cột nullable `preferredDate` + `preferredSlot` vào `viewing_requests` (+ index). Dữ liệu cũ không đụng tới.
+- Form đặt lịch: nút nhanh **Hôm nay / Ngày mai / Ngày kia** + lịch chọn ngày khác, rồi **🌅 Sáng / ☀️ Chiều / 🌙 Tối**. Ô ghi chú giữ lại cho yêu cầu riêng.
+- Bảng lead có cột **Lịch hẹn** riêng: hẹn hôm nay/mai tô đỏ, hẹn đã trôi qua thì xám mờ; cả hàng tô vàng nhạt. Chip **📅 Hẹn hôm nay/mai** ở cả `/admin/leads` và `/broker/leads` (lọc + đếm SERVER-SIDE). Giờ hẹn đứng ngay sau tên khách trong thông báo.
+- Mốc ngày tính theo **giờ VN** (server Vercel chạy UTC — lấy nhầm mốc là "hẹn hôm nay" lệch 1 ngày). Ngày quá khứ / quá 60 ngày / buổi không hợp lệ → bỏ qua, không cho rác vào bộ đếm.
+- **Kiểm đầu-cuối bằng Playwright mô phỏng iPhone: gửi "Ngày mai + Chiều" → server lưu đúng `2026-08-16` + `afternoon`, chip đếm bắt được. Ngày quá khứ và buổi rác đều bị từ chối. Bản ghi test đã xoá, 45 lead thật nguyên vẹn.**
+
+**4. Thẻ cung ↔ cầu theo quận** trên `/admin/dashboard`. Kho đang đổ nhầm chỗ: **Hai Bà Trưng hút 15/45 khách (33%) bằng 27 tin (4% kho)**, trong khi **Cầu Giấy ôm 134 tin chỉ ra 4 khách**; Tây Hồ/Hoài Đức/Ba Đình/Long Biên gộp **85 tin, 90 ngày không một khách hỏi**. Thẻ xếp quận theo "bao nhiêu tin mới đẻ ra 1 khách" — 3 quận cháy nhất tô đỏ, kèm dòng riêng liệt kê quận ôm hàng chết.
+
+**Còn tồn (chưa làm):** ĐH FPT Hòa Lạc có **0 tin** trong bán kính 3km → trang `/phong-tro-gan/fpt-hoa-lac` rỗng dù ngày 14/08 có khách hỏi; 48 tin còn trống chưa có ảnh nào; 119 tin chưa ai xem lần nào.
+
 ### v9.58 — 2026-08-14 (sửa "Tải ảnh" trên iPhone — pop-up hiện liên tục nhưng chỉ lưu được ảnh CUỐI)
 Lỗi báo từ người dùng iPhone: bấm "⬇️ Tải ảnh" thì hộp thoại tải hiện lên liên tục theo từng ảnh, đồng ý hết nhưng máy chỉ lưu đúng ảnh cuối cùng.
 - **Nguyên nhân kép** ở `ListingActionBar.tsx`: (1) iOS Safari không cho tải nhiều file liên tiếp bằng `<a download>` — các hộp thoại "Tải về?" đè nhau, chỉ lượt cuối được lưu thật; (2) `URL.revokeObjectURL` gọi sau 350ms — blob bị thu hồi TRƯỚC khi người dùng kịp bấm đồng ý trên hộp thoại.

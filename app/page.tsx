@@ -36,8 +36,8 @@ export default async function HomePage() {
             <div className="inline-flex items-center gap-2 rounded-full bg-gold-50 border border-gold-200 px-3 py-1 text-xs font-medium text-gold-800 mb-4">
               🔥 Đang hot
             </div>
-            <h2 className="font-display text-3xl sm:text-4xl font-bold mb-3">Phòng mới đăng</h2>
-            <p className="text-stone-500 text-base">Được cập nhật mỗi ngày từ các chủ nhà uy tín</p>
+            <h2 className="font-display text-3xl sm:text-4xl font-bold mb-3">Phòng nổi bật</h2>
+            <p className="text-stone-500 text-base">Mới đăng, giá tốt hay đang được nhiều người xem — chọn góc bạn quan tâm</p>
           </div>
 
           <FeaturedRooms />
