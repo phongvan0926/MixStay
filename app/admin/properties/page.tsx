@@ -11,6 +11,7 @@ import OptimizedImage from '@/components/ui/OptimizedImage';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/fetcher';
 import { useProperties, useCompanies, useUsers } from '@/hooks/useData';
+import IssueBanner from '@/components/admin/IssueBanner';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 import Link from 'next/link';
 import Avatar from '@/components/ui/Avatar';
@@ -21,6 +22,8 @@ function AdminPropertiesInner() {
   const searchParams = useSearchParams();
   const companyIdParam = searchParams.get('companyId') || '';
   const statusParam = searchParams.get('status') || '';
+  // ?issue=no-geo — đến từ dòng "Tòa nhà thiếu toạ độ" ở /admin/dashboard
+  const issueParam = searchParams.get('issue') || '';
   const { data: session } = useSession();
   const canApprove = hasPermission(session?.user as any, 'APPROVE_LISTINGS');
   const canDelete = hasPermission(session?.user as any, 'DELETE_PROPERTY');
@@ -34,6 +37,7 @@ function AdminPropertiesInner() {
   const [filterCompany, setFilterCompany] = useState(companyIdParam);
   const [filterLandlord, setFilterLandlord] = useState('');
   const [filterStatus, setFilterStatus] = useState(statusParam);
+  const [issue, setIssue] = useState(issueParam);
 
   useEffect(() => {
     const t = setTimeout(() => { setSearch(searchInput.trim()); setPage(1); }, 350);
@@ -50,6 +54,7 @@ function AdminPropertiesInner() {
   if (filterCompany) propParams.companyId = filterCompany;
   if (filterLandlord) propParams.landlordId = filterLandlord;
   if (filterStatus) propParams.status = filterStatus;
+  if (issue) propParams.issue = issue;
 
   const { properties, pagination, isLoading: loading, mutate } = useProperties(propParams);
   const { companies } = useCompanies();
@@ -138,6 +143,10 @@ function AdminPropertiesInner() {
 
   return (
     <div>
+      {issue && (
+        <IssueBanner issue={issue} total={pagination?.total}
+          onClear={() => { setIssue(''); setPage(1); window.history.replaceState(null, '', '/admin/properties'); }} />
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="font-display text-2xl font-bold">Tòa nhà</h1>

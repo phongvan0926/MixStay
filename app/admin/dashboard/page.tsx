@@ -194,10 +194,10 @@ export default function AdminDashboardPage() {
           <TodoCard href="/admin/leads?tab=xem-phong" icon="📅" label="Khách xin xem phòng" value={todo.newViewingRequests} tone="red" />
           <TodoCard href="/admin/rooms?approved=false" icon="📝" label="Tin chờ duyệt" value={todo.pendingRooms} tone="amber" />
           <TodoCard href="/admin/properties?status=PENDING" icon="🏢" label="Tòa chờ duyệt" value={todo.pendingProperties} tone="amber" />
-          <TodoCard href="/admin/companies" icon="🏛️" label="Công ty chờ duyệt" value={todo.pendingCompanies} tone="amber" />
+          <TodoCard href="/admin/companies?approved=false" icon="🏛️" label="Công ty chờ duyệt" value={todo.pendingCompanies} tone="amber" />
           <TodoCard href="/admin/leads?tab=san-phong" icon="🔔" label="Khách săn phòng" value={todo.activeLeads} tone="brand" />
           <TodoCard href="/admin/dashboard#hoi-phong" icon="💬" label="Hỏi phòng chưa trả lời" value={todo.openInquiries} tone="red" />
-          <TodoCard href="/admin/rooms" icon="🖼️" label="Tin thiếu ảnh" value={health.roomsNoImage} tone="red" />
+          <TodoCard href="/admin/rooms?issue=no-image" icon="🖼️" label="Tin thiếu ảnh" value={health.roomsNoImage} tone="red" />
         </div>
 
         {/* Danh sách hỏi phòng hiện ngay tại đây — số lượng ít, không đáng dựng trang riêng */}
@@ -262,16 +262,19 @@ export default function AdminDashboardPage() {
 
         <h2 className="font-display font-semibold mb-3">Sức khoẻ kho hàng</h2>
         <div className="card p-5">
+          {/* MỌI dòng có việc phải dẫn tới ĐÚNG danh sách đã lọc sẵn — xem quy tắc trong CLAUDE.md.
+              Số ở đây và số trên trang đích phải khớp: cùng điều kiện, cùng nguồn đếm. */}
           <HealthRow label="Tin chưa có ảnh nào (khách lướt qua sẽ bỏ)" bad={health.roomsNoImage}
-            good="mọi tin đều có ảnh" href="/admin/rooms" />
+            good="mọi tin đều có ảnh" href="/admin/rooms?issue=no-image" />
           <HealthRow label="Tòa nhà chưa gán công ty" bad={health.propsNoCompany}
-            good="mọi tòa đã có công ty" href="/admin/properties" unit="tòa" />
+            good="mọi tòa đã có công ty" href="/admin/properties?companyId=__none__" unit="tòa" />
           <HealthRow label="Tòa nhà thiếu toạ độ (không lên bản đồ)" bad={health.propsNoGeo}
-            good={`${totals.totalProperties}/${totals.totalProperties} tòa đã có pin bản đồ`} unit="tòa" />
+            good={`${totals.totalProperties}/${totals.totalProperties} tòa đã có pin bản đồ`}
+            href="/admin/properties?issue=no-geo" unit="tòa" />
           <HealthRow label="Tin 30 ngày không cập nhật (có thể đã hết phòng)" bad={health.staleRooms}
-            good="kho hàng đang được cập nhật đều" href="/admin/rooms" />
+            good="kho hàng đang được cập nhật đều" href="/admin/rooms?issue=stale" />
           <HealthRow label="Tin “sắp trống” đã quá ngày dự kiến" bad={health.overdueUpcoming}
-            good="cron vòng đời đang chạy đúng" href="/admin/rooms?status=UPCOMING" />
+            good="cron vòng đời đang chạy đúng" href="/admin/rooms?issue=overdue-upcoming" />
         </div>
       </section>
 

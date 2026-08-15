@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import toast from 'react-hot-toast';
 import { formatDate } from '@/lib/utils';
@@ -71,7 +72,14 @@ function CompanyCodeInlineInput({ company, onUpdated }: { company: any; onUpdate
   );
 }
 
-export default function AdminCompaniesPage() {
+/**
+ * ?approved=false → mở sẵn bộ lọc "Chờ duyệt" (đến từ thẻ "🏛️ Công ty chờ duyệt" ở
+ * /admin/dashboard). Mọi việc cần làm hiện trên Tổng quan phải bấm được và tới ĐÚNG chỗ xử lý.
+ * PHẢI đọc bằng useSearchParams + bọc Suspense — xem chú thích cùng ý ở /admin/properties.
+ */
+function AdminCompaniesInner() {
+  const searchParams = useSearchParams();
+  const approvedParam = searchParams.get('approved');
   const { companies, isLoading: loading, mutate } = useCompanies();
   // Nhóm công ty nghi trùng (cùng tên) để gộp
   const { data: dupData, mutate: mutateDup } = useSWR('/api/companies/duplicates', fetcher, { revalidateOnFocus: false });
@@ -109,7 +117,9 @@ export default function AdminCompaniesPage() {
   };
 
   const [search, setSearch] = useState('');
-  const [approvalFilter, setApprovalFilter] = useState<'all' | 'pending' | 'approved'>('all');
+  const [approvalFilter, setApprovalFilter] = useState<'all' | 'pending' | 'approved'>(
+    approvedParam === 'false' ? 'pending' : 'all'
+  );
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
@@ -493,5 +503,13 @@ export default function AdminCompaniesPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AdminCompaniesPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminCompaniesInner />
+    </Suspense>
   );
 }

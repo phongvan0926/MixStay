@@ -62,6 +62,15 @@ export async function GET(req: NextRequest) {
     if (companyId === '__none__') where.companyId = null;      // tòa chưa thuộc công ty nào
     else if (companyId) where.companyId = companyId;
 
+    // Việc cần xử lý từ thẻ /admin/dashboard — điều kiện PHẢI TRÙNG truy vấn đếm ở
+    // /api/admin/overview, lệch là thẻ báo một đằng danh sách ra một nẻo.
+    if (url.searchParams.get('issue') === 'no-geo') {
+      // Thiếu toạ độ = KHÔNG lên được bản đồ tìm phòng, khách tìm quanh trường sẽ không thấy.
+      // Phải nhét vào AND: `search` đã chiếm where.OR, gộp chung vào đó thì "tìm chữ X" HOẶC
+      // "thiếu toạ độ" — ra cả tòa đã có toạ độ, sai hẳn ý bộ lọc.
+      where.AND = [...(where.AND || []), { OR: [{ latitude: null }, { longitude: null }] }];
+    }
+
     const { page, limit, skip } = getPaginationParams(url);
 
     const [properties, total] = await Promise.all([

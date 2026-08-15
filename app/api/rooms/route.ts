@@ -66,6 +66,24 @@ export async function GET(req: NextRequest) {
     else if (status === 'UNAVAILABLE' || status === 'unavailable' || available === 'false') where.status = 'UNAVAILABLE';
     else if (status === 'UPCOMING' || status === 'upcoming') where.status = 'UPCOMING';
 
+    // ── VIỆC CẦN XỬ LÝ (từ thẻ trên /admin/dashboard) ────────────────────────────────
+    // Điều kiện ở đây PHẢI TRÙNG KHỚP truy vấn đếm trong /api/admin/overview — lệch một chút
+    // là thẻ báo "69 tin thiếu ảnh" mà bấm vào lại ra 63 tin, admin hết tin vào số liệu.
+    // Đặt SAU khối status để bộ lọc mà dải báo trên trang đang công bố luôn thắng: nếu bị ?status=
+    // đè thì dải ghi "Tin 30 ngày không cập nhật" mà danh sách lại ra tin khác.
+    const issue = url.searchParams.get('issue');
+    if (issue === 'no-image') {
+      where.images = { isEmpty: true };
+    } else if (issue === 'stale') {
+      // Tin còn trống đã 30 ngày không ai đụng — nhiều khả năng đã cho thuê mà quên tắt
+      where.status = 'AVAILABLE';
+      where.isApproved = true;
+      where.updatedAt = { lt: new Date(Date.now() - 30 * 24 * 3600 * 1000) };
+    } else if (issue === 'overdue-upcoming') {
+      where.status = 'UPCOMING';
+      where.expectedAvailableDate = { lte: new Date() };
+    }
+
     // Property-level filters
     const propertyWhere: any = {};
     // Cho phép lọc nhiều quận cùng lúc: district=Quận A,Quận B

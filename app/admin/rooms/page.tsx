@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
 import { formatCurrency, formatDate, formatDateTime, getRoleLabel } from '@/lib/utils';
+import IssueBanner from '@/components/admin/IssueBanner';
 import { hasPermission } from '@/lib/permissions';
 import RoomTypeForm from '@/components/forms/RoomTypeForm';
 import AIQuickCreate from '@/components/ai/AIQuickCreate';
@@ -180,6 +181,8 @@ function AdminRoomsInner() {
   const propertyIdParam = searchParams.get('propertyId') || '';
   const approvedParam = searchParams.get('approved') || '';
   const statusParam = searchParams.get('status') || '';
+  // ?issue=no-image | stale | overdue-upcoming — đến từ thẻ việc cần làm ở /admin/dashboard
+  const issueParam = searchParams.get('issue') || '';
   const { data: session } = useSession();
   const canExport = hasPermission(session?.user as any, 'EXPORT_DATA');
   const canApprove = hasPermission(session?.user as any, 'APPROVE_LISTINGS');
@@ -198,6 +201,7 @@ function AdminRoomsInner() {
   const [filterRoomType, setFilterRoomType] = useState('');
   const [filterStatus, setFilterStatus] = useState(statusParam);
   const [filterApproved, setFilterApproved] = useState(approvedParam); // '' | 'false' (chờ duyệt) | 'true' (đã duyệt)
+  const [issue, setIssue] = useState(issueParam);
 
   const roomParams: Record<string, string> = { page: String(page), limit: '20' };
   if (search) roomParams.search = search;
@@ -206,6 +210,7 @@ function AdminRoomsInner() {
   if (filterRoomType) roomParams.typeName = filterRoomType;
   if (filterStatus) roomParams.status = filterStatus;
   if (filterApproved) roomParams.approved = filterApproved;
+  if (issue) roomParams.issue = issue;
 
   const { roomTypes: rooms, pagination, isLoading: loading, mutate } = useRoomTypes(roomParams);
   const { properties, mutate: mutateProperties } = useProperties({ status: 'APPROVED', limit: '200' });
@@ -470,10 +475,16 @@ function AdminRoomsInner() {
 
   return (
     <div>
+      {issue && (
+        <IssueBanner issue={issue} total={pagination?.total}
+          onClear={() => { setIssue(''); setPage(1); window.history.replaceState(null, '', '/admin/rooms'); }} />
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="font-display text-2xl font-bold">Tin đăng (theo loại phòng)</h1>
-          <p className="text-sm text-stone-500 mt-1">{rooms.length} tin đăng</p>
+          {/* Đếm theo pagination.total của API (toàn bộ tập khớp bộ lọc), KHÔNG đếm mảng của
+              trang hiện tại — rooms.length luôn ≤ 20 nên trước đây kho 856 tin cũng chỉ báo 20. */}
+          <p className="text-sm text-stone-500 mt-1">{(pagination?.total ?? rooms.length).toLocaleString('vi-VN')} tin đăng</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {/* Excel buttons */}

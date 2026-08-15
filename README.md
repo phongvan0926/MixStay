@@ -286,6 +286,16 @@ mixstay/
 - **Sửa dữ liệu:** BNBHOLDING `09366258556` → **`0936258556`**. Bằng chứng: cả 9 tòa của công ty đứng tên chủ nhà **Anh Biên — 0936258556**, và 3 tòa ghi thẳng `"A Biên 0936258556"`; số lưu sai đúng là số đó **thừa một chữ số 6** (`0936|6|258556`). Kho công ty đã có lại nút gọi + Zalo.
 - **Rà lại toàn bộ nguồn SĐT dựng link:** công ty **0/36 lỗi**, tòa nhà **0/464 lỗi**, tài khoản còn 1 (CTV thử nghiệm "aaa" `1234567890` — đã có cảnh báo lo).
 
+### v9.62 — 2026-08-16 (mọi việc trên Tổng quan bấm được và tới ĐÚNG danh sách cần xử lý)
+Thẻ "🖼️ Tin thiếu ảnh" bấm vào chỉ mở `/admin/rooms` chung chung, admin vẫn phải tự dò 856 tin; dòng "Tòa nhà thiếu toạ độ" thì **không bấm được** — có số mà không có lối xử lý.
+- **Bộ lọc mới:** `/admin/rooms?issue=no-image | stale | overdue-upcoming` và `/admin/properties?issue=no-geo`; "Tòa chưa gán công ty" dùng `?companyId=__none__` (đã có sẵn); "Công ty chờ duyệt" dùng `?approved=false` (trang Công ty nay đọc query qua `useSearchParams` + Suspense).
+- **`components/admin/IssueBanner.tsx`** — vào trang có dải vàng nói rõ *đang lọc gì · bao nhiêu mục · vì sao phải xử lý*, kèm nút **Bỏ lọc**. Không có dải này thì admin thấy danh sách còn 69 dòng mà tưởng kho hụt.
+- **Số trên thẻ và số trên trang đích phải khớp:** điều kiện lọc dựng đúng bằng truy vấn đếm trong `/api/admin/overview`. Đối chiếu **8/8 mục khớp** trên dữ liệu thật (tin thiếu ảnh 69, tòa thiếu toạ độ 2, tòa chưa gán công ty 7, tin chờ duyệt 40, tòa chờ duyệt 3…).
+- **🐛 Vá 2 lỗi lộ ra khi làm:**
+  - `issue=no-geo` nhét điều kiện vào `where.OR` — mà `search` đã chiếm `OR` đó, nên lọc "thiếu toạ độ" kèm tìm chữ ra **362 tòa** thay vì tối đa 2 (thành "tìm chữ X **HOẶC** thiếu toạ độ"). Chuyển sang `where.AND`.
+  - Khối `issue` đặt trước khối `status` nên bị `?status=` đè → dải báo ghi một đằng, danh sách ra một nẻo. Chuyển xuống sau.
+  - `/admin/rooms` đếm tiêu đề bằng `rooms.length` (mảng 20 dòng của trang hiện tại) nên kho 856 tin cũng chỉ báo 20 → đổi sang `pagination.total`.
+
 ### v9.61 — 2026-08-15 (đổ lịch cho 42 lead cũ + vá lỗi "hẹn lúc 00:00"; đưa "Khách để lại SĐT" lên đầu menu)
 **Đổ giờ hẹn cho lead cũ.** 44 lead trước v9.59 gõ giờ hẹn vào ô ghi chú tự do nên trang "Lịch khách xem phòng" trống trơn — toàn bộ lịch đang có của công ty vô hình với người dẫn khách. `scripts/backfill-appointments.js` đổ vào **42/44** lead.
 - Bảng bóc **lập sẵn, đọc kiểm được từng dòng** (id · ghi chú gốc · ngày · buổi/giờ · lý do) thay vì gọi AI lúc chạy: việc này có đáp án đúng và chỉ làm một lần cho 44 dòng — chạy lại luôn ra đúng một kết quả, không phụ thuộc quota API, không có rủi ro model bịa ra giờ hẹn.
