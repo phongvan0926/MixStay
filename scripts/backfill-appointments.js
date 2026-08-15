@@ -52,7 +52,10 @@ const PARSED = [
   ['cmssx84z400015pk633b9pvoi', '19/8/2026 em sẽ ra xem', '2026-08-19', 'day', null, 'chỉ có ngày, không nói giờ'],
   ['cmssx4jne0009cs00udjiri9x', 'Ngày Chủ Nhật tuần này', '2026-08-16', 'day', null, 'gửi T6 14/08 → CN cùng tuần = 16/08'],
   ['cmsswx9it000111m5xd11wq6t', '16/8', '2026-08-16', 'day', null, 'chỉ có ngày'],
-  ['cmsswl35m0001cs00ruap4hfs', 'Hôm nay 9h và sáng hoặc tối t2', '2026-08-17', 'morning', null, 'gửi 19h08 nên "hôm nay 9h" đã qua → lấy sáng T2 17/08'],
+  // Khách nêu 2 mốc: "hôm nay 9h" (gửi lúc 19h08 → nhiều khả năng là 21h tối 14/08, nay đã
+  // qua và khách vẫn chưa ai gọi) và "sáng HOẶC tối t2". Mốc còn lại là T2 17/08, nhưng khách
+  // để ngỏ sáng hay tối → 'day', KHÔNG tự chọn hộ một buổi rồi hẹn người dẫn sai giờ.
+  ['cmsswl35m0001cs00ruap4hfs', 'Hôm nay 9h và sáng hoặc tối t2', '2026-08-17', 'day', null, 'mốc đầu đã qua → còn T2 17/08; khách để ngỏ sáng/tối nên chưa chốt giờ'],
   ['cmsskblvz0001enr5la3cbapo', 'Cuối tuần Chủ nhật', '2026-08-16', 'day', null, 'gửi T6 14/08 → CN = 16/08'],
   ['cmssab9q70001bi5ub4luds8s', 'chiều mai ngày 14/8/2026', '2026-08-14', 'afternoon', null, 'ghi chú tự mâu thuẫn (gửi đúng 14/08) → theo NGÀY ghi rõ'],
   ['cmsrkrbrl000mufegxfnnhpbi', 'chủ nhật 16.8', '2026-08-16', 'day', null, 'ngày ghi rõ'],

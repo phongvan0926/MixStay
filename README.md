@@ -292,6 +292,7 @@ mixstay/
 - Mọi từ tương đối tính từ **ngày khách GỬI**, không phải hôm nay: lead gửi 11/08 ghi *"8h tối mai"* = 12/08 20:00.
 - **Cố ý bỏ 2 lead** ghi *"Sang tuần"* — không nói thứ mấy, đoán ra là bịa lịch cho khách; chúng vẫn nằm ở tab "Xin xem phòng".
 - Trước khi ghi còn **đối chiếu lại ghi chú trong DB** có khớp bảng không; lệch một chữ là bỏ qua dòng đó. Kết quả: **17 lịch sắp tới** hiện lên tab Lịch (15/08 có 4 lượt, 16/08 có 11 lượt), 23 lịch đã qua ghi lại để thấy ca nào từng lỡ hẹn.
+- **Đối chiếu chéo với Gemini** (bản thử nghiệm chạy song song, chỉ dry-run): Gemini đọc được 32/44 — bỏ sót 10 ca dễ như *"8/8/2026"*, *"Chủ nhật 9/8"*, *"chiều mai 15h30"*. Trong 23 ca cả hai cùng đọc, **trùng ngày 22**, lệch đúng 1 ca *"Hôm nay 9h và sáng hoặc tối t2"* — soi lại thì bảng tay chọn hộ khách buổi "sáng" trong khi khách ghi *"sáng HOẶC tối"*; đã sửa thành **chưa chốt giờ** ngày 17/08.
 
 **Thêm trạng thái "chưa chốt giờ" (`preferredSlot='day'`).** Ghi chú kiểu *"16/8"* chỉ cho biết NGÀY. Điền đại 09:00 là bịa giờ hẹn → màn hình in "Hẹn 09:00 16/08" và người dẫn khách tới sai giờ. Nay lưu `slot='day'`, giờ 09:00 CHỈ dùng để sắp xếp và **không bao giờ in ra**; màn hình hiện "Hẹn 16/08", cột giờ ghi "chưa rõ".
 
