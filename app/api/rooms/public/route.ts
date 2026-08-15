@@ -53,8 +53,19 @@ export async function GET(req: NextRequest) {
     };
 
     if (typeName) where.typeName = typeName;
-    if (minPrice) where.priceMonthly = { ...where.priceMonthly, gte: parseFloat(minPrice) };
-    if (maxPrice) where.priceMonthly = { ...where.priceMonthly, lte: parseFloat(maxPrice) };
+
+    // Ở GHÉP: ?people=2|3 → khoảng giá khách nhập là NGÂN SÁCH MỖI NGƯỜI, nhân lên thành giá
+    // nguyên phòng trước khi lọc. Sinh viên 3tr/người rủ thêm 1 bạn thì kham được phòng 6tr;
+    // bộ lọc cũ chỉ hiểu giá nguyên phòng nên cắt mất 206 tin ≥5tr (32% kho, gần như 0 lead).
+    // Kèm điều kiện phòng đủ rộng để ghép — xem suggestedOccupancy() trong lib/share-cost.ts.
+    const people = Math.min(Math.max(parseInt(url.searchParams.get('people') || '1', 10) || 1, 1), 3);
+    if (people >= 2) {
+      const roomy: any[] = [{ typeName: { in: ['2k1n', 'duplex'] } }];
+      roomy.push({ areaSqm: { gte: people >= 3 ? 35 : 15 } });
+      where.AND = [...(where.AND || []), { OR: roomy }];
+    }
+    if (minPrice) where.priceMonthly = { ...where.priceMonthly, gte: parseFloat(minPrice) * people };
+    if (maxPrice) where.priceMonthly = { ...where.priceMonthly, lte: parseFloat(maxPrice) * people };
 
     // Tìm theo TỪ KHÓA (q): khớp tên tin, mã tin (MS-…), mô tả (đều CÔNG KHAI) + quận.
     // CỐ Ý KHÔNG tìm trên property.streetName/name/fullAddress (có thể chứa số nhà — app đang

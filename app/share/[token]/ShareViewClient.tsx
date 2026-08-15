@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { formatCurrency, formatServiceValue } from '@/lib/utils';
+import { formatPerPerson, suggestedOccupancy } from '@/lib/share-cost';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import VideoGallery from '@/components/ui/VideoGallery';
 import ZaloFab from '@/components/ui/ZaloFab';
@@ -389,6 +390,21 @@ export default function ShareViewClient() {
               </p>
             )}
           </div>
+
+          {/* Chia tiền khi ở ghép — sinh viên gần như luôn thuê chung, mà bảng giá nguyên
+              phòng làm phòng vừa túi tiền trông đắt gấp đôi. Đây là GỢI Ý theo diện tích +
+              loại phòng (lib/share-cost.ts), không phải cam kết số người của chủ nhà. */}
+          {(() => {
+            const n = suggestedOccupancy(roomType.typeName, roomType.areaSqm);
+            const per = formatPerPerson(roomType.priceMonthly, n);
+            if (!per) return null;
+            return (
+              <p className="text-sm font-medium text-emerald-700 mb-2">
+                👥 Ở ghép {n} người: <span className="font-bold">{per}</span>
+                <span className="text-stone-400 font-normal"> (chia đều tiền phòng)</span>
+              </p>
+            );
+          })()}
 
           {roomType.shortTermAllowed && (
             <div className="p-3 bg-violet-50 rounded-xl border border-violet-100 mb-4 mt-3">
