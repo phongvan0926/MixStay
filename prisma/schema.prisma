@@ -388,7 +388,12 @@ model ViewingRequest {
   // "sáng mai") → admin phải đọc chữ, mùa cao điểm lead dồn dập là lỡ hẹn. Nullable vì
   // toàn bộ lead cũ + khách không chọn giờ đều để trống.
   preferredDate DateTime? // ngày khách muốn xem (chỉ dùng phần ngày)
+  // preferredSlot != null → khách chỉ chọn BUỔI (preferredDate giữ giờ đại diện 8/14/19h để
+  // danh sách vẫn xếp đúng thứ tự). preferredSlot == null → khách đã chọn GIỜ CỤ THỂ, giờ đó
+  // nằm ngay trong preferredDate. Nhờ vậy sắp lịch chỉ cần orderBy preferredDate.
   preferredSlot String? // 'morning' | 'afternoon' | 'evening'
+  // Đã copy lịch gửi cho người dẫn khách lúc nào (null = chưa ai phụ trách)
+  guideSentAt   DateTime?
   source     String   @default("tin") // share | system | company | tin — vào từ đâu
   status     String   @default("NEW") // NEW | CONTACTED | DONE | CANCELLED
   createdAt  DateTime @default(now())

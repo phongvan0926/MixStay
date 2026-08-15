@@ -42,7 +42,8 @@ export default function ViewingRequestForm({
   const [phone, setPhone] = useState('');
   const [note, setNote] = useState('');
   const [date, setDate] = useState('');   // YYYY-MM-DD, '' = khách không chọn
-  const [slot, setSlot] = useState('');   // morning | afternoon | evening
+  const [slot, setSlot] = useState('');   // morning | afternoon | evening (chọn buổi)
+  const [time, setTime] = useState('');   // 'HH:MM' — khách chọn GIỜ cụ thể thì ưu tiên hơn buổi
   const [state, setState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
   const [errMsg, setErrMsg] = useState('');
 
@@ -60,7 +61,10 @@ export default function ViewingRequestForm({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           roomTypeId, phone: digits, name, note, shareToken, companyId,
-          preferredDate: date || null, preferredSlot: date ? slot || null : null,
+          preferredDate: date || null,
+          // Chọn giờ cụ thể thì gửi giờ, KHÔNG gửi buổi nữa (server hiểu: có buổi = chỉ chọn buổi)
+          preferredTime: date && time ? time : null,
+          preferredSlot: date && !time ? slot || null : null,
         }),
       });
       if (!res.ok) {
@@ -117,7 +121,7 @@ export default function ViewingRequestForm({
         <label className="block text-xs font-medium text-stone-600 mb-1.5">Bạn muốn xem khi nào? (tuỳ chọn)</label>
         <div className="flex flex-wrap gap-1.5">
           {QUICK_DAYS.map(d => (
-            <button key={d.key} type="button" onClick={() => setDate(date === d.value() ? '' : d.value())}
+            <button key={d.key} type="button" onClick={() => { setDate(date === d.value() ? '' : d.value()); setTime(''); setSlot(''); }}
               className={`inline-flex items-center min-h-11 sm:min-h-9 px-3 rounded-xl text-xs font-medium border transition-colors ${
                 date === d.value()
                   ? 'bg-brand-600 text-white border-brand-600'
@@ -133,18 +137,35 @@ export default function ViewingRequestForm({
         </div>
 
         {date && (
-          <div className="flex flex-wrap gap-1.5 mt-1.5">
+          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
             {SLOTS.map(s => (
-              <button key={s.value} type="button" onClick={() => setSlot(slot === s.value ? '' : s.value)}
+              // Chọn buổi và chọn giờ LOẠI TRỪ nhau — chọn cái này thì xoá cái kia, để khách
+              // không gửi lên "sáng" kèm "16:30" rồi người dẫn khách không biết tin cái nào.
+              <button key={s.value} type="button"
+                onClick={() => { setSlot(slot === s.value ? '' : s.value); setTime(''); }}
                 className={`inline-flex items-center min-h-11 sm:min-h-9 px-3 rounded-xl text-xs font-medium border transition-colors ${
-                  slot === s.value
+                  slot === s.value && !time
                     ? 'bg-brand-600 text-white border-brand-600'
                     : 'bg-white text-stone-600 border-stone-200 hover:border-brand-300'
                 }`}>
                 {s.label}
               </button>
             ))}
+            <span className="text-xs text-stone-400 px-1">hoặc</span>
+            <input type="time" value={time} step={900}
+              onChange={e => { setTime(e.target.value); if (e.target.value) setSlot(''); }}
+              aria-label="Giờ muốn xem phòng"
+              className={`input-field text-xs w-auto min-h-11 sm:min-h-9 py-0 px-2 ${
+                time ? 'border-brand-600 text-brand-700 font-semibold' : ''
+              }`} />
           </div>
+        )}
+
+        {date && (time || slot) && (
+          <p className="text-[11px] text-emerald-700 mt-1.5 font-medium">
+            ✓ Bạn muốn xem {time ? `lúc ${time}` : SLOTS.find(s => s.value === slot)?.label.replace(/^\S+\s/, '').toLowerCase()}{' '}
+            ngày {date.split('-').reverse().slice(0, 2).join('/')}
+          </p>
         )}
       </div>
 

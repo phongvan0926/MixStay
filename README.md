@@ -286,6 +286,24 @@ mixstay/
 - **Sửa dữ liệu:** BNBHOLDING `09366258556` → **`0936258556`**. Bằng chứng: cả 9 tòa của công ty đứng tên chủ nhà **Anh Biên — 0936258556**, và 3 tòa ghi thẳng `"A Biên 0936258556"`; số lưu sai đúng là số đó **thừa một chữ số 6** (`0936|6|258556`). Kho công ty đã có lại nút gọi + Zalo.
 - **Rà lại toàn bộ nguồn SĐT dựng link:** công ty **0/36 lỗi**, tòa nhà **0/464 lỗi**, tài khoản còn 1 (CTV thử nghiệm "aaa" `1234567890` — đã có cảnh báo lo).
 
+### v9.60 — 2026-08-15 (khách chọn GIỜ xem phòng + trang "Lịch khách xem phòng" giao việc cho người dẫn)
+Nối nốt khâu cuối: khách hẹn giờ → admin gom thành lịch → giao cho người dẫn khách.
+
+**Khách chọn giờ cụ thể.** Ngoài nút Sáng/Chiều/Tối, ô "Đặt lịch xem phòng" có thêm ô chọn **giờ** (bước 15 phút). Chọn giờ và chọn buổi **loại trừ nhau** — chọn cái này thì xoá cái kia, để người dẫn khách không nhận được "sáng" kèm "16:30" rồi không biết tin cái nào. Có dòng xác nhận ngay dưới: *"✓ Bạn muốn xem lúc 16:30 ngày 16/08"*.
+
+**Quy ước lưu (`prisma/schema.prisma`):** giờ hẹn LUÔN nằm trong `preferredDate`, nhờ vậy sắp lịch chỉ cần `orderBy preferredDate`.
+- `preferredSlot != null` → khách chỉ chọn BUỔI; `preferredDate` giữ **giờ đại diện** (sáng 08:00 · chiều 14:00 · tối 19:00) để vẫn xếp đúng thứ tự. Giờ đại diện **không bao giờ được in ra** — in "08:00" khi khách mới nói "sáng" là bịa giờ hẹn.
+- `preferredSlot == null` → khách đã chọn GIỜ CỤ THỂ, giờ đó nằm ngay trong `preferredDate`.
+- Không có giờ đại diện thì mọi lịch "chỉ chọn buổi" đều là 00:00 và bị xếp lên trước cả lịch 7h sáng cùng ngày.
+
+**Tab thứ 3 `/admin/leads?tab=lich` — "🗓️ Lịch khách xem phòng".** Khác tab "Xin xem phòng" (xếp theo lúc khách GỬI form): trang này xếp theo **GIỜ ĐI XEM**, gần nhất trước — đúng thứ tự người dẫn khách chạy trong ngày.
+- Gom theo ngày (*"Hôm nay · Thứ 7 15/08 · 3 lượt xem phòng"*), hôm nay/ngày mai tô vàng.
+- Nút **"📋 Copy gửi người dẫn"** từng ngày → tin nhắn Zalo sẵn: giờ · tên + SĐT khách · mã tin · **địa chỉ ĐẦY ĐỦ** · SĐT chủ nhà · ghi chú. Địa chỉ ở đây dùng `fullAddress` chứ KHÔNG redact — người dẫn phải tới tận nơi, bản che số nhà cho khách thì không đi được. Endpoint đã chặn chỉ ADMIN/ADMIN_STAFF/BROKER.
+- Nút **"Đánh dấu đã giao"** ghi vào cột mới `guideSentAt` (nullable) → hàng chuyển xanh, khỏi giao trùng người. Chip lọc **Tất cả / ⚠️ Chưa có người dẫn / ✅ Đã giao** kèm số đếm SERVER-SIDE.
+- `PUT /api/viewing-requests` nhận thêm `guideSent` (không bắt buộc kèm `status`). Kẹp 100 lịch/lần và **nói rõ khi bị cắt** thay vì im lặng.
+
+**Kiểm đầu-cuối bằng Playwright mô phỏng iPhone trên dữ liệu thật:** chọn giờ 16:30 → server lưu đúng `16:30`; chọn buổi sáng → lưu `08:00` kèm `preferredSlot=morning`; lịch "sáng" xếp trước lịch "16:30" cùng ngày; chọn giờ rồi bấm "Chiều" thì ô giờ tự xoá. 0 lỗi JS. Bản ghi test đã dọn, **45 lịch hẹn thật nguyên vẹn** sau `db push`.
+
 ### v9.59 — 2026-08-15 (mùa sinh viên nhập học: khớp phòng cho khách đang chờ, lịch hẹn có cấu trúc, bản đồ cung–cầu)
 Soi dữ liệu thật giữa mùa cao điểm rồi vá đúng chỗ đang chảy máu.
 

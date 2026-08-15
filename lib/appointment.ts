@@ -12,6 +12,12 @@ export const SLOT_LABEL: Record<string, string> = {
   evening: 'tối',
 };
 
+/** Giờ hẹn dạng "14:30" theo giờ máy người xem (admin ở VN nên trùng giờ VN). */
+export function clockOf(date: string | Date): string {
+  const d = new Date(date);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
 /** Số ngày từ HÔM NAY tới ngày hẹn (0 = hôm nay, 1 = mai, âm = đã qua). */
 export function daysUntil(date: string | Date): number {
   const d = new Date(date);
@@ -32,15 +38,19 @@ export function appointmentLabel(
 ): { text: string; urgent: boolean; past: boolean } | null {
   if (!preferredDate) return null;
   const diff = daysUntil(preferredDate);
+  // preferredSlot có giá trị = khách chỉ chọn buổi (giờ trong preferredDate chỉ là giờ đại
+  // diện để sắp xếp, KHÔNG được in ra — in "8:00" khi khách mới nói "sáng" là bịa giờ hẹn).
   const slot = preferredSlot ? SLOT_LABEL[preferredSlot] || '' : '';
+  const when = slot || clockOf(preferredDate);
 
-  let when: string;
-  if (diff === 0) when = slot ? `${slot} nay` : 'hôm nay';
-  else if (diff === 1) when = slot ? `${slot} mai` : 'ngày mai';
-  else if (diff === 2) when = slot ? `${slot} ngày kia` : 'ngày kia';
+  let day: string;
+  if (diff === 0) day = 'nay';
+  else if (diff === 1) day = 'mai';
+  else if (diff === 2) day = 'ngày kia';
   else {
     const d = new Date(preferredDate);
-    when = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}${slot ? ` ${slot}` : ''}`;
+    day = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
   }
-  return { text: `Hẹn ${when}`, urgent: diff >= 0 && diff <= 1, past: diff < 0 };
+  // "Hẹn sáng nay" · "Hẹn 14:30 mai" · "Hẹn 09:00 19/08"
+  return { text: `Hẹn ${when} ${day}`, urgent: diff >= 0 && diff <= 1, past: diff < 0 };
 }

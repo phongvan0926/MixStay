@@ -11,6 +11,7 @@ import Pagination from '@/components/ui/Pagination';
 import ViewingRequestTable from '@/components/leads/ViewingRequestTable';
 import FilterChip from '@/components/leads/FilterChip';
 import SavedSearchMatches from '@/components/leads/SavedSearchMatches';
+import ViewingSchedule from '@/components/leads/ViewingSchedule';
 import { HANOI_DISTRICTS } from '@/lib/hanoi-locations';
 import toast from 'react-hot-toast';
 import { telHref, zaloHref } from '@/lib/phone';
@@ -26,8 +27,9 @@ function AdminLeadsInner() {
   // Thông báo trỏ tới ?tab=xem-phong → đọc bằng useSearchParams (KHÔNG dùng window.location.search:
   // điều hướng nội bộ chưa cập nhật window.location khi component khởi tạo state).
   const searchParams = useSearchParams();
-  const [tab, setTab] = useState<'xem-phong' | 'san-phong'>(
-    searchParams.get('tab') === 'san-phong' ? 'san-phong' : 'xem-phong'
+  const initial = searchParams.get('tab');
+  const [tab, setTab] = useState<'xem-phong' | 'lich' | 'san-phong'>(
+    initial === 'san-phong' ? 'san-phong' : initial === 'lich' ? 'lich' : 'xem-phong'
   );
 
   return (
@@ -42,6 +44,7 @@ function AdminLeadsInner() {
       <div className="flex gap-2 mb-5">
         {([
           { key: 'xem-phong', label: '📅 Xin xem phòng' },
+          { key: 'lich', label: '🗓️ Lịch khách xem phòng' },
           { key: 'san-phong', label: '🔔 Săn phòng' },
         ] as const).map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
@@ -55,7 +58,9 @@ function AdminLeadsInner() {
         ))}
       </div>
 
-      {tab === 'xem-phong' ? <ViewingRequestsTab /> : <SavedSearchesTab />}
+      {tab === 'xem-phong' ? <ViewingRequestsTab />
+        : tab === 'lich' ? <ViewingSchedule />
+        : <SavedSearchesTab />}
     </>
   );
 }
