@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { applyRateLimit } from '@/lib/rate-limit';
+import { matchAndNotify } from '@/lib/saved-search-match';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -10,6 +11,7 @@ export const maxDuration = 60;
  *  1. Phòng 🟡 UPCOMING đã đến ngày trống dự kiến → tự chuyển 🟢 AVAILABLE + báo chủ nhà kiểm tra.
  *  2. Tin 🟢 AVAILABLE quá 30 ngày không cập nhật → nhắc chủ nhà xác nhận còn phòng
  *     (chỉ nhắc 1 lần khi vừa chạm mốc 30–31 ngày — cron ngày nào cũng chạy nên không spam).
+ *  3. Khách "săn phòng" đang bật → quét lại kho, có tin mới khớp thì báo admin gọi chào phòng.
  * Bảo mật 2 lớp:
  *  - CRON_SECRET (khuyến nghị): có env này thì bắt buộc Bearer khớp — Vercel Cron tự gắn header.
  *  - Khi CHƯA đặt CRON_SECRET: vẫn chặn gọi hàng loạt bằng rate limit + chỉ nhận lời gọi mang
@@ -92,7 +94,23 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ ok: true, autoAvailable: due.length, staleReminded: stale.length });
+    // ── 3. Quét lại "săn phòng" ─────────────────────────────────────────────
+    // Khách đang săn mà kho có hàng khớp thì phải được gọi, kể cả khi hàng đó đã nằm sẵn
+    // trong kho từ trước (không phải tin vừa duyệt). Mỗi khách chỉ báo phần tin MỚI cập
+    // nhật sau lần báo gần nhất → sáng nào cũng chạy nhưng không nhắc lại cùng một bộ tin.
+    const hunting = await prisma.savedSearch.findMany({ where: { isActive: true } });
+    let huntersNotified = 0;
+    for (const s of hunting) {
+      try {
+        if (await matchAndNotify(s, { since: s.lastMatchedAt, reason: 'daily' })) huntersNotified++;
+      } catch (e) {
+        console.error('cron saved-search match error:', s.id, e);
+      }
+    }
+
+    return NextResponse.json({
+      ok: true, autoAvailable: due.length, staleReminded: stale.length, huntersNotified,
+    });
   } catch (error: any) {
     console.error('/api/cron/lifecycle error:', error);
     return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });

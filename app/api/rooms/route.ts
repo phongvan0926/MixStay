@@ -450,8 +450,12 @@ export async function PUT(req: NextRequest) {
         });
         if (!rt) return;
         const searches = await prisma.savedSearch.findMany({ where: { isActive: true } });
+        // Khớp bằng CÙNG luật với bộ quét ngược (lib/saved-search-match.ts) — trước đây chỗ này
+        // so quận bằng `includes` chuỗi nên "Từ Liêm" ăn nhầm cả "Bắc/Nam Từ Liêm", còn khách
+        // chọn nhiều quận thì lọt tuỳ chuỗi. Nay tách theo dấu phẩy và so bằng.
         const matched = searches.filter(s => {
-          if (s.district && rt.property?.district && !s.district.toLowerCase().includes(rt.property.district.toLowerCase())) return false;
+          const districts = (s.district || '').split(',').map(d => d.trim()).filter(Boolean);
+          if (districts.length && !districts.includes(rt.property?.district || '')) return false;
           if (s.typeName && s.typeName !== rt.typeName) return false;
           if (s.minPrice && rt.priceMonthly < s.minPrice) return false;
           if (s.maxPrice && rt.priceMonthly > s.maxPrice) return false;
@@ -465,7 +469,7 @@ export async function PUT(req: NextRequest) {
             type: 'saved_search',
             title: '🎯 Tin mới khớp khách săn phòng',
             message: `"${rt.name}" (${rt.listingCode || ''}) khớp nhu cầu của ${s.name || 'khách'} ${s.phone} — gọi chào phòng ngay!`,
-            link: '/admin/leads',
+            link: '/admin/leads?tab=saved',
           }))),
         });
         await prisma.savedSearch.updateMany({

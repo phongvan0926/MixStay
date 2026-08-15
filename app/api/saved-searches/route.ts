@@ -4,13 +4,17 @@ import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination';
+import { countMatches, findMatches, matchAndNotify } from '@/lib/saved-search-match';
 
 /**
  * "Săn phòng": khách (KHÔNG cần tài khoản) để lại tiêu chí + SĐT.
  * - POST: public, rate-limit 'auth' chống spam — tạo yêu cầu săn phòng.
  * - GET:  admin-family — danh sách lead để gọi lại.
  * - PUT:  admin-family — bật/tắt (gọi xong/khách thuê rồi thì tắt).
- * Khi tin mới được duyệt khớp tiêu chí → notification cho ADMIN (xem PUT /api/rooms).
+ *
+ * KHỚP TIN 3 ĐƯỜNG (lib/saved-search-match.ts): khách vừa để lại tiêu chí → quét NGƯỢC kho
+ * có sẵn ngay tại POST này; tin mới duyệt → quét XUÔI (PUT /api/rooms); và quét lại hằng
+ * ngày (cron/lifecycle). Trước đây chỉ có đường thứ hai nên khách phải chờ vô thời hạn.
  */
 const PHONE_RE = /^0\d{9}$/;
 
@@ -49,11 +53,21 @@ export async function POST(req: NextRequest) {
           type: 'saved_search',
           title: '🔔 Khách săn phòng mới',
           message: `${name || 'Khách'} (${phone}) cần: ${[district, typeName, maxPrice ? `≤${(maxPrice / 1e6).toFixed(1)}tr` : ''].filter(Boolean).join(' · ') || 'chưa rõ tiêu chí'}`,
-          link: '/admin/leads',
+          link: '/admin/leads?tab=saved',
         })),
       });
     }
-    return NextResponse.json({ ok: true, id: created.id });
+
+    // QUÉT NGƯỢC KHO NGAY: khách vừa nêu tiêu chí thì kho thường đã sẵn hàng đúng ý —
+    // không có lý do gì bắt họ chờ tới khi tình cờ có tin MỚI được duyệt. Lỗi ở đây
+    // không được chặn response (khách đã để lại SĐT thành công rồi).
+    let matchCount = 0;
+    try {
+      matchCount = await matchAndNotify({ ...created, name, phone });
+    } catch (e) {
+      console.error('saved-search reverse match error:', e);
+    }
+    return NextResponse.json({ ok: true, id: created.id, matchCount });
   } catch (error: any) {
     console.error('POST /api/saved-searches error:', error);
     return NextResponse.json({ error: error?.message || 'Lỗi server' }, { status: 500 });
@@ -69,6 +83,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const url = new URL(req.url);
+
+    // ?matchesFor=<id> → danh sách tin trong kho khớp tiêu chí của ĐÚNG khách đó, để admin
+    // mở ra ngay tại bảng lead mà đọc mã tin cho khách qua điện thoại.
+    const matchesFor = url.searchParams.get('matchesFor');
+    if (matchesFor) {
+      const s = await prisma.savedSearch.findUnique({ where: { id: matchesFor } });
+      if (!s) return NextResponse.json({ error: 'Không tìm thấy' }, { status: 404 });
+      return NextResponse.json({ data: await findMatches(s) });
+    }
+
     const { page, limit, skip } = getPaginationParams(url);
     // state: active (đang săn) | off (đã tắt) | all. Giữ tương thích tham số cũ `active=false`
     // (nghĩa cũ của nó là "hiện cả yêu cầu đã tắt", tức là tất cả).
@@ -101,8 +125,14 @@ export async function GET(req: NextRequest) {
       prisma.savedSearch.count({ where: { ...base, isActive: true } }),
       prisma.savedSearch.count({ where: { ...base, isActive: false } }),
     ]);
+    // Số tin khớp cho TỪNG khách trên trang hiện tại (20 count song song) — admin nhìn phát
+    // biết khách nào đang có hàng để gọi, khách nào kho thật sự hết.
+    const withMatches = await Promise.all(
+      rows.map(async r => ({ ...r, matchCount: await countMatches(r) })),
+    );
+
     return NextResponse.json({
-      ...paginatedResponse(rows, total, page, limit),
+      ...paginatedResponse(withMatches, total, page, limit),
       counts: { active: activeCount, off: offCount, all: activeCount + offCount },
     });
   } catch (error: any) {

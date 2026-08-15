@@ -2,7 +2,7 @@
 // ⚠️ KHÔNG bọc <DashboardLayout> ở đây — app/{admin,broker,landlord}/layout.tsx đã bọc rồi.
 // Bọc hai lần thì mọi thứ nhân đôi: 2 sidebar, `lg:ml-60` cộng dồn (đẩy nội dung lệch phải
 // ~240px), `max-w-7xl mx-auto` + padding cộng dồn, và 2 bộ SWR poll thông báo mỗi 30s.
-import { Suspense, useEffect, useState } from 'react';
+import { Fragment, Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/fetcher';
@@ -10,6 +10,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import Pagination from '@/components/ui/Pagination';
 import ViewingRequestTable from '@/components/leads/ViewingRequestTable';
 import FilterChip from '@/components/leads/FilterChip';
+import SavedSearchMatches from '@/components/leads/SavedSearchMatches';
 import { HANOI_DISTRICTS } from '@/lib/hanoi-locations';
 import toast from 'react-hot-toast';
 import { telHref, zaloHref } from '@/lib/phone';
@@ -215,6 +216,7 @@ function SavedSearchesTab() {
   const [unmatched, setUnmatched] = useState(false);
   const [qInput, setQInput] = useState('');
   const [q, setQ] = useState('');
+  const [openId, setOpenId] = useState<string | null>(null); // khách đang mở xem tin khớp
 
   useEffect(() => {
     const t = setTimeout(() => { setQ(qInput.trim()); setPage(1); }, 350);
@@ -312,13 +314,14 @@ function SavedSearchesTab() {
                 <th className="table-header min-w-[200px]">Tiêu chí</th>
                 <th className="table-header min-w-[130px]">Ghi chú</th>
                 <th className="table-header min-w-[100px]">Đăng ký</th>
-                <th className="table-header min-w-[120px]">Khớp gần nhất</th>
+                <th className="table-header min-w-[140px]">Kho có hàng?</th>
                 <th className="table-header text-right min-w-[150px]">Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((s: any) => (
-                <tr key={s.id} className={`border-b border-stone-50 ${s.isActive ? '' : 'opacity-50'}`}>
+                <Fragment key={s.id}>
+                <tr className={`border-b border-stone-50 ${s.isActive ? '' : 'opacity-50'}`}>
                   <td className="table-cell align-top">
                     <p className="font-medium text-stone-800 whitespace-nowrap">{s.name || 'Khách'}</p>
                     <a href={telHref(s.phone) || undefined} className="text-brand-600 font-mono text-xs hover:underline">{s.phone}</a>
@@ -335,8 +338,22 @@ function SavedSearchesTab() {
                   </td>
                   <td className="table-cell align-top text-stone-500 text-xs max-w-[180px] truncate">{s.note || '—'}</td>
                   <td className="table-cell align-top text-stone-500 text-xs whitespace-nowrap">{formatDate(s.createdAt)}</td>
+                  {/* "Kho có hàng?" — trả lời đúng câu hỏi admin cần: gọi khách này thì có gì
+                      để chào. Trước đây cột này chỉ ghi ngày khớp gần nhất, không cho biết
+                      HIỆN GIỜ còn tin nào. */}
                   <td className="table-cell align-top text-xs whitespace-nowrap">
-                    {s.lastMatchedAt ? <span className="text-emerald-600 font-medium">🎯 {formatDate(s.lastMatchedAt)}</span> : <span className="text-stone-400">Chưa có</span>}
+                    {s.matchCount > 0 ? (
+                      <button type="button" onClick={() => setOpenId(openId === s.id ? null : s.id)}
+                        className="inline-flex items-center gap-1 min-h-8 px-2.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold hover:border-emerald-400">
+                        🎯 {s.matchCount} tin khớp <span className="text-[10px]">{openId === s.id ? '▲' : '▼'}</span>
+                      </button>
+                    ) : (s.district || s.typeName || s.minPrice || s.maxPrice) ? (
+                      <span className="text-stone-400">Kho chưa có</span>
+                    ) : (
+                      // Khách bỏ trống hết tiêu chí → không khớp tự động được, phải gọi hỏi
+                      <span className="text-amber-600">Chưa rõ tiêu chí — gọi hỏi</span>
+                    )}
+                    {s.lastMatchedAt && <p className="text-stone-400 mt-1">Báo lúc {formatDate(s.lastMatchedAt)}</p>}
                   </td>
                   <td className="table-cell align-top text-right">
                     <button onClick={() => toggle(s.id, !s.isActive)}
@@ -349,6 +366,14 @@ function SavedSearchesTab() {
                     </button>
                   </td>
                 </tr>
+                {openId === s.id && (
+                  <tr className="border-b border-stone-100 bg-stone-50/60">
+                    <td colSpan={6} className="px-4">
+                      <SavedSearchMatches searchId={s.id} open />
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))}
             </tbody>
           </table>
