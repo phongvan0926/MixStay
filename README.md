@@ -286,6 +286,19 @@ mixstay/
 - **Sửa dữ liệu:** BNBHOLDING `09366258556` → **`0936258556`**. Bằng chứng: cả 9 tòa của công ty đứng tên chủ nhà **Anh Biên — 0936258556**, và 3 tòa ghi thẳng `"A Biên 0936258556"`; số lưu sai đúng là số đó **thừa một chữ số 6** (`0936|6|258556`). Kho công ty đã có lại nút gọi + Zalo.
 - **Rà lại toàn bộ nguồn SĐT dựng link:** công ty **0/36 lỗi**, tòa nhà **0/464 lỗi**, tài khoản còn 1 (CTV thử nghiệm "aaa" `1234567890` — đã có cảnh báo lo).
 
+### v9.61 — 2026-08-15 (đổ lịch cho 42 lead cũ + vá lỗi "hẹn lúc 00:00"; đưa "Khách để lại SĐT" lên đầu menu)
+**Đổ giờ hẹn cho lead cũ.** 44 lead trước v9.59 gõ giờ hẹn vào ô ghi chú tự do nên trang "Lịch khách xem phòng" trống trơn — toàn bộ lịch đang có của công ty vô hình với người dẫn khách. `scripts/backfill-appointments.js` đổ vào **42/44** lead.
+- Bảng bóc **lập sẵn, đọc kiểm được từng dòng** (id · ghi chú gốc · ngày · buổi/giờ · lý do) thay vì gọi AI lúc chạy: việc này có đáp án đúng và chỉ làm một lần cho 44 dòng — chạy lại luôn ra đúng một kết quả, không phụ thuộc quota API, không có rủi ro model bịa ra giờ hẹn.
+- Mọi từ tương đối tính từ **ngày khách GỬI**, không phải hôm nay: lead gửi 11/08 ghi *"8h tối mai"* = 12/08 20:00.
+- **Cố ý bỏ 2 lead** ghi *"Sang tuần"* — không nói thứ mấy, đoán ra là bịa lịch cho khách; chúng vẫn nằm ở tab "Xin xem phòng".
+- Trước khi ghi còn **đối chiếu lại ghi chú trong DB** có khớp bảng không; lệch một chữ là bỏ qua dòng đó. Kết quả: **17 lịch sắp tới** hiện lên tab Lịch (15/08 có 4 lượt, 16/08 có 11 lượt), 23 lịch đã qua ghi lại để thấy ca nào từng lỡ hẹn.
+
+**Thêm trạng thái "chưa chốt giờ" (`preferredSlot='day'`).** Ghi chú kiểu *"16/8"* chỉ cho biết NGÀY. Điền đại 09:00 là bịa giờ hẹn → màn hình in "Hẹn 09:00 16/08" và người dẫn khách tới sai giờ. Nay lưu `slot='day'`, giờ 09:00 CHỈ dùng để sắp xếp và **không bao giờ in ra**; màn hình hiện "Hẹn 16/08", cột giờ ghi "chưa rõ".
+
+**🐛 Vá lỗi hẹn lúc nửa đêm.** Khách chọn ngày mà bỏ trống cả buổi lẫn giờ thì `POST /api/viewing-requests` rơi về `00:00` + `slot=null` → màn hình in **"Hẹn 00:00 16/08"**. Một khách thật đã dính đúng chiều 15/08 trước khi vá. Nay rơi về `slot='day'`. Bản ghi bị dính đã sửa lại.
+
+**Menu quản trị:** "📥 Khách để lại SĐT" chuyển lên **ngay dưới "📊 Tổng quan"** — đây là việc gấp nhất trong ngày (khách đang chờ gọi lại), không phải mục tra cứu; để lẫn dưới Giao dịch thì admin phải lướt qua 4 mục quản lý kho mới tới việc cần làm ngay.
+
 ### v9.60 — 2026-08-15 (khách chọn GIỜ xem phòng + trang "Lịch khách xem phòng" giao việc cho người dẫn)
 Nối nốt khâu cuối: khách hẹn giờ → admin gom thành lịch → giao cho người dẫn khách.
 

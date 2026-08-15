@@ -10,6 +10,10 @@ export const SLOT_LABEL: Record<string, string> = {
   morning: 'sáng',
   afternoon: 'chiều',
   evening: 'tối',
+  // 'day' = BIẾT NGÀY, CHƯA BIẾT GIỜ (khách chỉ ghi "16/8"). Không có giá trị này thì buộc
+  // phải bịa ra một giờ để lưu, rồi màn hình in "Hẹn 09:00 16/08" — hẹn giả, người dẫn khách
+  // đến sai giờ. Form không bao giờ gửi 'day'; nó chỉ sinh ra khi bóc ghi chú cũ.
+  day: '',
 };
 
 /** Giờ hẹn dạng "14:30" theo giờ máy người xem (admin ở VN nên trùng giờ VN). */
@@ -40,8 +44,9 @@ export function appointmentLabel(
   const diff = daysUntil(preferredDate);
   // preferredSlot có giá trị = khách chỉ chọn buổi (giờ trong preferredDate chỉ là giờ đại
   // diện để sắp xếp, KHÔNG được in ra — in "8:00" khi khách mới nói "sáng" là bịa giờ hẹn).
-  const slot = preferredSlot ? SLOT_LABEL[preferredSlot] || '' : '';
-  const when = slot || clockOf(preferredDate);
+  const slot = preferredSlot ? SLOT_LABEL[preferredSlot] ?? '' : '';
+  // slot 'day' cho chuỗi rỗng → chỉ in ngày, KHÔNG in giờ đại diện (giờ đó chỉ để sắp xếp)
+  const when = preferredSlot === 'day' ? '' : (slot || clockOf(preferredDate));
 
   let day: string;
   if (diff === 0) day = 'nay';
@@ -51,6 +56,6 @@ export function appointmentLabel(
     const d = new Date(preferredDate);
     day = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
   }
-  // "Hẹn sáng nay" · "Hẹn 14:30 mai" · "Hẹn 09:00 19/08"
-  return { text: `Hẹn ${when} ${day}`, urgent: diff >= 0 && diff <= 1, past: diff < 0 };
+  // "Hẹn sáng nay" · "Hẹn 14:30 mai" · "Hẹn 09:00 19/08" · "Hẹn 19/08" (chưa chốt giờ)
+  return { text: `Hẹn ${[when, day].filter(Boolean).join(' ')}`, urgent: diff >= 0 && diff <= 1, past: diff < 0 };
 }

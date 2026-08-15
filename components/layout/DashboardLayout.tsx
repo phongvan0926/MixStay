@@ -16,11 +16,14 @@ type MenuItem = { label: string; href: string; icon: string; perm?: AdminPermiss
 const menuItems: Record<string, MenuItem[]> = {
   ADMIN: [
     { label: 'Tổng quan', href: '/admin/dashboard', icon: '📊' },
+    // Khách để lại SĐT đứng NGAY SAU Tổng quan: đây là việc gấp nhất trong ngày (khách đang
+    // chờ gọi lại), không phải mục tra cứu — để lẫn dưới Giao dịch là admin phải lướt qua
+    // 4 mục quản lý kho mới tới việc cần làm ngay.
+    { label: 'Khách để lại SĐT', href: '/admin/leads', icon: '📥' },
     { label: 'Công ty', href: '/admin/companies', icon: '🏛️', perm: 'MANAGE_COMPANIES' },
     { label: 'Tòa nhà', href: '/admin/properties', icon: '🏢' },
     { label: 'Tin đăng', href: '/admin/rooms', icon: '📝' },
     { label: 'Giao dịch', href: '/admin/deals', icon: '💰' },
-    { label: 'Khách để lại SĐT', href: '/admin/leads', icon: '📥' },
     { label: 'Người dùng', href: '/admin/users', icon: '👥', perm: 'MANAGE_USERS' },
     { label: 'Cài đặt', href: '/admin/settings', icon: '⚙️', perm: 'EDIT_COMMISSION' },
   ],

@@ -42,7 +42,8 @@ export async function POST(req: NextRequest) {
     //   - Khách chỉ chọn BUỔI    → preferredDate = ngày + giờ ĐẠI DIỆN, preferredSlot = buổi
     // Không có giờ đại diện thì mọi lịch "chỉ chọn buổi" đều là 00:00 và bị xếp lên trước cả
     // lịch 7h sáng cùng ngày.
-    const SLOT_HOUR: Record<string, string> = { morning: '08:00', afternoon: '14:00', evening: '19:00' };
+    // 'day' = biết ngày chưa biết giờ (chỉ sinh khi bóc ghi chú cũ, form không gửi) — xem lib/appointment.ts
+    const SLOT_HOUR: Record<string, string> = { morning: '08:00', afternoon: '14:00', evening: '19:00', day: '09:00' };
     const rawDate: string = (body.preferredDate || '').trim();
     const rawSlot: string = (body.preferredSlot || '').trim();
     const rawTime: string = (body.preferredTime || '').trim();
@@ -52,8 +53,11 @@ export async function POST(req: NextRequest) {
     if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
       // Giờ cụ thể thắng buổi; giờ phải hợp lệ 00:00–23:59, sai thì bỏ qua (không đoán bừa).
       const validTime = /^([01]\d|2[0-3]):[0-5]\d$/.test(rawTime) ? rawTime : '';
-      const slot = !validTime && SLOT_HOUR[rawSlot] ? rawSlot : '';
-      const clock = validTime || (slot ? SLOT_HOUR[slot] : '00:00');
+      // Khách chọn NGÀY mà bỏ trống cả buổi lẫn giờ → slot 'day' (biết ngày, chưa chốt giờ).
+      // KHÔNG được để rơi về 00:00 + slot null: màn hình sẽ in "Hẹn 00:00 16/08" và người dẫn
+      // khách bị hẹn lúc nửa đêm. Lỗi thật 15/08/2026, một khách đã dính trước khi vá.
+      const slot = validTime ? '' : (SLOT_HOUR[rawSlot] ? rawSlot : 'day');
+      const clock = validTime || SLOT_HOUR[slot];
 
       const d = new Date(`${rawDate}T${clock}:00+07:00`); // giờ VN — tránh lệch ngày do UTC
       const today = new Date(); today.setHours(0, 0, 0, 0);

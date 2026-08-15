@@ -28,8 +28,12 @@ function dayHeading(date: string | Date) {
   return { label: rel ? `${rel} · ${dow} ${dm}` : `${dow} ${dm}`, urgent: diff <= 1, key: dm };
 }
 
-/** Giờ hiển thị: khách chọn buổi thì in "sáng", chọn giờ cụ thể thì in "14:30". */
+/**
+ * Giờ hiển thị: chọn buổi → "sáng"; chọn giờ cụ thể → "14:30"; chỉ biết ngày → "chưa rõ".
+ * KHÔNG in giờ đại diện của buổi — người dẫn khách đọc "08:00" sẽ tưởng đó là giờ đã hẹn.
+ */
 function timeText(r: any) {
+  if (r.preferredSlot === 'day') return 'chưa rõ';
   return r.preferredSlot ? SLOT_LABEL[r.preferredSlot] || r.preferredSlot : clockOf(r.preferredDate);
 }
 
