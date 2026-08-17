@@ -44,10 +44,16 @@ export default function PublicNav() {
             </span>
             <Logo variant="light" className="hidden min-[430px]:block h-8 sm:h-9 w-auto shrink-0 object-contain" />
           </Link>
-          {/* Nổi bật: nền vàng gold trên nav xanh đậm (gold-400 + chữ brand-900 an toàn tương phản), bo vuông giống nút Đăng ký */}
+          {/* Cùng KIỂU với nút "Tìm theo bản đồ" ở ô tìm kiếm bên dưới (gradient tím → xanh, bo xl,
+              đổ bóng, nhấc nhẹ khi rê chuột) để khách nhận ra ngay là cùng một lối vào — chỉ khác
+              chữ màu VÀNG cho ăn với logo.
+              Vì sao gradient đậm hơn bản dưới (violet-800/brand-700 thay vì -600): nút dưới nằm
+              trên thẻ TRẮNG, nút này nằm trên nav XANH ĐẬM. Giữ nguyên sắc -600 thì chữ gold-300
+              chỉ đạt tương phản 3.3:1 (chuẩn WCAG AA cần 4.5:1 cho chữ 14px) và đầu xanh của
+              gradient chìm vào nền nav. Đậm 2 nấc → 5.3:1 ở cả hai đầu gradient.
+              Bỏ icon 🗺️ theo yêu cầu: chữ đã nói rõ, icon chỉ làm nút dài thêm. */}
           <Link href="/ban-do" aria-label="Tìm phòng trên bản đồ"
-            className="inline-flex items-center justify-center gap-1 shrink-0 text-sm px-2.5 sm:px-4 py-2 min-h-11 sm:min-h-0 rounded-xl font-semibold bg-gold-400 text-brand-900 shadow-sm hover:bg-gold-300 transition-colors whitespace-nowrap">
-            🗺️
+            className="inline-flex items-center justify-center shrink-0 text-sm px-3 sm:px-6 py-2 min-h-11 sm:min-h-0 rounded-xl font-semibold text-gold-300 bg-gradient-to-r from-violet-800 to-brand-700 ring-1 ring-white/20 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all whitespace-nowrap">
             <span className="sm:hidden">Bản đồ</span>
             <span className="hidden sm:inline">Tìm trên bản đồ</span>
           </Link>

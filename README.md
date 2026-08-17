@@ -286,6 +286,22 @@ mixstay/
 - **Sửa dữ liệu:** BNBHOLDING `09366258556` → **`0936258556`**. Bằng chứng: cả 9 tòa của công ty đứng tên chủ nhà **Anh Biên — 0936258556**, và 3 tòa ghi thẳng `"A Biên 0936258556"`; số lưu sai đúng là số đó **thừa một chữ số 6** (`0936|6|258556`). Kho công ty đã có lại nút gọi + Zalo.
 - **Rà lại toàn bộ nguồn SĐT dựng link:** công ty **0/36 lỗi**, tòa nhà **0/464 lỗi**, tài khoản còn 1 (CTV thử nghiệm "aaa" `1234567890` — đã có cảnh báo lo).
 
+### v9.65 — 2026-08-17 (tab "💰 Giá tốt" trang chủ chọn đúng phòng đáng khoe + nút bản đồ trên nav)
+- **🔴 Lỗi nghiệp vụ ở tab "💰 Giá tốt":** tab này đang xếp theo **giá tuyệt đối** (`sort=price_asc`) nên **8/12 tin đầu rơi hết vào Hoài Đức 1,5–2,5tr** — ngoại thành, cách trung tâm ~15km — và **5 trong số đó là cùng MỘT tòa** (LIDECO Trạm Trôi). Khách vào trang chủ tìm phòng nội thành lướt qua thấy toàn chỗ mình không ở được → khối "Phòng nổi bật" mất tác dụng.
+- **Định nghĩa lại "giá tốt" = rẻ hơn MẶT BẰNG CHÍNH QUẬN đó**, không phải rẻ nhất bảng. Phòng 3tr ở Cầu Giấy (trung vị 4,8tr) là món hời thật; phòng 2,5tr ở Hoài Đức (trung vị 2,6tr) chỉ là giá thường của vùng đó. Chế độ mới `?sort=deal` ở `/api/rooms/public`:
+  - chỉ lấy tin **rẻ hơn trung vị quận ≥10%**, quận có <5 tin thì bỏ qua (trung vị không nói lên gì)
+  - **mỗi quận + mỗi TÒA nhiều nhất 1 tin** → 6 thẻ trang chủ là 6 quận khác nhau, không bị một tòa chiếm sạch
+  - **chỉ giới hạn nội thành khi khách CHƯA tự chọn quận** — khách chọn Hoài Đức thì "giá tốt ở Hoài Đức" mới là câu trả lời đúng
+  - chỉ tin **có ảnh** (thẻ trống ảnh nằm ở khối khoe hàng thì phản tác dụng)
+  - **luân phiên mỗi giờ**: đổi cả quận mở màn lẫn tin trong từng quận, khách quay lại buổi sau thấy kho khác
+- **⚠️ Bẫy đã tránh — trung vị phải tính trên TOÀN kho của quận, không phải trên tập đã lọc.** Bản đầu tính trung vị ngay trên kết quả đã áp bộ lọc của khách: kéo mức giá tối đa về 3,5tr thì trung vị Hoàng Mai tụt 4,7tr → 3tr, và tin 2,4tr **đang rẻ hơn 49% bị khai thành "rẻ hơn 20%"**. Nay có truy vấn mặt bằng riêng, bỏ qua lọc giá/loại/tiện ích — đã kiểm: tin xuất hiện ở cả hai lần gọi giữ nguyên đúng một con số.
+- **Trong cùng một vòng thì món hời sâu nhất lên trước:** thứ tự quận xoay theo giờ nên nếu không sắp lại, thẻ đầu trang chủ có lượt rơi đúng vào tin chỉ rẻ hơn 13% trong khi tin rẻ hơn 49% nằm tuốt thẻ thứ ba.
+- **Nói thẳng lý do tin đứng đó:** badge xanh **💰 Rẻ hơn N%** trên ảnh (cùng kiểu badge "👁 N lượt xem" của tab Xem nhiều) + một dòng dưới thanh tab giải thích "rẻ hơn mặt bằng chính quận đó". Không thì khách thấy phòng 4tr trong tab "Giá tốt" sẽ tưởng web xếp bừa — trong khi 4tr ở Đống Đa đúng là rẻ.
+- **Trạng thái rỗng nói đúng sự thật:** tab Giá tốt có bộ lọc riêng nên rỗng ≠ kho rỗng → hiện "Hôm nay chưa có phòng nào rẻ hơn hẳn mặt bằng khu vực" + lối sang `/phong`, thay vì câu "chưa có tin đăng nào được duyệt" đuổi khách đi oan.
+- **Nút bản đồ cạnh logo:** bỏ icon 🗺️, đổi sang **cùng kiểu với nút "Tìm theo bản đồ" ở ô tìm kiếm bên dưới** (gradient tím → xanh, bo `rounded-xl`, đổ bóng, nhấc nhẹ khi rê chuột) nhưng **chữ vàng `gold-300` ăn với logo** (`#ebc24d`, khớp sắc vàng lấy mẫu từ chính `logo-nav.png`).
+- **Vì sao gradient đậm hơn bản dưới (`violet-800`/`brand-700` thay vì `-600`):** nút dưới nằm trên thẻ trắng, nút này nằm trên nav xanh đậm. Giữ nguyên sắc `-600` thì chữ vàng chỉ đạt tương phản **3,3:1** (WCAG AA cần 4,5:1 cho chữ 14px) và đầu xanh của gradient chìm vào nền nav. Đậm 2 nấc → **5,3:1 ở cả hai đầu**, kèm `ring-1 ring-white/20` để cạnh nút không lẫn vào nav.
+- **Kiểm bằng Playwright (hành vi, không phải pixel):** 6 thẻ = 6 quận khác nhau, 0 tin ngoại thành, đủ 6 badge, badge không lọt sang tab khác, không lỗi JS; nút nav ở 360/390/430/1280px đều cao ≥44px và không tràn ngang. 7 chế độ sắp xếp cũ + chế độ gần trường chạy lại đều bình thường, không rò `latitude`/`longitude`/`fullAddress`/`propertyId`.
+
 ### v9.64 — 2026-08-17 (hồ sơ khách + nhật ký thao tác — hai mảng trống của khu quản trị)
 Từ bản rà soát dưới góc nhìn người vận hành 10 năm, làm phần "cho admin".
 

@@ -22,7 +22,11 @@ const TABS = [
   // Nhãn ngắn để 3 tab nằm gọn MỘT hàng trên điện thoại 390px (đo 15/08: nhãn dài bị
   // xuống dòng, tab thứ 3 đứng lẻ loi một mình trông như nút khác loại).
   { key: '', label: '🆕 Mới đăng', sort: '' },
-  { key: 'price_asc', label: '💰 Giá tốt', sort: 'price_asc' },
+  // "Giá tốt" dùng sort=deal chứ KHÔNG phải price_asc: xếp theo giá tuyệt đối thì 8/12 tin đầu
+  // là Hoài Đức 1,5–2,5tr (ngoại thành, 5 tin cùng một tòa) — khách tìm phòng nội thành lướt
+  // qua thấy toàn chỗ mình không ở. sort=deal xếp theo mức RẺ HƠN MẶT BẰNG CHÍNH QUẬN đó,
+  // ưu tiên nội thành, mỗi quận/mỗi tòa 1 tin và đổi lứa mỗi giờ. Xem app/api/rooms/public.
+  { key: 'deal', label: '💰 Giá tốt', sort: 'deal' },
   { key: 'views_desc', label: '🔥 Xem nhiều', sort: 'views_desc' },
 ] as const;
 
@@ -39,6 +43,8 @@ type PublicRoom = {
   status?: string;
   availableUnits?: number;
   viewCount?: number;
+  /** Chỉ có ở tab "Giá tốt": rẻ hơn bao nhiêu % so với giá phổ biến của quận đó */
+  dealPercent?: number;
   shortTermAllowed?: boolean;
   property?: {
     district?: string; streetName?: string; city?: string;
@@ -69,17 +75,26 @@ export default function FeaturedRooms() {
   }, [tab, byTab]);
 
   const tabBar = (
-    <div className="flex flex-wrap justify-center gap-2 mb-6">
-      {TABS.map(t => (
-        <button key={t.key} type="button" onClick={() => setTab(t.key)}
-          className={`inline-flex items-center min-h-11 sm:min-h-10 px-4 rounded-xl text-sm font-medium border transition-colors ${
-            tab === t.key
-              ? 'bg-brand-600 text-white border-brand-600'
-              : 'bg-white text-stone-600 border-stone-200 hover:border-brand-300'
-          }`}>
-          {t.label}
-        </button>
-      ))}
+    <div className="mb-6">
+      <div className="flex flex-wrap justify-center gap-2">
+        {TABS.map(t => (
+          <button key={t.key} type="button" onClick={() => setTab(t.key)}
+            className={`inline-flex items-center min-h-11 sm:min-h-10 px-4 rounded-xl text-sm font-medium border transition-colors ${
+              tab === t.key
+                ? 'bg-brand-600 text-white border-brand-600'
+                : 'bg-white text-stone-600 border-stone-200 hover:border-brand-300'
+            }`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {/* Nói rõ "giá tốt" nghĩa là gì — không thì khách thấy phòng 4tr đứng trong tab
+          "Giá tốt" sẽ tưởng web xếp bừa, trong khi 4tr ở Đống Đa đúng là rẻ. */}
+      {tab === 'deal' && (
+        <p className="mt-3 text-center text-xs sm:text-sm text-stone-500">
+          Phòng <strong className="text-stone-700">rẻ hơn mặt bằng chính quận đó</strong> — ưu tiên nội thành, mỗi quận một phòng, đổi lứa mỗi giờ.
+        </p>
+      )}
     </div>
   );
 
@@ -104,17 +119,30 @@ export default function FeaturedRooms() {
     );
   }
 
-  // Chưa có tin đăng nào (DB rỗng) → không hiện demo, hiện thông báo trung thực
+  // Chưa có tin đăng nào (DB rỗng) → không hiện demo, hiện thông báo trung thực.
+  // Tab "Giá tốt" có bộ lọc riêng (rẻ hơn mặt bằng quận) nên rỗng ở đây KHÔNG có nghĩa là
+  // kho rỗng — nói nhầm thành "chưa có tin nào được duyệt" là đuổi khách đi oan.
   if (rooms.length === 0) {
     return (
       <>
         {tabBar}
         <div className="text-center py-12">
           <span className="text-4xl block mb-3">🏠</span>
-          <p className="text-stone-500">Chưa có tin đăng nào được duyệt. Hãy quay lại sau nhé!</p>
-          <Link href="/register" className="inline-block mt-4 text-brand-600 font-medium hover:underline">
-            Bạn là chủ nhà? Đăng phòng ngay →
-          </Link>
+          {tab === 'deal' ? (
+            <>
+              <p className="text-stone-500">Hôm nay chưa có phòng nào rẻ hơn hẳn mặt bằng khu vực.</p>
+              <Link href="/phong" className="inline-block mt-4 text-brand-600 font-medium hover:underline">
+                Xem tất cả phòng đang trống →
+              </Link>
+            </>
+          ) : (
+            <>
+              <p className="text-stone-500">Chưa có tin đăng nào được duyệt. Hãy quay lại sau nhé!</p>
+              <Link href="/register" className="inline-block mt-4 text-brand-600 font-medium hover:underline">
+                Bạn là chủ nhà? Đăng phòng ngay →
+              </Link>
+            </>
+          )}
         </div>
       </>
     );
@@ -147,6 +175,13 @@ export default function FeaturedRooms() {
                   // Ở tab "nhiều người xem", con số chính là lý do tin đứng đây → nói ra
                   <span className="absolute top-3 right-3 z-10 inline-flex items-center rounded-full bg-black/60 backdrop-blur-sm px-2.5 py-1 text-xs font-semibold text-white shadow">
                     👁 {room.viewCount} lượt xem
+                  </span>
+                ) : tab === 'deal' && (room.dealPercent || 0) > 0 ? (
+                  // Cũng vậy ở tab "Giá tốt": nói thẳng rẻ hơn bao nhiêu, so với đâu
+                  <span
+                    title={`Rẻ hơn khoảng ${room.dealPercent}% so với giá phổ biến của phòng ở ${room.property?.district || 'quận này'}`}
+                    className="absolute top-3 right-3 z-10 inline-flex items-center rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white shadow">
+                    💰 Rẻ hơn {room.dealPercent}%
                   </span>
                 ) : null}
               </div>
