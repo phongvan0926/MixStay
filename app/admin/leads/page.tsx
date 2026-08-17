@@ -12,6 +12,7 @@ import ViewingRequestTable from '@/components/leads/ViewingRequestTable';
 import FilterChip from '@/components/leads/FilterChip';
 import SavedSearchMatches from '@/components/leads/SavedSearchMatches';
 import ViewingSchedule from '@/components/leads/ViewingSchedule';
+import CustomerProfiles from '@/components/leads/CustomerProfiles';
 import { HANOI_DISTRICTS } from '@/lib/hanoi-locations';
 import toast from 'react-hot-toast';
 import { telHref, zaloHref } from '@/lib/phone';
@@ -28,8 +29,9 @@ function AdminLeadsInner() {
   // điều hướng nội bộ chưa cập nhật window.location khi component khởi tạo state).
   const searchParams = useSearchParams();
   const initial = searchParams.get('tab');
-  const [tab, setTab] = useState<'xem-phong' | 'lich' | 'san-phong'>(
-    initial === 'san-phong' ? 'san-phong' : initial === 'lich' ? 'lich' : 'xem-phong'
+  const [tab, setTab] = useState<'xem-phong' | 'lich' | 'san-phong' | 'khach'>(
+    initial === 'san-phong' ? 'san-phong' : initial === 'lich' ? 'lich'
+      : initial === 'khach' ? 'khach' : 'xem-phong'
   );
 
   return (
@@ -46,6 +48,7 @@ function AdminLeadsInner() {
           { key: 'xem-phong', label: '📅 Xin xem phòng' },
           { key: 'lich', label: '🗓️ Lịch khách xem phòng' },
           { key: 'san-phong', label: '🔔 Săn phòng' },
+          { key: 'khach', label: '👤 Hồ sơ khách' },
         ] as const).map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={`inline-flex items-center min-h-11 px-4 rounded-xl text-sm font-medium border transition-colors ${
@@ -60,6 +63,7 @@ function AdminLeadsInner() {
 
       {tab === 'xem-phong' ? <ViewingRequestsTab />
         : tab === 'lich' ? <ViewingSchedule />
+        : tab === 'khach' ? <CustomerProfiles />
         : <SavedSearchesTab />}
     </>
   );
