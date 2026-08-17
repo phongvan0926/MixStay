@@ -286,6 +286,25 @@ mixstay/
 - **Sửa dữ liệu:** BNBHOLDING `09366258556` → **`0936258556`**. Bằng chứng: cả 9 tòa của công ty đứng tên chủ nhà **Anh Biên — 0936258556**, và 3 tòa ghi thẳng `"A Biên 0936258556"`; số lưu sai đúng là số đó **thừa một chữ số 6** (`0936|6|258556`). Kho công ty đã có lại nút gọi + Zalo.
 - **Rà lại toàn bộ nguồn SĐT dựng link:** công ty **0/36 lỗi**, tòa nhà **0/464 lỗi**, tài khoản còn 1 (CTV thử nghiệm "aaa" `1234567890` — đã có cảnh báo lo).
 
+### v9.64 — 2026-08-17 (hồ sơ khách + nhật ký thao tác — hai mảng trống của khu quản trị)
+Từ bản rà soát dưới góc nhìn người vận hành 10 năm, làm phần "cho admin".
+
+**👤 Hồ sơ khách** (`/admin/leads?tab=khach`). 56 lượt hỏi phòng chỉ đến từ 33 người, có người hỏi tới 5 phòng — nhưng hai tab kia xếp theo TỪNG LƯỢT lẻ nên admin gọi khách sát sao y như gọi người hỏi một lần rồi thôi.
+- `GET /api/customers` gộp `viewing_requests` + `saved_searches` theo SĐT bằng SQL union (Prisma `groupBy` không union 2 bảng được), phân trang + đếm SERVER-SIDE; `?phone=` trả toàn bộ lịch sử một người.
+- Bảng có chip **"🔥 Còn việc chưa xử lý"**, tìm theo tên/SĐT, gắn nhãn **"khách sát sao"** khi hỏi ≥3 tin. Mở ra là timeline đầy đủ: đã hỏi tin nào · quận nào · tầm giá · lịch hẹn · qua CTV nào · ghi chú.
+- 🐛 Bắt được lúc tự kiểm: tìm theo TÊN ra tất cả mọi người — gõ chữ thì phần số rỗng nên `phone LIKE '%%'` khớp mọi số.
+
+**🧾 Nhật ký thao tác** (`/admin/audit`, bảng mới `audit_logs`). Ngày 17/08 kho tụt **856 → 675 tin** và **498 → 358 tòa** mà không truy lại được ai xoá, lúc nào, nhầm hay cố ý.
+- Ghi các việc KHÓ HOÀN TÁC: duyệt/từ chối/xoá tin và tòa, đổi giá, **chuyển chủ sở hữu tòa**, đổi vai trò và quyền người dùng, duyệt công ty.
+- Lưu **snapshot tên** (`entityLabel`) chứ không khoá ngoại — bản ghi bị xoá rồi thì nhật ký vẫn đọc được, đó chính là lúc cần nó nhất. Xoá tòa còn ghi rõ **số tin bị xoá theo**.
+- Chỉ ghi field THẬT SỰ đổi (`diffFields`) — ghi nguyên bản ghi thì nhật ký phình và không ai đọc.
+- **Chỉ ADMIN xem được, ADMIN_STAFF bị chặn cả ở menu lẫn middleware**: nhật ký là chỗ soi lại việc của chính staff. Không có đường ghi/sửa/xoá qua API.
+- Ghi nhật ký lỗi thì **nuốt lỗi**, không bao giờ làm hỏng việc chính — thà mất một dòng nhật ký còn hơn admin bấm duyệt mà báo 500.
+
+**Đính chính số liệu hôm trước:** tôi báo "154 tin thừa do trùng" là SAI. Xem kỹ thì 17 tin "trùng" ở HUD Vân Canh là 17 phòng thật khác nhau (LK22, LK24, BT12…), 20–35m², 2,3–3,6tr, 16 tổ hợp giá/diện tích khác nhau. Tin trùng thật chỉ **17** (15 nhóm giống hệt cả giá lẫn diện tích). Vấn đề thật là **62 nhóm trùng TIÊU ĐỀ** — khách lướt thấy 17 dòng cùng tên khác giá thì tưởng web spam; việc này chưa làm.
+
+**Không phải việc code:** phần nhân viên (ADMIN_STAFF + 9 quyền lẻ) đã dựng đủ ở `/admin/users` từ trước, chỉ là chưa ai tạo tài khoản nào.
+
 ### v9.63 — 2026-08-16 (🐛 ảnh bìa đăng Facebook: 70% tin ra ảnh TRỐNG + chặn đăng tin chưa duyệt)
 Báo lỗi "ảnh bìa bài đăng bị vỡ" hoá ra là **hai lỗi chồng nhau**, lỗi thứ hai nặng hơn nhiều.
 

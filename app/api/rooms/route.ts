@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { writeAudit, diffFields } from '@/lib/audit';
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { roomTypeCreateSchema, roomTypeUpdateSchema, validateBody } from '@/lib/validations';
@@ -458,6 +459,22 @@ export async function PUT(req: NextRequest) {
       },
     });
 
+    // Nhật ký: chỉ ghi khi có thứ ĐÁNG ghi (duyệt/từ chối, đổi giá, đổi trạng thái, đổi tòa).
+    // Sửa mô tả hay thêm ảnh thì không ghi — nhật ký phình là không ai đọc.
+    const roomChanges = diffFields(existing as any, data, [
+      'isApproved', 'priceMonthly', 'deposit', 'status', 'propertyId', 'name',
+    ]);
+    if (roomChanges) {
+      const approvalFlip = 'isApproved' in roomChanges;
+      writeAudit({
+        user: session.user as any,
+        action: approvalFlip ? (roomChanges.isApproved.to ? 'approve' : 'reject') : 'update',
+        entity: 'roomType', entityId: id,
+        entityLabel: [roomType.listingCode, roomType.name].filter(Boolean).join(' '),
+        changes: roomChanges,
+      });
+    }
+
     // "SĂN PHÒNG": tin vừa được DUYỆT (false→true) → match tiêu chí khách đang săn
     // → notification cho ADMIN kèm SĐT khách để gọi lại chào phòng. Lỗi không chặn response.
     if (canSetApproval && data.isApproved === true && existing.isApproved === false) {
@@ -531,7 +548,17 @@ export async function DELETE(req: NextRequest) {
       }
     }
 
+    // Chụp tên/mã TRƯỚC khi xoá — sau khi xoá thì không còn gì để đọc ra nhật ký
+    const doomed = await prisma.roomType.findUnique({
+      where: { id },
+      select: { name: true, listingCode: true, priceMonthly: true, property: { select: { name: true } } },
+    });
     await prisma.roomType.delete({ where: { id } });
+    writeAudit({
+      user: session.user as any, action: 'delete', entity: 'roomType', entityId: id,
+      entityLabel: [doomed?.listingCode, doomed?.name].filter(Boolean).join(' '),
+      changes: doomed ? { toa: { from: doomed.property?.name, to: null }, gia: { from: doomed.priceMonthly, to: null } } : undefined,
+    });
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('DELETE /api/rooms error:', error);

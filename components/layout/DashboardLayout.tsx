@@ -26,6 +26,8 @@ const menuItems: Record<string, MenuItem[]> = {
     { label: 'Giao dịch', href: '/admin/deals', icon: '💰' },
     { label: 'Người dùng', href: '/admin/users', icon: '👥', perm: 'MANAGE_USERS' },
     { label: 'Cài đặt', href: '/admin/settings', icon: '⚙️', perm: 'EDIT_COMMISSION' },
+    // Nhật ký để CUỐI menu: là chỗ tra cứu khi cần đối chiếu, không phải việc hằng ngày
+    { label: 'Nhật ký thao tác', href: '/admin/audit', icon: '🧾', staffHidden: true },
   ],
   BROKER: [
     { label: 'Kho hàng', href: '/broker/inventory', icon: '📦' },

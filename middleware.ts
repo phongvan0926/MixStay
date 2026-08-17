@@ -32,6 +32,11 @@ export default withAuth(
     // ADMIN_STAFF: chặn trang theo permission (ADMIN super bypass). Khớp với gate ở
     // sidebar + API requirePermission để staff thiếu quyền không vào được khung trang.
     if (role === 'ADMIN_STAFF') {
+      // Nhật ký thao tác KHÔNG mở cho staff dù có quyền gì: đây là chỗ soi lại việc của chính
+      // họ. Cho tự xem — và biết mình đang bị ghi những gì — thì mất tác dụng giám sát.
+      if (pathname.startsWith('/admin/audit')) {
+        return NextResponse.redirect(new URL('/admin/dashboard', req.url));
+      }
       const staffPageGuards: { prefix: string; perm: string }[] = [
         { prefix: '/admin/settings', perm: 'EDIT_COMMISSION' },
         { prefix: '/admin/companies', perm: 'MANAGE_COMPANIES' },

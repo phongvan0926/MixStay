@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { writeAudit, diffFields } from '@/lib/audit';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { requirePermission } from '@/lib/permissions-server';
 import { normalizeZaloInput } from '@/lib/zalo';
@@ -192,7 +193,7 @@ export async function PUT(req: NextRequest) {
 
     // Form admin luôn gửi kèm `phone` → chỉ bỏ xác nhận khi số THỰC SỰ đổi,
     // không thì mỗi lần sửa tên/địa chỉ cũng làm cảnh báo hiện lại.
-    const currentCompany = await prisma.company.findUnique({ where: { id }, select: { phone: true } });
+    const currentCompany = await prisma.company.findUnique({ where: { id }, select: { phone: true, name: true, isApproved: true, isActive: true } });
     const phoneChanged = data.phone !== undefined && (data.phone || null) !== currentCompany?.phone;
 
     const company = await prisma.company.update({
@@ -225,6 +226,16 @@ export async function PUT(req: NextRequest) {
       });
     }
 
+    const coChanges = diffFields(currentCompany as any, body, ['isApproved', 'isActive', 'name']);
+    if (coChanges) {
+      writeAudit({
+        user: session?.user as any,
+        action: coChanges.isApproved?.to === true ? 'approve' : 'update',
+        entity: 'company', entityId: id,
+        entityLabel: currentCompany?.name || id,
+        changes: coChanges,
+      });
+    }
     return NextResponse.json(company);
   } catch {
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });

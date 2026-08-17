@@ -334,6 +334,32 @@ model RoomInquiry {
   @@map("room_inquiries")
 }
 
+// ── NHẬT KÝ THAO TÁC — ai đã làm gì, lúc nào, trên bản ghi nào ────────────────────────
+// Vì sao có: hệ thống cho phép duyệt/xoá tin, đổi giá, đổi chủ sở hữu tòa, đổi quyền người
+// dùng — toàn việc khó hoàn tác. Khi có nhân viên thứ hai mà không truy lại được "ai duyệt
+// tin này", mọi tranh cãi đều thành lời nói suông. Nhật ký KHÔNG ghép ngược được nên phải
+// bật trước lúc cần, không phải lúc đã cần.
+//
+// KHÔNG có khoá ngoại tới bản ghi bị tác động: bản ghi bị xoá rồi thì nhật ký vẫn phải đọc
+// được — đó chính là lúc cần nó nhất. Vì vậy lưu SNAPSHOT tên (entityLabel), không join ngược.
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String? // ai làm (null nếu tài khoản đã bị xoá)
+  userName    String? // chụp lại tên lúc thao tác — user đổi tên/bị xoá thì nhật ký vẫn đọc được
+  userRole    String? // vai trò lúc thao tác
+  action      String // approve | reject | delete | update | create | transfer | permission
+  entity      String // roomType | property | company | user | deal
+  entityId    String
+  entityLabel String? // snapshot tên/mã tin để đọc được sau khi bản ghi biến mất
+  changes     Json? // { field: { from, to } } — chỉ các field đáng quan tâm
+  createdAt   DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
 model Notification {
   id        String   @id @default(cuid())
   userId    String

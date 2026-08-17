@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { writeAudit, diffFields } from '@/lib/audit';
 import { hash } from 'bcryptjs';
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination';
 import { applyRateLimit } from '@/lib/rate-limit';
@@ -228,11 +229,30 @@ export async function PUT(req: NextRequest) {
       updateData.password = await hash(password, 12);
     }
 
+    // Chụp trạng thái CŨ trước khi ghi đè — nhật ký cần biết "từ gì sang gì"
+    const beforeUser = await prisma.user.findUnique({
+      where: { id },
+      select: { name: true, email: true, role: true, permissions: true, isActive: true },
+    });
+
     const user = await prisma.user.update({
       where: { id },
       data: updateData,
       select: safeUserSelect,
     });
+
+    // Chỉ ghi việc NHẠY CẢM: đổi vai trò, cấp/thu quyền, khoá–mở tài khoản.
+    // Đổi tên hay SĐT thì bỏ qua cho nhật ký khỏi phình.
+    const userChanges = diffFields(beforeUser as any, updateData, ['role', 'permissions', 'isActive']);
+    if (userChanges) {
+      writeAudit({
+        user: session?.user as any,
+        action: 'permissions' in userChanges || 'role' in userChanges ? 'permission' : 'update',
+        entity: 'user', entityId: id,
+        entityLabel: beforeUser?.name || beforeUser?.email || id,
+        changes: userChanges,
+      });
+    }
 
     return NextResponse.json(user);
   } catch {

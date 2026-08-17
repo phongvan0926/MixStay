@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { writeAudit, diffFields } from '@/lib/audit';
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { propertyCreateSchema, propertyUpdateSchema, validateBody } from '@/lib/validations';
@@ -220,9 +221,14 @@ export async function PUT(req: NextRequest) {
     const { id, ...data } = body;
 
     // Verify ownership for landlord; load current for admin/staff (need for permission check + landlordId transfer)
-    let current: { landlordId: string; status: string } | null = null;
+    // Nạp đủ field mà nhật ký cần so sánh — thiếu field nào thì diffFields thấy `undefined`
+    // ở bản CŨ và báo "đã đổi" cho cả những lần không đổi gì.
+    const AUDIT_SELECT = {
+      landlordId: true, status: true, companyId: true, name: true, fullAddress: true,
+    } as const;
+    let current: { landlordId: string; status: string; companyId: string | null; name: string; fullAddress: string } | null = null;
     if (session.user.role === 'LANDLORD') {
-      const prop = await prisma.property.findFirst({ where: { id, landlordId: session.user.id }, select: { landlordId: true, status: true } });
+      const prop = await prisma.property.findFirst({ where: { id, landlordId: session.user.id }, select: AUDIT_SELECT });
       if (!prop) return NextResponse.json({ error: 'Không có quyền' }, { status: 403 });
       current = prop;
       // Landlord không được đổi landlordId (chuyển sở hữu cho người khác)
@@ -230,7 +236,7 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: 'Chủ nhà không có quyền chuyển sở hữu tòa nhà' }, { status: 403 });
       }
     } else if (session.user.role === 'ADMIN' || session.user.role === 'ADMIN_STAFF') {
-      current = await prisma.property.findUnique({ where: { id }, select: { landlordId: true, status: true } });
+      current = await prisma.property.findUnique({ where: { id }, select: AUDIT_SELECT });
       if (!current) return NextResponse.json({ error: 'Không tìm thấy tòa nhà' }, { status: 404 });
 
       // TRANSFER_PROPERTY_OWNERSHIP: chỉ check khi đổi landlord (super-admin bypass trong requirePermission)
@@ -301,6 +307,21 @@ export async function PUT(req: NextRequest) {
       },
     });
 
+    // Nhật ký: duyệt tòa, ĐỔI CHỦ SỞ HỮU (việc nhạy cảm nhất), đổi công ty, đổi tên
+    const propChanges = diffFields(current as any, data, [
+      'status', 'landlordId', 'companyId', 'name', 'fullAddress',
+    ]);
+    if (propChanges) {
+      writeAudit({
+        user: session.user as any,
+        action: 'landlordId' in propChanges ? 'transfer'
+          : propChanges.status?.to === 'APPROVED' ? 'approve'
+          : propChanges.status?.to === 'REJECTED' ? 'reject' : 'update',
+        entity: 'property', entityId: id,
+        entityLabel: [property.name, property.district].filter(Boolean).join(' · '),
+        changes: propChanges,
+      });
+    }
     return NextResponse.json(property);
   } catch (error: any) {
     console.error('/api/properties error:', error);
@@ -331,7 +352,17 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Không có quyền' }, { status: 403 });
     }
 
+    const doomed = await prisma.property.findUnique({
+      where: { id },
+      select: { name: true, district: true, _count: { select: { roomTypes: true } } },
+    });
     await prisma.property.delete({ where: { id } });
+    // Xoá tòa là xoá theo CẢ TIN của tòa đó (cascade) — ghi rõ số tin đã mất theo
+    writeAudit({
+      user: session.user as any, action: 'delete', entity: 'property', entityId: id,
+      entityLabel: [doomed?.name, doomed?.district].filter(Boolean).join(' · '),
+      changes: doomed ? { soTinXoaTheo: { from: doomed._count.roomTypes, to: 0 } } : undefined,
+    });
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('/api/properties error:', error);
