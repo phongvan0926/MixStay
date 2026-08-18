@@ -6,13 +6,14 @@ tấn công, lỗi deploy). Giữ tài liệu này cập nhật khi hạ tầng 
 ## Mục tiêu khôi phục (đặt SLA của bạn)
 - **RPO** (mất tối đa bao nhiêu dữ liệu): **thực tế hiện nay ≤ 24 giờ** — dự án đang ở gói **Supabase Pro**,
   có snapshot hằng ngày + `pg_dump` hằng ngày, cả hai đều theo chu kỳ ngày.
-  Muốn xuống ≤ **1 giờ** thì phải bật thêm add-on **PITR** (xem Lớp A) — hiện **chưa xác minh được là đã bật hay chưa**.
+  Xuống ≤ **1 giờ** thì phải bật add-on **PITR**, nhưng chủ dự án đã **quyết không bật** (19/08/2026, lý do chi phí)
+  → **24 giờ là mức chấp nhận có chủ ý**, xem Lớp A.
 - **RTO** (bao lâu thì chạy lại): mục tiêu ≤ **2 giờ**.
 
 ## Cần backup những gì
 | Thành phần | Chứa gì | Cơ chế backup |
 |---|---|---|
-| **Postgres (Supabase)** | toàn bộ dữ liệu (users, tin đăng, giao dịch…) | Snapshot hằng ngày của gói **Pro** + `pg_dump` hằng ngày (GitHub Actions). PITR: **chưa xác minh** |
+| **Postgres (Supabase)** | toàn bộ dữ liệu (users, tin đăng, giao dịch…) | Snapshot hằng ngày của gói **Pro** + `pg_dump` hằng ngày (GitHub Actions). PITR: **không bật — có chủ ý** |
 | **Supabase Storage** (`images`, `videos`) | ảnh/video tin đăng | Cron 03:00 hằng ngày về ổ DATA của máy (`scripts/backup-storage.js`) — xem mục 3 |
 | **Mã nguồn** | code | GitHub (+ nên mirror sang host phụ) |
 | **Secrets/ENV** | DATABASE_URL, NEXTAUTH_SECRET, keys… | Trình quản lý bí mật + `.env.example` liệt kê đủ biến |
@@ -30,19 +31,19 @@ Xem/tải ở Dashboard → **Database → Backups**.
    lúc đó chỉ còn cứu được bằng Lớp B (`pg_dump`, giữ 30 ngày).
 2. **Storage KHÔNG nằm trong snapshot.** Supabase ghi rõ backup chỉ gồm database; ảnh/video là chuyện của mục 3.
 
-**PITR (Point-in-Time Recovery) — CHƯA XÁC MINH ĐƯỢC, nhiều khả năng là chưa bật.**
-Đây là add-on trả phí RIÊNG, **không tự có khi lên Pro** — nên lên Pro không đồng nghĩa với có PITR.
+**PITR (Point-in-Time Recovery) — 🚫 QUYẾT ĐỊNH KHÔNG BẬT (chủ dự án, 19/08/2026), vì tốn thêm tiền.**
+Đây là add-on trả phí RIÊNG, không tự có khi lên Pro.
 
-🔎 **Vì sao để ngỏ thay vì khẳng định:** máy này không có token quản lý Supabase (`sbp_…`) —
-chỉ có `NEXT_PUBLIC_SUPABASE_URL`, `ANON_KEY`, `SERVICE_ROLE_KEY`, đều là khoá tầng dữ liệu,
-không đọc được cấu hình backup. Không có đường nào kiểm bằng lệnh (đã kiểm 19/08/2026).
+**Hệ quả đã được chấp nhận có chủ ý:** RPO đứng ở mức **≤ 24 giờ**. Hỏng dữ liệu lúc 14h thì
+mốc phục hồi gần nhất là bản chụp rạng sáng hôm đó — mất công việc của cả ngày. Đây là lựa chọn
+đánh đổi tiền lấy rủi ro, **không phải thiếu sót cần ai đó "sửa"**.
+👉 **ĐỪNG đề xuất bật PITR lại** trừ khi chủ dự án tự nêu.
 
-✅ **Kiểm 30 giây, làm đi rồi sửa dòng này:** Dashboard → **Database → Backups**.
-Thấy tab/mục *Point-in-Time Recovery* kèm khoảng thời gian khôi phục (vd "7 days") = ĐÃ bật;
-chỉ thấy danh sách bản chụp theo ngày = CHƯA bật.
-
-⚠️ **Ghi sai chỗ này tốn tiền thật khi có sự cố:** tưởng có PITR mà không có → mất tới 24h dữ liệu
-ngoài dự tính; tưởng không có mà thật ra có → bỏ qua đường phục hồi nhanh nhất, đi vòng bằng dump.
+🔎 **Một việc nhỏ nên làm khi tiện:** máy này không có token quản lý Supabase (`sbp_…`) — chỉ có
+`ANON_KEY` / `SERVICE_ROLE_KEY` là khoá tầng dữ liệu, không đọc được cấu hình backup, nên **chưa ai
+xác minh PITR đang tắt thật hay không** (kiểm 19/08/2026). Lần nào vào Dashboard →
+**Database → Backups**, liếc xem có mục *Point-in-Time Recovery* kèm khoảng thời gian khôi phục không.
+Nếu CÓ thì nó đang bật và **đang tính tiền** — thứ vừa quyết là không muốn trả.
 
 **Lớp B — `pg_dump` hằng ngày (repo này đã có sẵn):**
 - Script: [`scripts/backup-db.sh`](scripts/backup-db.sh) — dump `-Fc` (nén), tuỳ chọn mã hoá GPG + upload S3, tự xoá bản > 30 ngày.
@@ -90,9 +91,16 @@ Vì thế Storage phải có đường backup riêng, và nó đã có:
 - **Kiểm nhanh:** `node scripts/backup-storage.js --check` (chỉ đối chiếu, không tải),
   hoặc xem đuôi log: `tail /srv/data/MixStay/backup-storage.log`.
 
-⚠️ **Điểm yếu còn lại: bản sao Storage này chỉ nằm ở MỘT nơi — ổ trong máy.**
-Cháy/mất/hỏng máy là mất luôn 4,2GB ảnh cùng lúc với máy. Muốn chắc thì đẩy thêm một bản offsite
-(S3 có versioning, hoặc ổ cứng rời cất chỗ khác) — chưa làm.
+**🚫 Không làm thêm bản offsite (quyết định của chủ dự án, 19/08/2026).** Ổ SSD này chuyên để
+chứa dữ liệu và đặt ở nhà, mức an toàn như vậy là đủ. 👉 **ĐỪNG đề xuất offsite lại.**
+
+📐 **Rủi ro thật ra nhỏ hơn tưởng — chép lại cho đúng để đừng ai hoảng nhầm:** bản GỐC của ảnh/video
+nằm trên **Supabase (đám mây)**, không nằm trong máy. Ổ SSD ở nhà đã chính là "nơi thứ hai" so với
+đám mây rồi. Mất máy = mất **bản sao**, ảnh gốc vẫn còn; hỏng Supabase = vẫn còn bản trên ổ.
+Chỉ mất trắng khi **cả hai hỏng cùng lúc** — xác suất thấp hơn nhiều so với cách nói
+"chỉ có một bản, cháy nhà là hết".
+
+⚠️ Đổi lại, phải giữ đúng một điều: **ổ hỏng thì không có gì báo.** Xem mục 6 và mục 7.
 
 ---
 
@@ -138,11 +146,11 @@ Cháy/mất/hỏng máy là mất luôn 4,2GB ảnh cùng lúc với máy. Muố
 cron trên máy chỉ ghi vào log. Máy tắt lúc 03:00 là hôm đó không có backup, và không có tín hiệu nào cả.
 Nên **1 tháng liếc log một lần**.
 
-## 7) Bảng kiểm nhanh — 4 lệnh, biết ngay còn an toàn không
+## 7) Bảng kiểm nhanh — 5 lệnh, biết ngay còn an toàn không
 
 > **Kiểm chứng lần cuối: 19/08/2026** — cron Storage khớp tài liệu, lần chạy gần nhất 18/08 03:00
 > (5.180 file / 4.236 MB); `backup-db.yml` 5/5 lần gần nhất **success**, gần nhất 18/08; ổ `/srv/data` dùng 30% (còn 78G).
-> Riêng PITR không kiểm được bằng lệnh — xem mục 1, Lớp A.
+> Ổ SSD: SMART **PASSED**, 0 sector lỗi, hao mòn 2%. PITR không kiểm được bằng lệnh — xem mục 1, Lớp A.
 
 
 ```bash
@@ -158,6 +166,16 @@ RESTIC_REPOSITORY=/srv/data/backup RESTIC_PASSWORD_FILE=~/.config/restic/passwor
 
 # 4. Ổ DATA còn chỗ không (đầy ổ = backup âm thầm chết)
 df -h /srv/data
+
+# 5. SỨC KHOẺ ổ SSD — vì đã chọn không làm offsite, ổ này là chỗ dựa duy nhất cho 4,2GB ảnh.
+#    Cần thấy: PASSED, Reallocated_Sector_Ct = 0, và cột thứ 4 của Wear_Leveling_Count còn cao.
+sudo /usr/sbin/smartctl -H /dev/sda
+sudo /usr/sbin/smartctl -A /dev/sda | grep -E "Reallocated_Sector_Ct|Wear_Leveling_Count|Power_On_Hours"
 ```
+
+**Mốc so sánh (đo 19/08/2026):** SMART `PASSED` · sector lỗi **0** · hao mòn mới **2%**
+(Wear_Leveling 098/100) · đã chạy **2.912 giờ** · ghi tổng ~2,75 TB. Ổ còn rất mới.
+Lần sau kiểm mà thấy sector lỗi **khác 0**, hoặc hao mòn tụt dưới ~80, thì tính chuyện thay ổ —
+đừng đợi nó chết hẳn.
 
 Còn lại kiểm bằng mắt trên Dashboard: **Supabase → Database → Backups** phải có bản của hôm qua.
