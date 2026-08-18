@@ -4,14 +4,16 @@ Mục tiêu: **luôn khôi phục được** dữ liệu và dịch vụ khi có
 tấn công, lỗi deploy). Giữ tài liệu này cập nhật khi hạ tầng đổi.
 
 ## Mục tiêu khôi phục (đặt SLA của bạn)
-- **RPO** (mất tối đa bao nhiêu dữ liệu): mục tiêu ≤ **1 giờ** (cần Supabase PITR) — hoặc ≤ **24 giờ** nếu chỉ có dump hằng ngày.
+- **RPO** (mất tối đa bao nhiêu dữ liệu): **thực tế hiện nay ≤ 24 giờ** — dự án đang ở gói **Supabase Pro**,
+  có snapshot hằng ngày + `pg_dump` hằng ngày, cả hai đều theo chu kỳ ngày.
+  Muốn xuống ≤ **1 giờ** thì phải bật thêm add-on **PITR** (xem Lớp A) — hiện **chưa xác minh được là đã bật hay chưa**.
 - **RTO** (bao lâu thì chạy lại): mục tiêu ≤ **2 giờ**.
 
 ## Cần backup những gì
 | Thành phần | Chứa gì | Cơ chế backup |
 |---|---|---|
-| **Postgres (Supabase)** | toàn bộ dữ liệu (users, tin đăng, giao dịch…) | Supabase PITR + `pg_dump` hằng ngày (GitHub Actions) |
-| **Supabase Storage** (`images`, `videos`) | ảnh/video tin đăng | Sync định kỳ sang S3 (chưa tự động — xem mục 3) |
+| **Postgres (Supabase)** | toàn bộ dữ liệu (users, tin đăng, giao dịch…) | Snapshot hằng ngày của gói **Pro** + `pg_dump` hằng ngày (GitHub Actions). PITR: **chưa xác minh** |
+| **Supabase Storage** (`images`, `videos`) | ảnh/video tin đăng | Cron 03:00 hằng ngày về ổ DATA của máy (`scripts/backup-storage.js`) — xem mục 3 |
 | **Mã nguồn** | code | GitHub (+ nên mirror sang host phụ) |
 | **Secrets/ENV** | DATABASE_URL, NEXTAUTH_SECRET, keys… | Trình quản lý bí mật + `.env.example` liệt kê đủ biến |
 
@@ -19,9 +21,28 @@ tấn công, lỗi deploy). Giữ tài liệu này cập nhật khi hạ tầng 
 
 ## 1) Database — 3 lớp backup
 
-**Lớp A — Supabase tự động (BẬT NGAY):**
-Supabase Dashboard → **Database → Backups**. Free tier KHÔNG có backup → cần **Pro** (snapshot hằng ngày).
-Bật thêm **PITR** (Point-in-Time Recovery, add-on trả phí) để RPO ~phút thay vì 24h. Kiểm tra hằng tuần thấy có bản mới.
+**Lớp A — Supabase tự động (ĐANG CHẠY):**
+Dự án đang ở gói **Pro**, nên Supabase tự chụp **snapshot hằng ngày**, giữ **7 ngày** gần nhất.
+Xem/tải ở Dashboard → **Database → Backups**.
+
+⚠️ **Hai giới hạn phải nhớ, vì Pro KHÔNG tự khắc phục:**
+1. **Giữ 7 ngày, không hơn.** Hỏng dữ liệu mà hơn một tuần sau mới phát hiện thì snapshot đã trôi mất —
+   lúc đó chỉ còn cứu được bằng Lớp B (`pg_dump`, giữ 30 ngày).
+2. **Storage KHÔNG nằm trong snapshot.** Supabase ghi rõ backup chỉ gồm database; ảnh/video là chuyện của mục 3.
+
+**PITR (Point-in-Time Recovery) — CHƯA XÁC MINH ĐƯỢC, nhiều khả năng là chưa bật.**
+Đây là add-on trả phí RIÊNG, **không tự có khi lên Pro** — nên lên Pro không đồng nghĩa với có PITR.
+
+🔎 **Vì sao để ngỏ thay vì khẳng định:** máy này không có token quản lý Supabase (`sbp_…`) —
+chỉ có `NEXT_PUBLIC_SUPABASE_URL`, `ANON_KEY`, `SERVICE_ROLE_KEY`, đều là khoá tầng dữ liệu,
+không đọc được cấu hình backup. Không có đường nào kiểm bằng lệnh (đã kiểm 19/08/2026).
+
+✅ **Kiểm 30 giây, làm đi rồi sửa dòng này:** Dashboard → **Database → Backups**.
+Thấy tab/mục *Point-in-Time Recovery* kèm khoảng thời gian khôi phục (vd "7 days") = ĐÃ bật;
+chỉ thấy danh sách bản chụp theo ngày = CHƯA bật.
+
+⚠️ **Ghi sai chỗ này tốn tiền thật khi có sự cố:** tưởng có PITR mà không có → mất tới 24h dữ liệu
+ngoài dự tính; tưởng không có mà thật ra có → bỏ qua đường phục hồi nhanh nhất, đi vòng bằng dump.
 
 **Lớp B — `pg_dump` hằng ngày (repo này đã có sẵn):**
 - Script: [`scripts/backup-db.sh`](scripts/backup-db.sh) — dump `-Fc` (nén), tuỳ chọn mã hoá GPG + upload S3, tự xoá bản > 30 ngày.
@@ -52,15 +73,26 @@ Hiện dự án dùng `npx prisma db push` lên **production** — lệnh này *
 
 ---
 
-## 3) Storage (ảnh/video) — cần thiết lập
+## 3) Storage (ảnh/video) — ĐANG CHẠY
 
-DB dump **KHÔNG** chứa file trong Supabase Storage. Xoá nhầm bucket = mất hết ảnh/video (DB vẫn còn link → hỏng ảnh).
-- Định kỳ **sync** bucket sang S3 riêng (bật versioning), vd bằng `rclone`:
-  ```bash
-  rclone sync supabase:images  s3:mixstay-backup/images  --s3-storage-class STANDARD_IA
-  rclone sync supabase:videos  s3:mixstay-backup/videos
+⚠️ **Snapshot của gói Pro và bản `pg_dump` đều KHÔNG chứa file Storage** — Supabase ghi rõ
+"Storage objects are not included". Xoá nhầm bucket = mất hết ảnh/video, mà DB vẫn còn link → tin đăng hỏng ảnh hàng loạt.
+Vì thế Storage phải có đường backup riêng, và nó đã có:
+
+- **Script:** [`scripts/backup-storage.js`](scripts/backup-storage.js) — tải tăng dần (incremental), **chỉ đọc**
+  với Supabase (không xoá/sửa gì trên cloud), và **không xoá file local kể cả khi file đã biến mất trên cloud**
+  (đó chính là mục đích backup). Ghi kèm `manifest.json` để đối chiếu về sau.
+- **Lịch:** cron của user `phong` trên máy ThinkBook, **03:00 hằng ngày**:
   ```
-  Đặt lịch (GitHub Actions/cron) hằng ngày. Bật **Object Versioning** + (nếu có) cross-region replication trên bucket backup.
+  0 3 * * * cd /home/phong/Desktop/MixStay && /usr/bin/node scripts/backup-storage.js >> /srv/data/MixStay/backup-storage.log 2>&1
+  ```
+- **Đích:** `/srv/data/MixStay/storage` trên ổ SSD 120GB gắn trong.
+- **Kiểm nhanh:** `node scripts/backup-storage.js --check` (chỉ đối chiếu, không tải),
+  hoặc xem đuôi log: `tail /srv/data/MixStay/backup-storage.log`.
+
+⚠️ **Điểm yếu còn lại: bản sao Storage này chỉ nằm ở MỘT nơi — ổ trong máy.**
+Cháy/mất/hỏng máy là mất luôn 4,2GB ảnh cùng lúc với máy. Muốn chắc thì đẩy thêm một bản offsite
+(S3 có versioning, hoặc ổ cứng rời cất chỗ khác) — chưa làm.
 
 ---
 
@@ -75,7 +107,9 @@ DB dump **KHÔNG** chứa file trong Supabase Storage. Xoá nhầm bucket = mấ
 
 ### 5a. Khôi phục Database
 1. Xác định mốc thời gian tốt cuối cùng (trước sự cố).
-2. **Nếu có PITR:** Supabase Dashboard → Backups → Restore to point-in-time → chọn mốc. (Nhanh nhất.)
+2. **Snapshot gói Pro (đường đi mặc định hiện nay):** Supabase Dashboard → **Database → Backups** → chọn bản gần nhất TRƯỚC sự cố → Restore.
+   Chỉ có 7 ngày gần nhất; cũ hơn thì nhảy xuống bước 3.
+   *(Nếu sau này bật PITR: Backups → Restore to point-in-time → chọn mốc — nhanh và mất ít dữ liệu nhất.)*
 3. **Nếu dùng dump:** tạo DB đích (project Supabase mới hoặc DB trống), rồi:
    ```bash
    # Bản .dump (custom format):
@@ -99,3 +133,31 @@ DB dump **KHÔNG** chứa file trong Supabase Storage. Xoá nhầm bucket = mấ
 - **Diễn tập khôi phục hằng tháng:** restore bản mới nhất sang DB *staging*, chạy kiểm chứng. Backup chưa test = chưa có backup.
 - **Cảnh báo lỗi backup:** GitHub Actions gửi email khi job fail (mặc định). Kiểm tra định kỳ có bản mới < 24h và kích thước hợp lý.
 - **Nhật ký:** ghi lại mỗi lần restore thật (thời điểm, mốc phục hồi, kết quả kiểm chứng).
+
+⚠️ **Cron Storage chạy im lặng — hỏng cũng không ai báo.** Khác `pg_dump` (GitHub gửi email khi fail),
+cron trên máy chỉ ghi vào log. Máy tắt lúc 03:00 là hôm đó không có backup, và không có tín hiệu nào cả.
+Nên **1 tháng liếc log một lần**.
+
+## 7) Bảng kiểm nhanh — 4 lệnh, biết ngay còn an toàn không
+
+> **Kiểm chứng lần cuối: 19/08/2026** — cron Storage khớp tài liệu, lần chạy gần nhất 18/08 03:00
+> (5.180 file / 4.236 MB); `backup-db.yml` 5/5 lần gần nhất **success**, gần nhất 18/08; ổ `/srv/data` dùng 30% (còn 78G).
+> Riêng PITR không kiểm được bằng lệnh — xem mục 1, Lớp A.
+
+
+```bash
+# 1. Storage: lần chạy gần nhất có "✔ Xong" và ngày hôm qua không?
+tail -5 /srv/data/MixStay/backup-storage.log
+
+# 2. pg_dump trên GitHub: 5 lần gần nhất phải "success"
+gh run list --repo phongvan0926/MixStay --workflow=backup-db.yml --limit 5
+
+# 3. Backup toàn máy (code + .env): bản mới nhất là hôm nay/hôm qua?
+RESTIC_REPOSITORY=/srv/data/backup RESTIC_PASSWORD_FILE=~/.config/restic/password \
+  restic snapshots --host thinkbook --compact | tail -5
+
+# 4. Ổ DATA còn chỗ không (đầy ổ = backup âm thầm chết)
+df -h /srv/data
+```
+
+Còn lại kiểm bằng mắt trên Dashboard: **Supabase → Database → Backups** phải có bản của hôm qua.
