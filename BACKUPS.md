@@ -26,10 +26,17 @@ tấn công, lỗi deploy). Giữ tài liệu này cập nhật khi hạ tầng 
 Dự án đang ở gói **Pro**, nên Supabase tự chụp **snapshot hằng ngày**, giữ **7 ngày** gần nhất.
 Xem/tải ở Dashboard → **Database → Backups**.
 
+✅ **Đã xem tận mắt 19/08/2026:** đúng **7 bản**, ngày 11→17/08, đều loại `PHYSICAL`,
+chụp lúc **22:23–22:24 giờ UTC = 05:23 sáng giờ VN**. Bản mới nhất luôn dưới 24h tuổi.
+Biết giờ chụp thì tính được thiệt hại thật: hỏng dữ liệu lúc 14h chiều là mất ~9 tiếng công việc
+(về mốc 05:23 sáng cùng ngày), chứ không phải cứ mặc định mất trọn 24h.
+
 ⚠️ **Hai giới hạn phải nhớ, vì Pro KHÔNG tự khắc phục:**
 1. **Giữ 7 ngày, không hơn.** Hỏng dữ liệu mà hơn một tuần sau mới phát hiện thì snapshot đã trôi mất —
    lúc đó chỉ còn cứu được bằng Lớp B (`pg_dump`, giữ 30 ngày).
-2. **Storage KHÔNG nằm trong snapshot.** Supabase ghi rõ backup chỉ gồm database; ảnh/video là chuyện của mục 3.
+2. **Storage KHÔNG nằm trong snapshot.** Chính trang Backups in cảnh báo này: *"Storage objects are
+   not included… Restoring an old backup does not restore objects that have been deleted since then."*
+   Ảnh/video là chuyện của mục 3.
 
 **PITR (Point-in-Time Recovery) — 🚫 QUYẾT ĐỊNH KHÔNG BẬT (chủ dự án, 19/08/2026), vì tốn thêm tiền.**
 Đây là add-on trả phí RIÊNG, không tự có khi lên Pro.
@@ -39,11 +46,20 @@ mốc phục hồi gần nhất là bản chụp rạng sáng hôm đó — mấ
 đánh đổi tiền lấy rủi ro, **không phải thiếu sót cần ai đó "sửa"**.
 👉 **ĐỪNG đề xuất bật PITR lại** trừ khi chủ dự án tự nêu.
 
-🔎 **Một việc nhỏ nên làm khi tiện:** máy này không có token quản lý Supabase (`sbp_…`) — chỉ có
-`ANON_KEY` / `SERVICE_ROLE_KEY` là khoá tầng dữ liệu, không đọc được cấu hình backup, nên **chưa ai
-xác minh PITR đang tắt thật hay không** (kiểm 19/08/2026). Lần nào vào Dashboard →
-**Database → Backups**, liếc xem có mục *Point-in-Time Recovery* kèm khoảng thời gian khôi phục không.
-Nếu CÓ thì nó đang bật và **đang tính tiền** — thứ vừa quyết là không muốn trả.
+✅ **ĐÃ XÁC MINH TẮT — 19/08/2026, xem tận mắt trên Dashboard.**
+Tab *Database → Backups → Point in time* hiện đúng dòng *"Point in Time Recovery is available as an
+add-on — Enable the add-on to add point-in-time recovery to your project"* kèm nút **Enable add-on**
+(chưa bấm). Tức add-on chưa mua, không phát sinh chi phí.
+
+🚨 **BẪY: ĐỪNG kết luận PITR bật/tắt bằng cách hỏi Postgres.** Đo cùng ngày trên chính DB này:
+```
+archive_mode = on · archive_command = admin-mgr wal-push (WAL-G) · archive_timeout = 120 (2 phút)
+archived_count = 7355 · failed_count = 0 · WAL mới nhất cách lúc đo 1 phút
+```
+Nhìn thì y hệt PITR — tài liệu Supabase còn ghi PITR dùng WAL-G và đẩy WAL "at two-minute intervals",
+khớp từng con số. **Nhưng đó là kết luận SAI:** Supabase chạy WAL archiving 2 phút/lần cho dự án
+Pro **dù có mua add-on PITR hay không**. Một phiên làm việc đã suýt kết luận nhầm là "PITR đang bật
+và đang thu tiền" chỉ vì mấy chỉ số này. **Chỉ Dashboard mới trả lời được câu hỏi này.**
 
 **Lớp B — `pg_dump` hằng ngày (repo này đã có sẵn):**
 - Script: [`scripts/backup-db.sh`](scripts/backup-db.sh) — dump `-Fc` (nén), tuỳ chọn mã hoá GPG + upload S3, tự xoá bản > 30 ngày.
@@ -146,11 +162,12 @@ Chỉ mất trắng khi **cả hai hỏng cùng lúc** — xác suất thấp h�
 cron trên máy chỉ ghi vào log. Máy tắt lúc 03:00 là hôm đó không có backup, và không có tín hiệu nào cả.
 Nên **1 tháng liếc log một lần**.
 
-## 7) Bảng kiểm nhanh — 5 lệnh, biết ngay còn an toàn không
+## 7) Bảng kiểm nhanh — 6 lệnh, biết ngay còn an toàn không
 
 > **Kiểm chứng lần cuối: 19/08/2026** — cron Storage khớp tài liệu, lần chạy gần nhất 18/08 03:00
 > (5.180 file / 4.236 MB); `backup-db.yml` 5/5 lần gần nhất **success**, gần nhất 18/08; ổ `/srv/data` dùng 30% (còn 78G).
-> Ổ SSD: SMART **PASSED**, 0 sector lỗi, hao mòn 2%. PITR không kiểm được bằng lệnh — xem mục 1, Lớp A.
+> Ổ SSD: SMART **PASSED**, 0 sector lỗi, hao mòn 2%. Supabase Backups: **7 bản 11→17/08**, PITR **đã xác minh là TẮT**
+> (xem tận mắt trên Dashboard — không có cách nào kiểm bằng lệnh, xem mục 1 Lớp A).
 
 
 ```bash
@@ -171,7 +188,17 @@ df -h /srv/data
 #    Cần thấy: PASSED, Reallocated_Sector_Ct = 0, và cột thứ 4 của Wear_Leveling_Count còn cao.
 sudo /usr/sbin/smartctl -H /dev/sda
 sudo /usr/sbin/smartctl -A /dev/sda | grep -E "Reallocated_Sector_Ct|Wear_Leveling_Count|Power_On_Hours"
+
+# 6. Supabase: snapshot còn chạy không + PITR bật hay tắt — KHÔNG cần mở trình duyệt.
+#    Cần khoá Management API; chưa có thì script tự in hướng dẫn tạo (30 giây).
+node scripts/check-supabase.js
 ```
+
+**Về lệnh 6 — khoá cất ở `~/.config/mixstay/supabase-token`, CỐ Ý không để trong `.env` của repo.**
+Khoá Personal Access Token của Supabase là quyền **quản trị toàn tài khoản** (xoá được dự án, đổi được
+thanh toán) và Supabase **không cho tạo loại chỉ-đọc**. Thư mục repo có nhiều AI agent cùng đọc/ghi,
+nên để khoá đó ở đây là mở rộng thiệt hại vô ích. Đặt ngoài repo + `chmod 600`. Lộ thì thu hồi ngay
+tại https://supabase.com/dashboard/account/tokens .
 
 **Mốc so sánh (đo 19/08/2026):** SMART `PASSED` · sector lỗi **0** · hao mòn mới **2%**
 (Wear_Leveling 098/100) · đã chạy **2.912 giờ** · ghi tổng ~2,75 TB. Ổ còn rất mới.
