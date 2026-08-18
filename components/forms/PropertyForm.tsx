@@ -6,6 +6,7 @@ import Combobox from '@/components/ui/Combobox';
 import SearchableSelect from '@/components/ui/SearchableSelect';
 import { HANOI_DISTRICTS } from '@/lib/hanoi-locations';
 import { extractHouseNumber, redactHouseNumber } from '@/lib/address';
+import { parseCoords, coordsError, formatCoords, mapPreviewUrl } from '@/lib/coords';
 
 interface PropertyData {
   id?: string;
@@ -16,6 +17,8 @@ interface PropertyData {
   district: string;
   streetName: string;
   city: string;
+  latitude: number | null;   // toạ độ ghim trên bản đồ — null = tòa KHÔNG hiện ở /ban-do
+  longitude: number | null;
   totalFloors: number | string;
   zaloPhone: string;
   landlordNotes: string;
@@ -76,6 +79,8 @@ const defaultData: PropertyData = {
   district: '',
   streetName: '',
   city: 'Hà Nội',
+  latitude: null,
+  longitude: null,
   totalFloors: '',
   zaloPhone: '',
   landlordNotes: '',
@@ -104,6 +109,12 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
   const [newCompanyName, setNewCompanyName] = useState('');
   const [newCompanyPhone, setNewCompanyPhone] = useState('');
   const [creatingCompany, setCreatingCompany] = useState(false);
+  // Ô nhập toạ độ: giữ NGUYÊN VĂN thứ admin dán vào, tách khỏi lat/lng đã bóc được —
+  // dán sai thì còn thấy mình vừa dán gì mà sửa, không bị ô tự xoá trắng.
+  const [coordInput, setCoordInput] = useState('');
+  const [coordMsg, setCoordMsg] = useState('');
+  const [coordOk, setCoordOk] = useState(false);
+  const [locating, setLocating] = useState(false);
 
   // Chỉ hiện công ty ĐÃ DUYỆT (isApproved !== false) + công ty vừa tạo (để chọn ngay). Bỏ trùng theo id.
   const companyOptions = (() => {
@@ -156,6 +167,8 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
         district: initialData.district || '',
         streetName: initialData.streetName || '',
         city: initialData.city || 'Hà Nội',
+        latitude: initialData.latitude ?? null,
+        longitude: initialData.longitude ?? null,
         totalFloors: initialData.totalFloors || '',
         zaloPhone: initialData.zaloPhone || '',
         landlordNotes: initialData.landlordNotes || '',
@@ -176,6 +189,59 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
 
   const updateField = (field: keyof PropertyData, value: any) => {
     setForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  // ── Ghim vị trí ────────────────────────────────────────────────────────────────
+  const hasPin = form.latitude != null && form.longitude != null;
+
+  const setPin = (lat: number | null, lng: number | null) =>
+    setForm(prev => ({ ...prev, latitude: lat, longitude: lng }));
+
+  const clearPin = () => {
+    setPin(null, null);
+    setCoordInput('');
+    setCoordOk(false);
+    setCoordMsg('Đã bỏ ghim. Lưu lại thì tòa này sẽ biến mất khỏi bản đồ.');
+  };
+
+  /** Nhận link Google Maps / cặp số. Sai thì nói RÕ sai ở đâu, không im lặng nuốt. */
+  const applyCoordInput = () => {
+    const raw = coordInput.trim();
+    if (!raw) return;
+    const c = parseCoords(raw);
+    if (!c) { setCoordOk(false); setCoordMsg(coordsError(raw) || 'Không đọc được toạ độ'); return; }
+    setPin(c.lat, c.lng);
+    setCoordOk(true);
+    setCoordMsg(`Đã ghim ${formatCoords(c.lat, c.lng)} — bấm "Xem thử" để kiểm tra rồi mới Lưu.`);
+  };
+
+  /** Thử geocode từ địa chỉ đang nhập. Không thấy thì nói thẳng là phải ghim tay,
+   *  đừng để admin bấm đi bấm lại chờ phép màu. */
+  const autoLocate = async () => {
+    const q = [form.houseNumber, form.fullAddress, form.district, form.city].map(v => (v || '').trim()).filter(Boolean).join(', ');
+    if (!q) { setCoordOk(false); setCoordMsg('Nhập địa chỉ và quận/huyện trước đã.'); return; }
+    setLocating(true);
+    setCoordMsg('');
+    try {
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`);
+      const json = await res.json();
+      const hit = (json?.data || [])[0];
+      const c = hit ? parseCoords(`${hit.lat}, ${hit.lon}`) : null;
+      if (!c) {
+        setCoordOk(false);
+        setCoordMsg(`Bản đồ không tìm ra "${q}". Khu đô thị mới thường chưa có trên bản đồ — mở Google Maps, bấm giữ vào vị trí tòa nhà rồi copy toạ độ dán vào ô bên trên.`);
+        return;
+      }
+      setPin(c.lat, c.lng);
+      setCoordInput(formatCoords(c.lat, c.lng));
+      setCoordOk(true);
+      setCoordMsg(`Tìm thấy: ${hit.display_name?.slice(0, 90) || formatCoords(c.lat, c.lng)} — BẤM "Xem thử" kiểm tra đúng chỗ chưa rồi mới Lưu.`);
+    } catch {
+      setCoordOk(false);
+      setCoordMsg('Không gọi được dịch vụ bản đồ. Ghim tay bằng toạ độ Google Maps nhé.');
+    } finally {
+      setLocating(false);
+    }
   };
 
   const toggleAmenity = (amenity: string) => {
@@ -347,6 +413,57 @@ export default function PropertyForm({ initialData, onSubmit, isAdmin = false, c
               onChange={e => updateField('city', e.target.value)}
             />
           </div>
+        </div>
+
+        {/* ── GHIM VỊ TRÍ TRÊN BẢN ĐỒ ─────────────────────────────────────────────
+            Vì sao có ô này: geocode tự động (Nominatim/OSM) KHÔNG biết phần lớn khu đô thị
+            mới ở Việt Nam. Đo 18/08/2026: "Khu đô thị mới HUD Vân Canh" (17 tin) và
+            "66 Nam 32" (1 tin) trượt mọi cách hỏi ở cả Nominatim lẫn Overpass — chạy lại
+            scripts/geocode-properties.js bao nhiêu lần cũng vẫn trượt. Trước đây form KHÔNG
+            có ô toạ độ nào, nên thẻ "Tòa nhà thiếu toạ độ" ở Tổng quan bấm vào là tới danh
+            sách rồi bó tay — trái đúng quy tắc "việc hiện ra phải tới được chỗ xử lý". */}
+        <div className="mt-5 pt-5 border-t border-stone-100">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+            <label className="block text-sm font-medium text-stone-700">📍 Vị trí trên bản đồ</label>
+            {hasPin ? (
+              <span className="inline-flex items-center gap-2 text-xs">
+                <span className="text-emerald-700 font-medium">✅ Đã ghim {formatCoords(form.latitude!, form.longitude!)}</span>
+                <a href={mapPreviewUrl(form.latitude!, form.longitude!)} target="_blank" rel="noopener noreferrer"
+                  className="text-brand-600 font-medium hover:underline">Xem thử ↗</a>
+                <button type="button" onClick={clearPin} className="text-stone-400 hover:text-red-600">Bỏ ghim</button>
+              </span>
+            ) : (
+              <span className="text-xs font-medium text-amber-700">⚠️ Chưa ghim — tòa này KHÔNG hiện trên bản đồ tìm phòng</span>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              className="input-field flex-1"
+              value={coordInput}
+              onChange={e => { setCoordInput(e.target.value); setCoordMsg(''); }}
+              onBlur={() => applyCoordInput()}
+              placeholder="Dán link Google Maps, hoặc gõ 21.039103, 105.730912"
+              aria-label="Toạ độ hoặc link Google Maps"
+            />
+            <button type="button" onClick={applyCoordInput} disabled={!coordInput.trim()}
+              className="btn-secondary whitespace-nowrap disabled:opacity-40">Ghim</button>
+            <button type="button" onClick={autoLocate} disabled={locating}
+              className="btn-ghost whitespace-nowrap border border-stone-200"
+              title="Thử tìm toạ độ từ địa chỉ đã nhập">
+              {locating ? 'Đang tìm…' : '🎯 Tìm theo địa chỉ'}
+            </button>
+          </div>
+
+          {coordMsg && (
+            <p className={`text-xs mt-1.5 ${coordOk ? 'text-emerald-700' : 'text-red-600'}`}>{coordMsg}</p>
+          )}
+          <p className="text-[11px] text-stone-400 mt-1.5 leading-relaxed">
+            Lấy toạ độ: mở <strong>Google Maps</strong> → bấm giữ vào đúng vị trí tòa nhà → dãy số hiện ra ở ô tìm kiếm, bấm để copy rồi dán vào đây.
+            Dán cả link cũng được. Nút <strong>🎯 Tìm theo địa chỉ</strong> chỉ chạy được với đường/phố có trên bản đồ —
+            khu đô thị mới thường không có, phải ghim tay.
+          </p>
         </div>
       </div>
 

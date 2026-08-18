@@ -8,7 +8,31 @@ import { applyRateLimit } from '@/lib/rate-limit';
 import { propertyCreateSchema, propertyUpdateSchema, validateBody } from '@/lib/validations';
 import { requirePermission } from '@/lib/permissions-server';
 import { geocodeAddress } from '@/lib/geocode';
+import { inHanoi } from '@/lib/coords';
 import { canonicalDistrict } from '@/lib/hanoi-locations';
+
+/**
+ * Toạ độ do NGƯỜI DÙNG gửi lên: chỉ nhận số thật và phải nằm trong khung Hà Nội.
+ * Pin sai còn tệ hơn không có pin — khách bấm vào đi xem phòng ở sai chỗ.
+ *   { ok:true, lat, lng }   → ghim
+ *   { ok:true, clear:true } → BỎ ghim (client gửi null tường minh)
+ *   { ok:false, error }     → chặn, báo lỗi
+ *   null                    → client không đụng tới toạ độ, giữ nguyên
+ */
+function readCoords(body: any): { ok: true; lat?: number; lng?: number; clear?: boolean } | { ok: false; error: string } | null {
+  const hasLat = body.latitude !== undefined, hasLng = body.longitude !== undefined;
+  if (!hasLat && !hasLng) return null;
+
+  const blank = (v: any) => v === null || v === '' ;
+  if (blank(body.latitude) && blank(body.longitude)) return { ok: true, clear: true };
+
+  const lat = typeof body.latitude === 'number' ? body.latitude : parseFloat(body.latitude);
+  const lng = typeof body.longitude === 'number' ? body.longitude : parseFloat(body.longitude);
+  if (!inHanoi(lat, lng)) {
+    return { ok: false, error: 'Toạ độ không hợp lệ (phải nằm trong Hà Nội: vĩ độ 20,5–21,5 và kinh độ 105,2–106,2)' };
+  }
+  return { ok: true, lat, lng };
+}
 
 export async function GET(req: NextRequest) {
   const rateLimited = await applyRateLimit(req, 'api');
@@ -164,8 +188,11 @@ export async function POST(req: NextRequest) {
 
     // Tự geocode toạ độ từ địa chỉ khi client không gửi (để pin tự có trên bản đồ /ban-do).
     // Geocode lỗi → null, KHÔNG chặn tạo tòa (backfill lại bằng scripts/geocode-properties.js).
+    const pin = readCoords(body);
+    if (pin && !pin.ok) return NextResponse.json({ error: pin.error }, { status: 400 });
+
     let geo: { lat: number; lng: number } | null = null;
-    if (!body.latitude || !body.longitude) {
+    if (!pin || pin.clear || pin.lat === undefined) {
       geo = await geocodeAddress({ fullAddress: body.fullAddress, streetName: body.streetName, district: body.district, city: body.city });
     }
 
@@ -180,8 +207,8 @@ export async function POST(req: NextRequest) {
         district: canonicalDistrict(body.district), // "đống đa " → "Đống Đa": bản đồ/bộ lọc không tách cụm
         streetName: body.streetName,
         city: body.city || 'Hà Nội',
-        latitude: body.latitude ? parseFloat(body.latitude) : (geo?.lat ?? null),
-        longitude: body.longitude ? parseFloat(body.longitude) : (geo?.lng ?? null),
+        latitude: pin && pin.ok && pin.lat !== undefined ? pin.lat : (geo?.lat ?? null),
+        longitude: pin && pin.ok && pin.lng !== undefined ? pin.lng : (geo?.lng ?? null),
         totalFloors: parseInt(body.totalFloors) || 1,
         zaloPhone: body.zaloPhone || null,
         landlordNotes: body.landlordNotes || null,
@@ -262,8 +289,14 @@ export async function PUT(req: NextRequest) {
     }
 
     // Địa chỉ đổi mà client không gửi toạ độ mới → re-geocode để pin bản đồ đi theo địa chỉ.
+    // Client GỬI toạ độ (kể cả gửi null để bỏ ghim) → tôn trọng tuyệt đối, KHÔNG geocode đè.
+    // Nếu không thì admin ghim tay xong, lần sau sửa mỗi cái lỗi chính tả trong địa chỉ là
+    // pin bị Nominatim đoán lại và ghi đè mất.
+    const putPin = readCoords(data);
+    if (putPin && !putPin.ok) return NextResponse.json({ error: putPin.error }, { status: 400 });
+
     let geo: { lat: number; lng: number } | null = null;
-    if ((data.fullAddress || data.streetName || data.district) && !data.latitude && !data.longitude) {
+    if (!putPin && (data.fullAddress || data.streetName || data.district)) {
       const cur = await prisma.property.findUnique({
         where: { id },
         select: { fullAddress: true, streetName: true, district: true, city: true },
@@ -301,8 +334,8 @@ export async function PUT(req: NextRequest) {
         ...(data.foreignerOk !== undefined && { foreignerOk: data.foreignerOk }),
         ...(data.status && { status: data.status }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
-        ...(data.latitude && { latitude: parseFloat(data.latitude) }),
-        ...(data.longitude && { longitude: parseFloat(data.longitude) }),
+        ...(putPin && putPin.ok && putPin.lat !== undefined && { latitude: putPin.lat, longitude: putPin.lng }),
+        ...(putPin && putPin.ok && putPin.clear && { latitude: null, longitude: null }),
         ...(geo && { latitude: geo.lat, longitude: geo.lng }),
       },
     });
