@@ -112,6 +112,45 @@ function rankDeals<T extends DealRow>(rows: T[], median: Record<string, number>,
   return { ordered, percentById };
 }
 
+// Bộ field công khai dùng chung cho truy vấn chính + lượt lấy bù của ?mixUnseen
+const PUBLIC_SELECT = {
+      id: true,
+      // CHỈ dùng server-side để "giá tốt" không lấy 2 tin cùng một tòa — không trả ra client
+      propertyId: true,
+      name: true,
+      listingCode: true,
+      typeName: true,
+      areaSqm: true,
+      priceMonthly: true,
+      deposit: true,
+      amenities: true,
+      images: true,
+      videos: true,
+      videoLinks: true,
+      availableUnits: true,
+      viewCount: true, // công khai được — dùng cho tab "nhiều lượt xem" ở trang chủ
+      status: true,
+      expectedAvailableDate: true,
+      shortTermAllowed: true,
+      property: {
+        select: {
+          name: true,
+          district: true,
+          streetName: true,
+          city: true,
+          images: true,
+          parkingCar: true,
+          parkingBike: true,
+          evCharging: true,
+          petAllowed: true,
+          foreignerOk: true,
+          // CHỈ dùng server-side tính khoảng cách tới trường — bị xoá trước khi trả response
+          latitude: true,
+          longitude: true,
+        },
+      },
+} as const;
+
 export async function GET(req: NextRequest) {
   const rateLimited = await applyRateLimit(req, 'api');
   if (rateLimited) return rateLimited;
@@ -214,43 +253,7 @@ export async function GET(req: NextRequest) {
     const [roomTypes, total] = await Promise.all([
       prisma.roomType.findMany({
         where,
-        select: {
-          id: true,
-          // CHỈ dùng server-side để "giá tốt" không lấy 2 tin cùng một tòa — không trả ra client
-          propertyId: true,
-          name: true,
-          listingCode: true,
-          typeName: true,
-          areaSqm: true,
-          priceMonthly: true,
-          deposit: true,
-          amenities: true,
-          images: true,
-          videos: true,
-          videoLinks: true,
-          availableUnits: true,
-          viewCount: true, // công khai được — dùng cho tab "nhiều lượt xem" ở trang chủ
-          status: true,
-          expectedAvailableDate: true,
-          shortTermAllowed: true,
-          property: {
-            select: {
-              name: true,
-              district: true,
-              streetName: true,
-              city: true,
-              images: true,
-              parkingCar: true,
-              parkingBike: true,
-              evCharging: true,
-              petAllowed: true,
-              foreignerOk: true,
-              // CHỈ dùng server-side tính khoảng cách tới trường — bị xoá trước khi trả response
-              latitude: true,
-              longitude: true,
-            },
-          },
-        },
+        select: PUBLIC_SELECT,
         orderBy,
         // Gần trường & giá tốt: đều phải lấy RỘNG rồi tự xếp + tự cắt trang, vì thứ tự
         // (khoảng cách / mức rẻ hơn trung vị quận) không tính được bằng SQL.
@@ -295,6 +298,45 @@ export async function GET(req: NextRequest) {
         });
       if (!sort) withDist.sort((a, b) => a.d - b.d);
       pageRows = withDist.slice(skip, skip + limit).map(x => x.rt);
+    }
+
+    /* ── ?mixUnseen=1 — "cửa sổ trưng bày công bằng" cho khối Phòng nổi bật ──
+     * Đo 19/08/2026: 114/510 tin còn hiệu lực có 0 lượt xem — hơn 1/5 kho chưa từng được
+     * ai mở, vì mọi danh sách xếp "mới nhất trước" và khách chỉ lướt trang đầu. Tin cũ
+     * chìm vĩnh viễn dù có khi chính là phòng khách cần.
+     * Cách trộn: giữ các tin mới nhất, thay 2 SLOT CUỐI trang bằng tin 0-lượt-xem (chỉ tin
+     * có ảnh), luân phiên mỗi giờ như "Giá tốt" — mỗi giờ 2 tin khác được ra kệ.
+     * Chỉ áp cho trang 1, không sort đặc biệt — /phong (phân trang) không truyền tham số
+     * này nên hành vi cũ giữ nguyên. */
+    if (url.searchParams.get('mixUnseen') === '1' && !uni && !isDeal && !sort && page === 1 && pageRows.length >= 4) {
+      const SLOTS = 2;
+      const pool = await prisma.roomType.findMany({
+        where: {
+          ...where,
+          status: 'AVAILABLE',
+          viewCount: 0,
+          // thẻ trống ảnh nằm ở khối khoe hàng thì phản tác dụng
+          OR: [{ images: { isEmpty: false } }, { property: { ...where.property, images: { isEmpty: false } } }],
+        },
+        select: { id: true },
+        orderBy: { createdAt: 'desc' },
+        take: 60,
+      });
+      const already = new Set(pageRows.map(r => r.id));
+      const fresh = pool.filter(x => !already.has(x.id));
+      if (fresh.length) {
+        const bucket = Math.floor(Date.now() / DEAL_ROTATE_MS);
+        const pickedIds: string[] = [];
+        for (let k = 0; k < Math.min(SLOTS, fresh.length); k++) {
+          const id = fresh[(bucket * SLOTS + k) % fresh.length].id;
+          if (!pickedIds.includes(id)) pickedIds.push(id);
+        }
+        const extra = await prisma.roomType.findMany({ where: { id: { in: pickedIds } }, select: PUBLIC_SELECT });
+        // Giữ thứ tự đã chọn (findMany không bảo toàn thứ tự của `in`)
+        const byId = new Map(extra.map(r => [r.id, r]));
+        const chosen = pickedIds.map(id => byId.get(id)).filter(Boolean) as typeof pageRows;
+        if (chosen.length) pageRows = [...pageRows.slice(0, pageRows.length - chosen.length), ...chosen];
+      }
     }
 
     // Scope the share-link lookup to only the rooms on this page (≤ limit rows),

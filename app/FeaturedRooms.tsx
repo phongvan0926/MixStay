@@ -67,7 +67,9 @@ export default function FeaturedRooms() {
     if (byTab[tab]) return;
     let alive = true;
     const t = TABS.find(x => x.key === tab);
-    fetch(`/api/rooms/public?limit=6${t?.sort ? `&sort=${t.sort}` : ''}`)
+    // Tab "Mới đăng" trộn 2 slot cuối bằng tin CHƯA AI XEM (luân phiên mỗi giờ) — 114/510
+    // tin hiệu lực đang 0 lượt xem vì mọi danh sách xếp mới-nhất-trước (đo 19/08/2026).
+    fetch(`/api/rooms/public?limit=6${t?.sort ? `&sort=${t.sort}` : '&mixUnseen=1'}`)
       .then(r => (r.ok ? r.json() : Promise.reject(new Error('fetch failed'))))
       .then(json => { if (alive) setByTab(prev => ({ ...prev, [tab]: json.data || [] })); })
       .catch(() => { if (alive) setByTab(prev => ({ ...prev, [tab]: [] })); });

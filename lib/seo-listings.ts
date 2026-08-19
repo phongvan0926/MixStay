@@ -374,3 +374,44 @@ export async function getUniCounts(): Promise<Map<string, number>> {
   }
   return map;
 }
+
+// ───────────────────────── Trang theo dõi "Săn phòng" /san-phong/[token] ─────────────────────────
+
+export type SavedSearchPageData = {
+  criteria: { district: string | null; typeName: string | null; minPrice: number | null; maxPrice: number | null };
+  isActive: boolean;
+  createdAt: Date;
+  listings: ListingCardData[];
+};
+
+/**
+ * Dữ liệu cho trang KHÁCH tự xem tin khớp tiêu chí săn phòng của mình (link gửi qua Zalo,
+ * không cần tài khoản). Nửa sau của vòng "Săn phòng": nửa đầu (admin được báo khi có tin
+ * khớp) đã có từ trước, nhưng khách thì không có chỗ nào tự quay lại xem — mỗi lần muốn
+ * biết thêm phải chờ admin nhắn tay.
+ *
+ * ⚠️ Trang là CÔNG KHAI theo token → tuyệt đối KHÔNG đưa SĐT/tên khách vào dữ liệu trả về;
+ * link lọt ra ngoài thì người lạ chỉ thấy tiêu chí + tin khớp (đều là nội dung công khai).
+ * Thẻ tin đi qua toCard() nên tên tin + tên đường đã che số nhà sẵn.
+ */
+export async function getSavedSearchPageData(token: string): Promise<SavedSearchPageData | null> {
+  if (!token || token.length > 40) return null;
+  const s = await prisma.savedSearch.findUnique({ where: { token } });
+  if (!s) return null;
+
+  // Dùng chung bộ khớp với 3 đường báo admin (lib/saved-search-match) — cùng một định nghĩa
+  // "khớp", khách và admin nhìn thấy cùng một danh sách.
+  const { hasCriteria, roomWhereForSearch } = await import('@/lib/saved-search-match');
+  const criteria = { district: s.district, typeName: s.typeName, minPrice: s.minPrice, maxPrice: s.maxPrice };
+
+  const listings = hasCriteria(criteria)
+    ? (await prisma.roomType.findMany({
+        where: roomWhereForSearch(criteria),
+        select: CARD_SELECT,
+        orderBy: [{ updatedAt: 'desc' }],
+        take: 30,
+      })).map(rt => toCard(rt))
+    : [];
+
+  return { criteria, isActive: s.isActive, createdAt: s.createdAt, listings };
+}

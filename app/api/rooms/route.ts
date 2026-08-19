@@ -72,6 +72,10 @@ export async function GET(req: NextRequest) {
     // là thẻ báo "69 tin thiếu ảnh" mà bấm vào lại ra 63 tin, admin hết tin vào số liệu.
     // Đặt SAU khối status để bộ lọc mà dải báo trên trang đang công bố luôn thắng: nếu bị ?status=
     // đè thì dải ghi "Tin 30 ngày không cập nhật" mà danh sách lại ra tin khác.
+    // ?unseen=true — tin CHƯA AI XEM (viewCount=0): hàng CTV nên mang đi đăng lại nhất,
+    // vì chưa cạnh tranh với ai. Đo 19/08/2026: 114/510 tin hiệu lực chưa từng được mở.
+    if (url.searchParams.get('unseen') === 'true') where.viewCount = 0;
+
     const issue = url.searchParams.get('issue');
     if (issue === 'no-image') {
       where.images = { isEmpty: true };

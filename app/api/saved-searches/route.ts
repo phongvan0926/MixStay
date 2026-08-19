@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { nanoid } from 'nanoid';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
     if (dup) return NextResponse.json({ ok: true, id: dup.id, duplicated: true });
 
     const created = await prisma.savedSearch.create({
-      data: { phone, name, district, typeName, minPrice, maxPrice, note },
+      data: { phone, name, district, typeName, minPrice, maxPrice, note, token: nanoid(12) },
     });
 
     // Báo admin có khách săn phòng mới (lead chủ động liên hệ ngay cũng được)
@@ -90,7 +91,14 @@ export async function GET(req: NextRequest) {
     if (matchesFor) {
       const s = await prisma.savedSearch.findUnique({ where: { id: matchesFor } });
       if (!s) return NextResponse.json({ error: 'Không tìm thấy' }, { status: 404 });
-      return NextResponse.json({ data: await findMatches(s) });
+      // Sinh token LƯỜI cho bản ghi cũ (trước khi có cột token): admin mở danh sách khớp
+      // lần đầu là có ngay link theo dõi /san-phong/<token> để kèm vào tin nhắn Zalo.
+      let token = s.token;
+      if (!token) {
+        token = nanoid(12);
+        await prisma.savedSearch.update({ where: { id: s.id }, data: { token } });
+      }
+      return NextResponse.json({ data: await findMatches(s), token });
     }
 
     const { page, limit, skip } = getPaginationParams(url);

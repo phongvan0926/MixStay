@@ -19,6 +19,8 @@ export default function SavedSearchMatches({ searchId, open }: { searchId: strin
     { revalidateOnFocus: false },
   );
   const rows = data?.data || [];
+  // Link theo dõi /san-phong/<token> — server sinh lười khi mở lần đầu, luôn có sau khi fetch
+  const followUrl = data?.token ? `${SITE_URL}/san-phong/${data.token}` : '';
 
   if (!open) return null;
   if (isLoading) return <p className="text-xs text-stone-400 py-3">Đang tìm tin khớp…</p>;
@@ -38,7 +40,12 @@ export default function SavedSearchMatches({ searchId, open }: { searchId: strin
       ].filter(Boolean).join(' · ');
       return `${i + 1}. ${r.name}\n${info}\n${SITE_URL}/tin/${r.id}`;
     });
-    const text = `MixStay gửi bạn ${rows.length} phòng phù hợp nhu cầu:\n\n${lines.join('\n\n')}\n\nBạn bấm vào link để xem ảnh + video từng phòng nhé.`;
+    // Chốt tin nhắn bằng LINK THEO DÕI: danh sách trong tin nhắn là ảnh chụp hôm nay,
+    // còn link là kho sống — mai có phòng mới khớp thì khách tự thấy, không cần nhắn lại.
+    const follow = followUrl
+      ? `\n\n📌 Trang săn phòng riêng của bạn (tự cập nhật khi có phòng mới khớp):\n${followUrl}`
+      : '';
+    const text = `MixStay gửi bạn ${rows.length} phòng phù hợp nhu cầu:\n\n${lines.join('\n\n')}\n\nBạn bấm vào link để xem ảnh + video từng phòng nhé.${follow}`;
     try { await navigator.clipboard.writeText(text); toast.success(`Đã copy ${rows.length} phòng kèm link — dán vào Zalo gửi khách`); }
     catch { toast.error('Không copy được'); }
   };
@@ -47,10 +54,23 @@ export default function SavedSearchMatches({ searchId, open }: { searchId: strin
     <div className="py-3">
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs font-semibold text-stone-600">{rows.length} tin khớp — gửi khách hoặc đọc mã qua điện thoại:</p>
-        <button type="button" onClick={copyForZalo}
-          className="inline-flex items-center min-h-8 px-2.5 rounded-lg text-xs font-medium border border-brand-200 bg-brand-50 text-brand-700 hover:border-brand-400">
-          📋 Copy gửi Zalo (kèm link)
-        </button>
+        <div className="flex items-center gap-1.5">
+          {followUrl && (
+            <button type="button"
+              onClick={async () => {
+                try { await navigator.clipboard.writeText(followUrl); toast.success('Đã copy link theo dõi — khách mở là thấy danh sách luôn tươi'); }
+                catch { toast.error('Không copy được'); }
+              }}
+              title="Trang khách tự xem tin khớp, tự cập nhật — gửi một lần, khách quay lại nhiều lần"
+              className="inline-flex items-center min-h-8 px-2.5 rounded-lg text-xs font-medium border border-stone-200 bg-white text-stone-600 hover:border-brand-400">
+              📌 Copy link theo dõi
+            </button>
+          )}
+          <button type="button" onClick={copyForZalo}
+            className="inline-flex items-center min-h-8 px-2.5 rounded-lg text-xs font-medium border border-brand-200 bg-brand-50 text-brand-700 hover:border-brand-400">
+            📋 Copy gửi Zalo (kèm link)
+          </button>
+        </div>
       </div>
       <div className="flex flex-wrap gap-2">
         {rows.map((r: any) => (

@@ -464,7 +464,7 @@ export default function BrokerInventoryPage() {
   const [filter, setFilter] = useState({
     search: '', companyId: '', roomType: '', district: [] as string[], minPrice: '', maxPrice: '',
     parkingCar: false, foreignerOk: false, evCharging: false, petAllowed: false,
-    shortTerm: false, status: 'available' as 'available' | 'all',
+    shortTerm: false, unseen: false, status: 'available' as 'available' | 'all',
   });
   // Pending price range — slider chỉ update local, đợi user bấm "Lọc" mới apply
   const [pendingPrice, setPendingPrice] = useState({ min: '', max: '' });
@@ -487,6 +487,7 @@ export default function BrokerInventoryPage() {
   if (filter.evCharging) swrParams.evCharging = 'true';
   if (filter.petAllowed) swrParams.petAllowed = 'true';
   if (filter.shortTerm) swrParams.shortTerm = 'true';
+  if (filter.unseen) swrParams.unseen = 'true';
 
   const { roomTypes: rooms, pagination, isLoading: loading, mutate } = useRoomTypes(swrParams);
   const { stats } = useDashboardStats();
@@ -692,6 +693,9 @@ export default function BrokerInventoryPage() {
             { key: 'evCharging', label: '⚡ Sạc xe' },
             { key: 'petAllowed', label: '🐾 Pet' },
             { key: 'shortTerm', label: '📅 Ngắn hạn' },
+            // Hàng CHƯA AI XEM = chưa CTV nào cạnh tranh — mang đi đăng Facebook/Zalo là
+            // dễ nổi nhất. 114/510 tin hiệu lực đang 0 lượt xem (đo 19/08/2026).
+            { key: 'unseen', label: '💎 Chưa ai xem' },
           ] as const).map(f => (
             <button key={f.key}
               onClick={() => toggleFilter(f.key, !(filter as any)[f.key])}

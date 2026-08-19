@@ -390,6 +390,10 @@ model SavedSearch {
   note          String? // ghi chú thêm của khách
   isActive      Boolean   @default(true) // admin gọi xong/khách thuê rồi → tắt
   lastMatchedAt DateTime? // lần gần nhất có tin khớp (đã báo admin)
+  // Link theo dõi công khai /san-phong/<token> — gửi khách qua Zalo, khách tự quay lại xem
+  // danh sách tin khớp LUÔN TƯƠI mà không cần tài khoản. Nullable: bản ghi cũ chưa có,
+  // sinh lười (lazy) khi admin mở danh sách tin khớp lần đầu.
+  token         String?   @unique
   createdAt     DateTime  @default(now())
 
   @@index([isActive])

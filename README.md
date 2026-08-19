@@ -286,6 +286,22 @@ mixstay/
 - **Sửa dữ liệu:** BNBHOLDING `09366258556` → **`0936258556`**. Bằng chứng: cả 9 tòa của công ty đứng tên chủ nhà **Anh Biên — 0936258556**, và 3 tòa ghi thẳng `"A Biên 0936258556"`; số lưu sai đúng là số đó **thừa một chữ số 6** (`0936|6|258556`). Kho công ty đã có lại nút gọi + Zalo.
 - **Rà lại toàn bộ nguồn SĐT dựng link:** công ty **0/36 lỗi**, tòa nhà **0/464 lỗi**, tài khoản còn 1 (CTV thử nghiệm "aaa" `1234567890` — đã có cảnh báo lo).
 
+### v9.68 — 2026-08-19 (khép vòng "Săn phòng" về phía KHÁCH + cửa sổ trưng bày cho 114 tin chưa ai xem)
+Từ lượt phân tích phễu 19/08 (4.781 lượt xem → 44 lead/30 ngày → 0 deal ghi nhận), làm 2 việc đầu trong nhóm "giữ khách quay lại + phân phối kho công bằng". *(Việc "Cung ↔ cầu theo quận" đề xuất kèm hoá ra ĐÃ ship từ v9.5x — chỉ kiểm chứng lại, thẻ trên Tổng quan vẫn chạy đúng.)*
+
+**1) Trang theo dõi "Săn phòng" `/san-phong/[token]` — nửa còn thiếu của vòng săn phòng.**
+- **Vì sao:** vòng săn phòng trước đây chỉ khép về phía ADMIN (tin khớp → báo admin → admin copy gửi Zalo). Khách nhận MỘT tin nhắn tĩnh; ba hôm sau kho có phòng mới khớp thì tin nhắn cũ không tự dài ra. 18 khách đang săn là nhóm lead chủ động nhất (tự khai nhu cầu) mà không có đường quay lại riêng.
+- **Cách chạy:** `saved_searches` thêm cột `token` (@unique, nullable — cột thêm thuần, không đụng dữ liệu cũ; đã kiểm 19 bản ghi nguyên vẹn sau `db push`). Token sinh khi tạo yêu cầu mới, sinh **LƯỜI** qua `?matchesFor` cho bản ghi cũ — admin mở danh sách khớp lần đầu là có link. Trang public theo token, **không cần tài khoản**, `force-dynamic` (luôn tươi chính là lời hứa của trang), `noindex`.
+- **An toàn:** trang công khai nên **tuyệt đối không đưa SĐT/tên khách** ra ngoài — chỉ tiêu chí + tin khớp (đều là nội dung công khai, thẻ tin qua `toCard()` đã che số nhà). Đã kiểm bằng Playwright: SĐT khách không xuất hiện trong HTML.
+- **Nút mới ở admin:** "📌 Copy link theo dõi" cạnh "📋 Copy gửi Zalo", và tin nhắn Zalo tự chốt bằng dòng *"Trang săn phòng riêng của bạn (tự cập nhật khi có phòng mới khớp)"* — gửi một lần, khách tự quay lại nhiều lần.
+- Token rác → trang lỗi tử tế kèm lối sang `/phong`; khách chưa có tin khớp → nói thẳng "vẫn đang săn" thay vì trang trống.
+
+**2) "Cửa sổ trưng bày công bằng" — 114/510 tin còn hiệu lực có 0 lượt xem.**
+- **Vì sao:** hơn 1/5 kho chưa từng được ai mở — mọi danh sách xếp "mới nhất trước" và khách chỉ lướt trang đầu, tin cũ chìm vĩnh viễn dù có khi đúng là phòng khách cần.
+- **Trang chủ:** tab 🆕 Mới đăng truyền `?mixUnseen=1` → 4 tin mới nhất giữ nguyên + **2 slot cuối thay bằng tin 0-lượt-xem** (chỉ tin có ảnh), luân phiên mỗi giờ như "Giá tốt". Chỉ áp trang 1 không sort — `/phong` giữ nguyên hành vi. Đã kiểm: 4 slot đầu trùng khớp bản thường, 2 slot cuối đều viewCount=0, không trùng tin, `sort=deal` và trang 2 không bị ảnh hưởng.
+- **Kho CTV:** chip **💎 Chưa ai xem** ở `/broker/inventory` (`/api/rooms?unseen=true`, lọc server-side đúng quy tắc) — hàng chưa CTV nào cạnh tranh, mang đi đăng Facebook/Zalo là dễ nổi nhất. Hiện có 138 tin trong nhóm này (tính cả UPCOMING).
+- Kiểm bằng phiên admin + phiên CTV thật (JWT tự ký local): nút copy đọc từ clipboard ra đúng nội dung kèm link; chip CTV bắn đúng `unseen=true`; trang chủ vẫn 6 thẻ không lỗi JS; `npm run build` sạch, route `/san-phong/[token]` có mặt.
+
 ### v9.67 — 2026-08-18 (ghim toạ độ tay: xử lý nốt 2 tòa "không lên bản đồ" + vá đường ghi đè pin)
 - **Việc đặt ra:** thẻ "Tòa nhà thiếu toạ độ" trên Tổng quan báo **2 tòa** — `Khu đô thị mới HUD Vân Canh` (**17 tin**) và `66 Nam 32` (**1 tin**). 18 tin đăng đang vô hình trên bản đồ tìm phòng.
 - **🔴 Gốc rễ, không phải "quên chạy script":** cả hai tòa đã bị `scripts/geocode-properties.js` thử và trượt. Dò lại bằng tay 14 cách hỏi ở **Nominatim** và **Overpass** — OSM **không hề có đối tượng nào** tên "HUD Vân Canh" hay "Nam 32". Đây là chuyện chung của khu đô thị mới ở Việt Nam, nên chạy lại script bao nhiêu lần cũng vô ích.
