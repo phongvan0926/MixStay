@@ -129,7 +129,9 @@ export const roomTypeUpdateSchema = z.object({
 
 // ===== Deal =====
 export const dealCreateSchema = z.object({
-  roomTypeId: z.string().min(1, 'Thiếu loại phòng'),
+  // roomTypeId không bắt buộc khi ghi deal TỪ LEAD (server tự lấy từ viewing_request)
+  roomTypeId: z.string().optional(),
+  viewingRequestId: z.string().optional(),
   brokerId: z.string().optional(),
   customerId: z.string().optional().nullable(),
   customerName: z.string().max(200).optional().nullable(),
@@ -137,6 +139,9 @@ export const dealCreateSchema = z.object({
   dealPrice: z.union([z.number().positive('Giá deal phải > 0'), z.string()]),
   commissionTotal: z.union([z.number(), z.string()]).optional(),
   notes: z.string().max(2000).optional().nullable(),
+}).refine(d => !!d.roomTypeId || !!d.viewingRequestId, {
+  message: 'Thiếu loại phòng (hoặc lead để lấy ra)',
+  path: ['roomTypeId'],
 });
 
 export const dealUpdateSchema = z.object({

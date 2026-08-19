@@ -160,10 +160,38 @@ export async function POST(req: NextRequest) {
     const commissionBroker = commissionTotal * (brokerPercent / 100);
     const commissionCompany = commissionTotal * (companyPercent / 100);
 
-    // BROKER tự tạo → gắn chính mình. ADMIN/ADMIN_STAFF gán brokerId → BẮT BUỘC là 1 CTV (role=BROKER)
-    // đang hoạt động, tránh gán giao dịch/hoa hồng cho tài khoản bất kỳ.
-    let dealBrokerId = session.user.id;
-    if (role !== 'BROKER') {
+    /* ── Ghi deal THẲNG TỪ LEAD (?viewingRequestId) ────────────────────────────────
+     * Vì sao: sau 2 tháng vận hành kho deal trống trơn (0 bản ghi) trong khi 44 lead đã
+     * vào — không phải vì không chốt được khách, mà vì chốt xong KHÔNG CÓ CHỖ GHI: muốn
+     * ghi phải mò sang trang Giao dịch nhập tay lại từ đầu. Nay bấm "đã chốt" ngay trên
+     * dòng lead là xong.
+     * Mọi field định danh (phòng nào, khách nào, CTV nào) đọc TỪ LEAD ở SERVER, không lấy
+     * theo body — client chỉ được quyết giá và ghi chú. */
+    let lead: { id: string; roomTypeId: string; brokerId: string | null; name: string | null; phone: string } | null = null;
+    if (body.viewingRequestId) {
+      lead = await prisma.viewingRequest.findUnique({
+        where: { id: String(body.viewingRequestId) },
+        select: { id: true, roomTypeId: true, brokerId: true, name: true, phone: true },
+      });
+      if (!lead) return NextResponse.json({ error: 'Không tìm thấy lead' }, { status: 404 });
+      // CTV chỉ được ghi deal cho lead CỦA MÌNH
+      if (role === 'BROKER' && lead.brokerId !== session.user.id) {
+        return NextResponse.json({ error: 'Lead này không thuộc về bạn' }, { status: 403 });
+      }
+      const existed = await prisma.deal.findUnique({ where: { viewingRequestId: lead.id }, select: { id: true } });
+      if (existed) {
+        return NextResponse.json({ error: 'Lead này đã ghi giao dịch rồi', dealId: existed.id }, { status: 409 });
+      }
+    }
+
+    // BROKER tự tạo → gắn chính mình. ADMIN/ADMIN_STAFF gán brokerId → BẮT BUỘC là 1 CTV
+    // (role=BROKER) đang hoạt động, tránh gán giao dịch/hoa hồng cho tài khoản bất kỳ.
+    // Ghi từ lead thì lấy CTV của lead — lead "tự tìm" (brokerId=null) → deal KHÔNG có CTV,
+    // đó là giao dịch công ty tự chốt, hợp lệ (xem chú thích Deal.brokerId trong schema).
+    let dealBrokerId: string | null = session.user.id;
+    if (lead) {
+      dealBrokerId = lead.brokerId;
+    } else if (role !== 'BROKER') {
       if (!body.brokerId) {
         return NextResponse.json({ error: 'Thiếu brokerId (cộng tác viên)' }, { status: 400 });
       }
@@ -176,11 +204,12 @@ export async function POST(req: NextRequest) {
 
     const deal = await prisma.deal.create({
       data: {
-        roomTypeId: body.roomTypeId,
+        roomTypeId: lead ? lead.roomTypeId : body.roomTypeId,
         brokerId: dealBrokerId,
+        viewingRequestId: lead ? lead.id : null,
         customerId: body.customerId || null,
-        customerName: body.customerName,
-        customerPhone: body.customerPhone,
+        customerName: lead ? lead.name : body.customerName,
+        customerPhone: lead ? lead.phone : body.customerPhone,
         dealPrice: parseFloat(body.dealPrice),
         commissionTotal,
         commissionBroker,

@@ -227,6 +227,9 @@ export async function GET(req: NextRequest) {
             },
           },
           broker: { select: { id: true, name: true, phone: true } },
+          // Deal đã ghi từ lead này (nếu có) — để bảng hiện "💰 Đã chốt N triệu" và KHÔNG
+          // mời ghi lại lần nữa. Chỉ lấy 3 field, không kéo cả hoa hồng ra bảng lead.
+          deal: { select: { id: true, dealPrice: true, status: true } },
         },
         // Trang lịch xếp theo GIỜ HẸN gần nhất trước; bảng lead vẫn theo lúc khách gửi.
         orderBy: schedule ? { preferredDate: 'asc' } : { createdAt: 'desc' },

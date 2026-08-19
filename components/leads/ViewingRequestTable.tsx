@@ -1,5 +1,7 @@
 'use client';
+import { useState } from 'react';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import CloseDealModal from '@/components/leads/CloseDealModal';
 import toast from 'react-hot-toast';
 import { telHref, zaloHref } from '@/lib/phone';
 import { appointmentLabel } from '@/lib/appointment';
@@ -44,6 +46,9 @@ export default function ViewingRequestTable({
   /** Thay lời nhắn "chưa có khách nào" khi danh sách rỗng VÌ ĐANG LỌC, không phải vì hết dữ liệu */
   emptyState?: React.ReactNode;
 }) {
+  // Lead đang được hỏi "khách có thuê không" (chuyển sang Đã dẫn xem)
+  const [closing, setClosing] = useState<any>(null);
+
   const setStatus = async (id: string, status: string) => {
     const res = await fetch('/api/viewing-requests', {
       method: 'PUT',
@@ -52,6 +57,16 @@ export default function ViewingRequestTable({
     });
     if (res.ok) { toast.success('Đã cập nhật'); mutate(); }
     else toast.error('Không cập nhật được');
+  };
+
+  /**
+   * Đổi sang "🟢 Đã dẫn xem" = thời điểm DUY NHẤT biết được kết quả. Chặn lại hỏi luôn
+   * thay vì để admin tự nhớ sang trang Giao dịch nhập tay — 44 lead / 0 deal chính là hậu
+   * quả của việc không hỏi (đo 19/08/2026). Lead đã có deal thì không hỏi lại.
+   */
+  const onStatusChange = (row: any, status: string) => {
+    if (status === 'DONE' && !row.deal) { setClosing(row); return; }
+    setStatus(row.id, status);
   };
 
   if (rows.length === 0) {
@@ -65,6 +80,10 @@ export default function ViewingRequestTable({
   }
 
   return (
+    <>
+    {closing && (
+      <CloseDealModal lead={closing} onClose={() => setClosing(null)} onDone={mutate} />
+    )}
     <div className="card overflow-x-auto p-0">
       <table className="w-full text-sm min-w-[1020px]">
         {/* Dùng .table-header / .table-cell như MỌI bảng quản trị khác (app/globals.css) thay vì
@@ -136,7 +155,14 @@ export default function ViewingRequestTable({
                   <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium border ${STATUS_META[r.status]?.cls || ''}`}>
                     {STATUS_META[r.status]?.label || r.status}
                   </span>
-                  <select value={r.status} onChange={e => setStatus(r.id, e.target.value)}
+                  {/* Đã ghi giao dịch → nói ra ngay tại dòng lead, khỏi mở trang Giao dịch để tra */}
+                  {r.deal && (
+                    <span title="Đã ghi giao dịch từ lead này"
+                      className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold border bg-emerald-600 text-white border-emerald-600">
+                      💰 Đã chốt {formatCurrency(r.deal.dealPrice)}
+                    </span>
+                  )}
+                  <select value={r.status} onChange={e => onStatusChange(r, e.target.value)}
                     className="text-xs border border-stone-200 rounded-lg px-2 py-1 bg-white text-stone-600">
                     <option value="NEW">Mới</option>
                     <option value="CONTACTED">Đã gọi</option>
@@ -151,5 +177,6 @@ export default function ViewingRequestTable({
         </tbody>
       </table>
     </div>
+    </>
   );
 }

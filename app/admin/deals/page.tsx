@@ -144,8 +144,16 @@ export default function AdminDealsPage() {
                       {companyName ? <span className="badge bg-brand-50 text-brand-700 text-[10px]">{companyName}</span> : <span className="text-xs text-stone-400">—</span>}
                     </td>
                     <td className="table-cell">
-                      <p className="font-medium text-stone-900">{d.broker?.name}</p>
-                      <p className="text-xs text-stone-400">{d.broker?.phone}</p>
+                      {/* Không có CTV = khách tự tìm đến web, công ty tự chốt — nói thẳng,
+                          để trống thì trông như thiếu dữ liệu (xem Deal.brokerId trong schema) */}
+                      {d.broker ? (
+                        <>
+                          <p className="font-medium text-stone-900">{d.broker.name}</p>
+                          <p className="text-xs text-stone-400">{d.broker.phone}</p>
+                        </>
+                      ) : (
+                        <span className="badge bg-stone-100 text-stone-600 text-[10px]">🏢 Công ty tự chốt</span>
+                      )}
                     </td>
                     <td className="table-cell">
                       <p className="text-stone-900">{d.customerName || d.customer?.name || '—'}</p>

@@ -255,7 +255,13 @@ model RoomType {
 model Deal {
   id                String     @id @default(cuid())
   roomTypeId        String
-  brokerId          String
+  // NULLABLE từ 19/08/2026: giao dịch công ty TỰ CHỐT (khách vào thẳng web, không qua CTV nào)
+  // là chuyện có thật — đo cùng ngày: 44/44 lead đều brokerId=null. Bắt buộc phải có CTV thì
+  // không ghi nổi deal nào, và đó đúng là lý do kho deal trống trơn sau 2 tháng vận hành.
+  brokerId          String?
+  // Lead sinh ra giao dịch này — @unique để một lead chỉ ghi được MỘT deal (bấm nhầm 2 lần
+  // không đẻ ra 2 doanh thu ảo), và để bảng lead hiện lại "đã chốt bao nhiêu".
+  viewingRequestId  String?    @unique
   customerId        String?
   customerName      String?
   customerPhone     String?
@@ -273,7 +279,8 @@ model Deal {
 
   // Relations
   roomType          RoomType   @relation(fields: [roomTypeId], references: [id])
-  broker            User       @relation("BrokerDeals", fields: [brokerId], references: [id])
+  broker            User?      @relation("BrokerDeals", fields: [brokerId], references: [id])
+  viewingRequest    ViewingRequest? @relation(fields: [viewingRequestId], references: [id])
   customer          User?      @relation("CustomerDeals", fields: [customerId], references: [id])
 
   @@index([brokerId])
@@ -431,6 +438,9 @@ model ViewingRequest {
 
   roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
   broker     User?    @relation("BrokerViewingRequests", fields: [brokerId], references: [id], onDelete: SetNull)
+
+  // Giao dịch chốt từ lead này (nếu có) — quan hệ ngược của Deal.viewingRequestId
+  deal            Deal?
 
   @@index([brokerId, createdAt])
   @@index([roomTypeId])
