@@ -121,6 +121,9 @@ export async function GET(req: NextRequest) {
               priceMonthly: true,
               availableUnits: true,
               totalUnits: true,
+              // isApproved: để trang Tòa nhà đếm được "tòa này đang giam bao nhiêu tin đã duyệt"
+              // — tin đã duyệt của tòa CHƯA duyệt thì khách không thấy ở đâu cả.
+              isApproved: true,
             },
           },
         },

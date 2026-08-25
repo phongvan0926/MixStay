@@ -87,6 +87,15 @@ export async function GET(req: NextRequest) {
     } else if (issue === 'overdue-upcoming') {
       where.status = 'UPCOMING';
       where.expectedAvailableDate = { lte: new Date() };
+    } else if (issue === 'property-pending') {
+      // 🚫 TIN BỊ TÒA GIAM: tin đã duyệt, còn phòng, nhưng TÒA của nó chưa duyệt.
+      // PUBLIC_ROOM_WHERE (lib/seo-listings.ts) bắt buộc property.status='APPROVED', nên tin
+      // nhóm này KHÔNG hiện ở trang chủ / /phong / bản đồ / sitemap dù admin đã bấm duyệt tin.
+      // Đo 25/08/2026: 73 tin nằm im sau 43 tòa chờ duyệt, tin cũ nhất chờ 8 ngày.
+      // ⚠️ Điều kiện phải TRÙNG KHỚP truy vấn đếm trappedRooms trong /api/admin/overview.
+      where.isApproved = true;
+      where.status = { in: ['AVAILABLE', 'UPCOMING'] };
+      where.property = { ...(where.property || {}), status: 'PENDING' };
     }
 
     // Property-level filters

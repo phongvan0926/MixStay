@@ -21,8 +21,11 @@ import Avatar from '@/components/ui/Avatar';
 const BAR_AREA = 140;
 
 /** Ô "việc cần làm": =0 thì làm mờ để không tranh chú ý với việc đang thật sự tồn đọng. */
-function TodoCard({ href, icon, label, value, tone = 'brand' }: {
+function TodoCard({ href, icon, label, value, tone = 'brand', note }: {
   href: string; icon: string; label: string; value: number | null; tone?: 'brand' | 'amber' | 'red';
+  /** Dòng phụ nói HẬU QUẢ của con số — dùng khi bản thân con số không nói lên việc
+   *  (VD "48 tòa chờ duyệt" nghe như việc hành chính, "đang giam 73 tin" mới là việc thật). */
+  note?: string;
 }) {
   if (value === null) return null;
   const active = value > 0;
@@ -40,6 +43,7 @@ function TodoCard({ href, icon, label, value, tone = 'brand' }: {
         <span className="truncate">{label}</span>
       </div>
       <p className={`mt-1 font-display text-3xl font-bold ${active ? '' : 'text-stone-300'}`}>{value}</p>
+      {active && note && <p className="mt-0.5 text-[11px] leading-tight font-medium opacity-90">{note}</p>}
     </Link>
   );
 }
@@ -193,7 +197,17 @@ export default function AdminDashboardPage() {
           {/* Khách xin xem phòng lên đầu: lead nóng nhất, chậm gọi là mất khách */}
           <TodoCard href="/admin/leads?tab=xem-phong" icon="📅" label="Khách xin xem phòng" value={todo.newViewingRequests} tone="red" />
           <TodoCard href="/admin/rooms?approved=false" icon="📝" label="Tin chờ duyệt" value={todo.pendingRooms} tone="amber" />
-          <TodoCard href="/admin/properties?status=PENDING" icon="🏢" label="Tòa chờ duyệt" value={todo.pendingProperties} tone="amber" />
+          {/* Tòa chờ duyệt KHÔNG phải việc hành chính: mỗi tòa chờ là một nắm tin đã duyệt bị
+              giấu khỏi khách (PUBLIC_ROOM_WHERE bắt property.status='APPROVED'). Khi đang giam
+              tin thì đổi sang tông ĐỎ và nói rõ hậu quả — trước đây thẻ chỉ ghi "48" nên admin
+              vẫn đi duyệt tin, còn tin thì nằm im. */}
+          <TodoCard href="/admin/properties?status=PENDING" icon="🏢" label="Tòa chờ duyệt"
+            value={todo.pendingProperties} tone={todo.trappedRooms > 0 ? 'red' : 'amber'}
+            note={todo.trappedRooms > 0 ? `🚫 Đang giam ${todo.trappedRooms} tin — khách không thấy` : undefined} />
+          {todo.trappedRooms > 0 && (
+            <TodoCard href="/admin/rooms?issue=property-pending" icon="🚫" label="Tin bị tòa giam"
+              value={todo.trappedRooms} tone="red" note="Đã duyệt tin nhưng chưa duyệt tòa" />
+          )}
           <TodoCard href="/admin/companies?approved=false" icon="🏛️" label="Công ty chờ duyệt" value={todo.pendingCompanies} tone="amber" />
           <TodoCard href="/admin/leads?tab=san-phong" icon="🔔" label="Khách săn phòng" value={todo.activeLeads} tone="brand" />
           <TodoCard href="/admin/dashboard#hoi-phong" icon="💬" label="Hỏi phòng chưa trả lời" value={todo.openInquiries} tone="red" />

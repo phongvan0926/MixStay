@@ -41,6 +41,7 @@ export async function GET(req: NextRequest) {
     const [
       // ① Việc cần làm
       pendingRooms, pendingProperties, pendingCompanies, activeLeads, openInquiries, newViewingRequests,
+      trappedRooms,
       // ② Sức khoẻ kho hàng
       roomsNoImage, propsNoCompany, propsNoGeo, staleRooms, overdueUpcoming,
       // ③ Nhịp + ④ số tổng
@@ -54,6 +55,12 @@ export async function GET(req: NextRequest) {
       prisma.roomInquiry.count({ where: { reply: null, dismissedAt: null } }),
       // Khách xin xem phòng chưa ai gọi — lead nóng nhất, để tụt là mất khách.
       prisma.viewingRequest.count({ where: { status: 'NEW' } }),
+      // 🚫 Tin ĐÃ DUYỆT nhưng TÒA chưa duyệt → khách không thấy. Đây mới là cái giá thật của
+      // "48 tòa chờ duyệt": con số tòa không nói lên việc, con số TIN BỊ GIAM thì có.
+      // ⚠️ Phải TRÙNG KHỚP nhánh issue==='property-pending' trong /api/rooms (GET).
+      prisma.roomType.count({
+        where: { isApproved: true, status: { in: ['AVAILABLE', 'UPCOMING'] }, property: { status: 'PENDING' } },
+      }),
 
       prisma.roomType.count({ where: { images: { isEmpty: true } } }),
       prisma.property.count({ where: { companyId: null } }),
@@ -181,6 +188,7 @@ export async function GET(req: NextRequest) {
       todo: {
         pendingRooms,
         pendingProperties,
+        trappedRooms,
         pendingCompanies: canManageCompanies ? pendingCompanies : null,
         newViewingRequests,
         activeLeads,

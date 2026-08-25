@@ -22,6 +22,11 @@ const ISSUE_TEXT: Record<string, { icon: string; label: string; hint: string }> 
     label: 'Tin “sắp trống” đã quá ngày dự kiến',
     hint: 'Đến hạn mà chưa chuyển trạng thái — xác nhận đã trống chưa để khách không hỏi nhầm.',
   },
+  'property-pending': {
+    icon: '🚫',
+    label: 'Tin đã duyệt nhưng TÒA chưa duyệt',
+    hint: 'Những tin này khách KHÔNG nhìn thấy ở đâu cả (trang chủ, /phong, bản đồ, Google) vì tòa nhà của chúng còn chờ duyệt. Bấm "✓ Duyệt tòa ngay" ở cột Tòa nhà là tin hiện ra lập tức.',
+  },
   'no-geo': {
     icon: '📍',
     label: 'Tòa nhà thiếu toạ độ',

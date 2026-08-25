@@ -291,6 +291,19 @@ function AdminPropertiesInner() {
                     </td>
                     <td className="table-cell">
                       <span className={`badge ${getStatusColor(p.status)}`}>{getStatusLabel(p.status)}</span>
+                      {/* Tòa chờ duyệt ĐANG GIAM bao nhiêu tin: tin đã duyệt + còn hiệu lực của một
+                          tòa chưa duyệt thì khách KHÔNG thấy ở đâu cả. Số này để admin duyệt tòa
+                          nhiều tin trước — 25/08/2026 có tòa giam tới 11 tin suốt 7 ngày. */}
+                      {p.status === 'PENDING' && (() => {
+                        const trapped = (p.roomTypes || []).filter(
+                          (r: any) => r.isApproved && (r.status === 'AVAILABLE' || r.status === 'UPCOMING')
+                        ).length;
+                        return trapped > 0 ? (
+                          <p className="mt-1 text-[11px] leading-tight font-semibold text-red-700 bg-red-50 border border-red-200 rounded px-1.5 py-1 max-w-[170px]">
+                            🚫 Đang giam {trapped} tin đã duyệt — khách chưa thấy
+                          </p>
+                        ) : null;
+                      })()}
                     </td>
                     <td className="table-cell">
                       <div className="flex items-center gap-2">

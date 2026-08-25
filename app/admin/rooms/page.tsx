@@ -181,7 +181,7 @@ function AdminRoomsInner() {
   const propertyIdParam = searchParams.get('propertyId') || '';
   const approvedParam = searchParams.get('approved') || '';
   const statusParam = searchParams.get('status') || '';
-  // ?issue=no-image | stale | overdue-upcoming — đến từ thẻ việc cần làm ở /admin/dashboard
+  // ?issue=no-image | stale | overdue-upcoming | property-pending — đến từ thẻ việc cần làm ở /admin/dashboard
   const issueParam = searchParams.get('issue') || '';
   const { data: session } = useSession();
   const canExport = hasPermission(session?.user as any, 'EXPORT_DATA');
@@ -333,6 +333,29 @@ function AdminRoomsInner() {
   const toggleApproval = async (id: string, current: boolean) => {
     await fetch('/api/rooms', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, isApproved: !current }) });
     toast.success(!current ? 'Đã duyệt phòng' : 'Đã huỷ duyệt'); mutate();
+  };
+
+  // Duyệt TÒA ngay từ bảng tin. Vì sao cần: duyệt tin xong mà tòa còn chờ duyệt thì tin VẪN
+  // không hiện với khách (PUBLIC_ROOM_WHERE bắt property.status='APPROVED'), mà bảng này trước
+  // đây chỉ hiện dấu "✓ Đã duyệt" của riêng cái tin → admin tưởng xong việc, tin nằm im nhiều ngày.
+  const [approvingProp, setApprovingProp] = useState<string | null>(null);
+  const approveProperty = async (propertyId: string, propertyName: string) => {
+    setApprovingProp(propertyId);
+    try {
+      const res = await fetch('/api/properties', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: propertyId, status: 'APPROVED' }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        toast.error(j.error || 'Không duyệt được tòa nhà');
+        return;
+      }
+      toast.success(`Đã duyệt tòa "${propertyName}" — các tin của tòa đã hiện với khách`);
+      mutate();
+    } finally {
+      setApprovingProp(null);
+    }
   };
 
   const getCommissionText = (r: any) => {
@@ -651,6 +674,30 @@ function AdminRoomsInner() {
                         {r.property?.district}
                         {companyName && <span className="ml-1 inline-block align-middle badge bg-brand-50 text-brand-700 !text-[11px] !px-1.5 !py-0" title={companyName}>{companyName}</span>}
                       </p>
+                      {/* 🚫 BẪY DUYỆT TÒA — cảnh báo quan trọng nhất trong bảng này.
+                          Tin có thể "✓ Đã duyệt" mà khách vẫn KHÔNG thấy, nếu tòa của nó chưa duyệt.
+                          Không có dòng này thì admin duyệt tin, thấy tích xanh, tin tưởng là xong —
+                          đo 25/08/2026: 73 tin đã duyệt nằm im sau 43 tòa chờ duyệt, cũ nhất 8 ngày. */}
+                      {r.property?.status && r.property.status !== 'APPROVED' && (
+                        <div className="mt-1.5 rounded-md border border-red-200 bg-red-50 px-1.5 py-1">
+                          <p className="text-[11px] leading-tight font-semibold text-red-700">
+                            {r.property.status === 'PENDING' ? '🚫 Tòa chưa duyệt' : '🚫 Tòa bị từ chối'}
+                          </p>
+                          <p className="text-[10px] leading-tight text-red-600 mt-0.5">
+                            {r.isApproved
+                              ? 'Tin đã duyệt nhưng khách VẪN CHƯA THẤY — phải duyệt tòa thì tin mới hiện.'
+                              : 'Duyệt tin thôi chưa đủ — tòa cũng phải được duyệt tin mới hiện với khách.'}
+                          </p>
+                          {r.property.status === 'PENDING' && (
+                            <button type="button" onClick={() => approveProperty(r.property.id, r.property.name)}
+                              disabled={!canApprove || approvingProp === r.property.id}
+                              title={canApprove ? 'Duyệt tòa nhà này ngay' : 'Cần quyền Duyệt tin đăng (APPROVE_LISTINGS)'}
+                              className="mt-1 inline-flex items-center min-h-7 px-2 rounded-md text-[11px] font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                              {approvingProp === r.property.id ? 'Đang duyệt…' : '✓ Duyệt tòa ngay'}
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </td>
                     <td className="table-cell font-semibold text-brand-600 whitespace-nowrap">{formatCurrency(r.priceMonthly)}</td>
                     <td className="table-cell">
