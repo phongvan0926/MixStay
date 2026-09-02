@@ -58,6 +58,39 @@ export function roomWhereForSearch(s: SearchCriteria): any {
   return where;
 }
 
+/**
+ * Tin CỤ THỂ này có khớp tiêu chí của khách không — bản thuần JS của `roomWhereForSearch`,
+ * dùng khi đã cầm sẵn bản ghi tin trong tay (đường "tin vừa duyệt") nên không cần hỏi lại DB.
+ *
+ * ⚠️ PHẢI cùng luật với `roomWhereForSearch`. Trước 03/09/2026 đường `PUT /api/rooms` tự chép
+ * lại bộ luật này một bản riêng và **quên gọi `hasCriteria`** — 3/19 khách đang săn bỏ trống hết
+ * tiêu chí nên khớp MỌI tin, mỗi lần duyệt tin là báo thêm một lượt rác.
+ */
+export function roomMatchesSearch(
+  s: SearchCriteria,
+  room: { typeName: string | null; priceMonthly: number; property?: { district: string | null } | null },
+) {
+  if (!hasCriteria(s)) return false;
+  const districts = (s.district || '').split(',').map(d => d.trim()).filter(Boolean);
+  if (districts.length && !districts.includes(room.property?.district || '')) return false;
+  if (s.typeName && s.typeName !== room.typeName) return false;
+  if (s.minPrice && room.priceMonthly < s.minPrice) return false;
+  if (s.maxPrice && room.priceMonthly > s.maxPrice) return false;
+  return true;
+}
+
+/**
+ * Khoảng LẶNG giữa 2 lần báo về cùng một khách săn phòng.
+ *
+ * Vì sao cần: admin duyệt tin theo ĐỢT (duyệt xong một tòa là 11 tin liền tay). Nếu mỗi tin
+ * duyệt xong lại báo riêng cho từng khách khớp thì một đợt sinh ra hàng trăm thông báo gần như
+ * trùng nhau — đo 25/08/2026: **103 thông báo trong một ngày**, và hộp thông báo của admin dồn
+ * tới 755 mục chưa đọc, tức là cái chuông mất hẳn tác dụng cảnh báo.
+ * Có khoảng lặng thì cả đợt duyệt gộp thành MỘT tin nhắn "kho có N tin khớp" cho mỗi khách,
+ * phần còn lại để lượt quét hằng ngày báo nốt.
+ */
+export const MATCH_NOTIFY_COOLDOWN_MS = 6 * 60 * 60 * 1000;
+
 /** Đếm số tin trong kho khớp tiêu chí (dùng cho badge "🎯 N tin khớp" ở /admin/leads). */
 export function countMatches(s: SearchCriteria) {
   if (!hasCriteria(s)) return Promise.resolve(0);

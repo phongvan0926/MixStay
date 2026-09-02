@@ -11,6 +11,7 @@ import { normalizeListingCode, LISTING_CODE_REGEX, parseComposedListingCode } fr
 import { generateUniqueListingCode } from '@/lib/listing-code-server';
 import { reconcileAvailability, type RoomStatusValue } from '@/lib/room-status';
 import { redactName, redactHouseNumber } from '@/lib/address';
+import { roomMatchesSearch, matchAndNotify, MATCH_NOTIFY_COOLDOWN_MS } from '@/lib/saved-search-match';
 
 export async function GET(req: NextRequest) {
   const rateLimited = await applyRateLimit(req, 'api');
@@ -494,36 +495,29 @@ export async function PUT(req: NextRequest) {
       (async () => {
         const rt = await prisma.roomType.findUnique({
           where: { id },
-          select: { name: true, priceMonthly: true, typeName: true, listingCode: true, property: { select: { district: true } } },
+          select: { typeName: true, priceMonthly: true, property: { select: { district: true } } },
         });
         if (!rt) return;
+
+        // Khớp bằng CÙNG bộ luật với 2 đường còn lại (lib/saved-search-match.ts). Trước 03/09/2026
+        // chỗ này chép riêng một bản luật + tự dựng notification, sinh ra HAI lỗi:
+        //   ① quên `hasCriteria` → khách bỏ trống hết tiêu chí khớp MỌI tin (3/19 khách);
+        //   ② báo theo TỪNG CẶP (tin × khách) → duyệt cả tòa 11 tin là 11 lượt báo gần y hệt nhau.
+        // Đo 25/08/2026: 103 thông báo trong một ngày, hộp thông báo admin dồn 755 mục chưa đọc.
         const searches = await prisma.savedSearch.findMany({ where: { isActive: true } });
-        // Khớp bằng CÙNG luật với bộ quét ngược (lib/saved-search-match.ts) — trước đây chỗ này
-        // so quận bằng `includes` chuỗi nên "Từ Liêm" ăn nhầm cả "Bắc/Nam Từ Liêm", còn khách
-        // chọn nhiều quận thì lọt tuỳ chuỗi. Nay tách theo dấu phẩy và so bằng.
-        const matched = searches.filter(s => {
-          const districts = (s.district || '').split(',').map(d => d.trim()).filter(Boolean);
-          if (districts.length && !districts.includes(rt.property?.district || '')) return false;
-          if (s.typeName && s.typeName !== rt.typeName) return false;
-          if (s.minPrice && rt.priceMonthly < s.minPrice) return false;
-          if (s.maxPrice && rt.priceMonthly > s.maxPrice) return false;
-          return true;
-        });
+        const matched = searches.filter(s => roomMatchesSearch(s, rt));
         if (!matched.length) return;
-        const admins = await prisma.user.findMany({ where: { role: 'ADMIN', isActive: true }, select: { id: true } });
-        await prisma.notification.createMany({
-          data: matched.flatMap(s => admins.map(a => ({
-            userId: a.id,
-            type: 'saved_search',
-            title: '🎯 Tin mới khớp khách săn phòng',
-            message: `"${rt.name}" (${rt.listingCode || ''}) khớp nhu cầu của ${s.name || 'khách'} ${s.phone} — gọi chào phòng ngay!`,
-            link: '/admin/leads?tab=saved',
-          }))),
-        });
-        await prisma.savedSearch.updateMany({
-          where: { id: { in: matched.map(s => s.id) } },
-          data: { lastMatchedAt: new Date() },
-        });
+
+        const now = Date.now();
+        for (const s of matched) {
+          // KHOẢNG LẶNG: khách vừa được báo trong 6h thì đợt duyệt này không báo lại — tin vừa
+          // duyệt vẫn nằm trong `count` của lần báo kế tiếp (quét hằng ngày dùng `since:
+          // lastMatchedAt`), nên không mất tin nào, chỉ gộp lại cho đỡ ồn.
+          if (s.lastMatchedAt && now - s.lastMatchedAt.getTime() < MATCH_NOTIFY_COOLDOWN_MS) continue;
+          // matchAndNotify tự đếm TỔNG tin khớp và gộp thành MỘT thông báo mỗi khách
+          // ("kho có N tin khớp: MS-… · MS-… "), đồng thời cập nhật lastMatchedAt.
+          await matchAndNotify(s, { since: s.lastMatchedAt, reason: 'new' });
+        }
       })().catch(e => console.error('saved-search match error:', e));
     }
 
