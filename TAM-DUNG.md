@@ -20,6 +20,14 @@ Mọi thứ trên **ổ SSD Samsung gắn trong máy**, `/srv/data/MixStay/`:
 | Khoá bí mật (.env) | `secrets/env-2026-09-23` | Quyền 600, KHÔNG commit |
 | Mã băm kiểm tra | `db/SHA256SUMS` | `cd /srv/data/MixStay && sha256sum -c db/SHA256SUMS` |
 
+**Bản sao ngoài nhà (có sẵn, không phải tự làm):** backup chung của máy (restic, do phiên
+"Phong Prosucker - Remote + Repo ĐM LL" quản lý) đã gồm `/srv/data/MixStay` và `~/Desktop/MixStay`
+(kể cả `.env`). Kho restic ở `/srv/data/backup` chạy ~03:08 hằng đêm và được **mã hoá AES-256**.
+Nguyên kho được rclone copy lên Google Drive 5 TiB (`gdrive-backup:backup-may`) lúc 05:00.
+Muốn lấy lại từ Drive thì cần **mật khẩu kho restic**, anh Phong đã cất riêng ngoài máy.
+Kho nội bộ chỉ giữ tối đa ~6 tháng. Bản trên Drive không bị xoá (rclone copy chỉ thêm).
+⚠️ ĐỪNG chạy `rclone config` trên remote `gdrive-backup` (scope drive.file, đổi là mất quyền thấy file cũ).
+
 Mã nguồn: GitHub (miễn phí) + thư mục này. Commit cuối trước khi dừng: `485d693`.
 
 Số dòng lúc sao lưu (đã khớp 14/14 bảng khi khôi phục thử):
