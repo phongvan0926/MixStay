@@ -1,6 +1,8 @@
 # ⏸️ MixStay đang TẠM DỪNG — sổ tay khởi động lại
 
-**Tạm dừng từ:** 23/09/2026, theo quyết định của chủ dự án: chưa có nhân sự phát triển nên
+> **Kho lưu trữ đầy đủ (bản chốt lúc đóng, 24/09/2026): `/srv/data/MixStay/` — đọc `DOC-TOI-TRUOC.md` ở đó trước.** Gồm DB, ảnh, khoá, mã nguồn dạng git bundle, cấu hình mọi nền tảng online, bộ nhớ AI.
+
+**Tạm dừng từ:** 23/09/2026 (bản dữ liệu chốt 24/09/2026), theo quyết định của chủ dự án: chưa có nhân sự phát triển nên
 đưa chi phí về 0đ bằng cách tắt Vercel + Supabase. Dữ liệu đã sao lưu và **đã khôi phục thử
 thành công** trước khi tắt.
 
@@ -13,8 +15,8 @@ Mọi thứ trên **ổ SSD Samsung gắn trong máy**, `/srv/data/MixStay/`:
 
 | Thứ | Đường dẫn | Ghi chú |
 |---|---|---|
-| Database (định dạng pg_dump) | `db/mixstay-2026-09-23.dump` | Dùng file này để khôi phục |
-| Database (SQL đọc được) | `db/mixstay-2026-09-23.sql` | Dự phòng, mở bằng mắt được |
+| Database (định dạng pg_dump) | `db/mixstay-2026-09-24.dump` | Dùng file này để khôi phục |
+| Database (SQL đọc được) | `db/mixstay-2026-09-24.sql` | Dự phòng, mở bằng mắt được |
 | Ảnh + video | `storage/` (properties/, rooms/, videos/) | 5.714 file, 4,6 GB, đủ 100% |
 | Danh mục ảnh | `storage/manifest.json` | Đường dẫn gốc của từng file |
 | Khoá bí mật (.env) | `secrets/env-2026-09-23` | Quyền 600, KHÔNG commit |
@@ -65,7 +67,7 @@ cd /srv/data/MixStay && sha256sum -c db/SHA256SUMS   # phải ra 3 dòng OK
 ```bash
 docker run --rm --network host -e PGURL='<DIRECT_URL mới>?sslmode=require' \
   -v /srv/data/MixStay/db:/in postgres:17 \
-  pg_restore -d "$PGURL" --no-owner --no-privileges /in/mixstay-2026-09-23.dump
+  pg_restore -d "$PGURL" --no-owner --no-privileges /in/mixstay-2026-09-24.dump
 ```
    Lỗi `schema "public" already exists` là bình thường, bỏ qua.
 4. Đếm lại số dòng, so với danh sách ở mục 1.
