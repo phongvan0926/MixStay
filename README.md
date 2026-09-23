@@ -1,5 +1,8 @@
 # 🏢 MixStay Manager
 
+> ⏸️ **DỰ ÁN ĐANG TẠM DỪNG từ 23/09/2026** (tắt Vercel + Supabase để chi phí về 0đ). Dữ liệu đã sao lưu và khôi phục thử thành công. Cách mở lại: xem [`TAM-DUNG.md`](TAM-DUNG.md).
+
+
 Nền tảng quản lý chung cư mini — kết nối Chủ nhà, Cộng tác viên, Công ty và Khách thuê.
 
 ## Tech Stack
