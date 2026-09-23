@@ -9,6 +9,27 @@ thành công** trước khi tắt.
 > AI agent đọc file này: dự án đang ngủ, **production KHÔNG còn chạy**. Đừng cố gọi DB,
 > đừng chạy `scripts/backup-storage.js` (cloud không còn). Muốn làm tiếp → theo mục 3.
 
+## ⚠️ Thứ tự TẮT an toàn (đừng làm ngược, kẻo kéo CCMN + FinanceOS sập theo)
+
+Team Vercel "Phong Bùi's projects" còn chạy `cloudhunter`, `ccmn`, `financeos`. CCMN
+(Supabase `qvddrwcmxczvgffyhkip`) và FinanceOS (`atosnpxwautqkdscdlal`) có thể nằm CHUNG tổ chức
+Supabase với MixStay (tới 24/09/2026 vẫn chưa xác minh, hãy xem trên dashboard).
+
+1. Chờ lượt kiểm backup 05:43 ngày 24/09 báo OK.
+2. **Vercel:** XOÁ RIÊNG project `mixstay`. Việc này gỡ luôn tên miền `mixstay.vn` khỏi team.
+   Vercel bắt buộc gỡ tên miền cấp team trước khi hạ Pro xuống Hobby. Sau đó mới hạ gói, NẾU 3
+   project kia chạy được trên Hobby. ĐỪNG để gói hết hạn vì không trả tiền: cả team có thể bị chặn.
+3. **Supabase:** XOÁ project MixStay `cepznpxlzrrvqjcojwep` TRƯỚC khi hạ tổ chức xuống Free.
+   Project này có 4,6 GB ảnh, vượt hạn mức 1 GB của Free. Tài liệu Supabase: hạ gói khi tổ chức có quá
+   2 project thì TẤT CẢ project bị tạm dừng. Không trả tiền cũng dẫn tới tạm dừng tất cả.
+4. Gỡ cron backup ảnh trên máy: `bash scripts/install-backup-cron.sh --remove`.
+
+## Nếu mở lại trên gói Vercel Hobby (miễn phí)
+
+- Cron chỉ chạy tối đa **1 lần/ngày**, giờ chạy có thể lệch **±59 phút**. Cron `lifecycle` hiện đặt
+  01:00 UTC mỗi ngày nên vẫn chạy được. Nhưng đừng thêm cron dày hơn, và đừng giả định chạy đúng giờ.
+- Hobby chỉ cho dùng phi thương mại. MixStay thu hoa hồng nên về điều khoản cần gói Pro.
+
 ## 1. Dữ liệu đang nằm ở đâu
 
 Mọi thứ trên **ổ SSD Samsung gắn trong máy**, `/srv/data/MixStay/`:
