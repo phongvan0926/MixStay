@@ -6,8 +6,23 @@
 đưa chi phí về 0đ bằng cách tắt Vercel + Supabase. Dữ liệu đã sao lưu và **đã khôi phục thử
 thành công** trước khi tắt.
 
-> AI agent đọc file này: dự án đang ngủ, **production KHÔNG còn chạy**. Đừng cố gọi DB,
+> AI agent đọc file này: dự án đang ngủ. **Supabase ĐÃ XOÁ, production KHÔNG còn chạy.**
 > đừng chạy `scripts/backup-storage.js` (cloud không còn). Muốn làm tiếp → theo mục 3.
+
+## ✅ Trạng thái sau khi tắt (24/09/2026 ~05:50)
+
+| Thứ | Trạng thái |
+|---|---|
+| Supabase project `cepznpxlzrrvqjcojwep` | **ĐÃ XOÁ** (~05:50 24/09). Tổ chức "phongvan0926's Org" đã hạ xuống **Free**, còn 0 project |
+| CCMN, FinanceOS (Supabase) | Không ảnh hưởng: ở 2 tổ chức Free riêng, vẫn chạy |
+| Vercel team "Phong Bùi's projects" | Đã hạ xuống **Hobby** (~03:35 24/09). cloudhunter, ccmn, financeos vẫn trong team |
+| Vercel project `mixstay` | **Còn**, tại mixstay.vercel.app (Hobby, 0đ), nhưng app LỖI khi gọi DB vì Supabase đã mất |
+| Tên miền `mixstay.vn` | Đã gỡ khỏi Vercel. DNS ở dotvndns vẫn trỏ A → 76.76.21.21, nên trang trả **404**. Tên miền vẫn phải gia hạn riêng ở nhà đăng ký |
+| Cron backup ảnh 03:00 trên máy | **Đã gỡ** (Supabase không còn để tải) |
+| Bản chốt dữ liệu | `/srv/data/MixStay` + restic snapshot `44f9ab31`, tag giữ vĩnh viễn, có trên Google Drive |
+
+Khi mở lại: KHÔNG dùng lại được Supabase cũ, phải tạo project MỚI (mục 3). Project Vercel `mixstay`
+dùng lại được nếu còn: chỉ cần thay biến môi trường Supabase rồi gắn lại tên miền.
 
 ## ⚠️ Thứ tự TẮT an toàn (đừng làm ngược, kẻo kéo CCMN + FinanceOS sập theo)
 
