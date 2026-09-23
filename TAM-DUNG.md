@@ -76,7 +76,8 @@ room_inquiries 4 · settings 3 · saved_listings 1 · deals 0.
 
 ### 3.1 Kiểm file còn nguyên
 ```bash
-cd /srv/data/MixStay && sha256sum -c db/SHA256SUMS   # phải ra 3 dòng OK
+cd /srv/data/MixStay && sha256sum -c db/SHA256SUMS   # phải ra 7 dòng OK
+# ⚠️ PHẢI chạy từ /srv/data/MixStay. Chạy trong db/ thì cả 7 dòng báo FAILED dù file vẫn nguyên.
 ```
 
 ### 3.2 Tạo Supabase mới + đổ DB
